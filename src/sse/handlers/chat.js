@@ -245,7 +245,8 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
     recordError(provider, firstTokenTimedOut ? 0 : statusCode);
     log.warn("ROUTING", `Profile ${profileName} candidate ${candidateModelStr} failed (${firstTokenTimedOut ? "first-token-timeout" : statusCode}), trying next`);
 
-    if (excludeCandidates.length >= profile.candidates.length) {
+    // Safety cap; selectProvider throws on true exhaustion (caught above).
+    if (excludeCandidates.length >= 50) {
       break;
     }
   }

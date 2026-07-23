@@ -28,7 +28,10 @@ import { DATA_DIR } from "@/lib/dataDir.js";
  * @typedef {{
  *   description?: string,
  *   strategy?: "priority" | "rotation",
- *   candidates: Candidate[],
+ *   candidates?: Candidate[],
+ *   aggregate?: string,
+ *   aggregateOnly?: string[],
+ *   aggregateExclude?: string[],
  *   fallbackOn?: string[],
  *   sticky?: boolean,
  *   requiredCapabilities?: string[],
@@ -45,6 +48,12 @@ import { DATA_DIR } from "@/lib/dataDir.js";
  *     healthy one, fall back down the list on failure.
  *   - "rotation": spread load evenly across all healthy sources (least-recently
  *     used first); weight breaks ties. Used for the 百家饭 "管够" pools.
+ *
+ * aggregate (rotation only):
+ *   A model-family query string (e.g. "claude-sonnet-4"). The engine discovers
+ *   ALL providers whose registry lists a matching model and pools them into the
+ *   rotation. `aggregateOnly` / `aggregateExclude` restrict the provider set.
+ *   Static `candidates` (if any) are merged on top as pinned extras.
  */
 
 // ---------------------------------------------------------------------------
@@ -61,6 +70,14 @@ const PROFILES = {
       { provider: "kimi-coding", model: "auto", weight: 1 },
       { provider: "anthropic", model: "claude-sonnet-4", weight: 1 },
     ],
+    fallbackOn: ["403", "429", "quota_exceeded", "timeout", "5xx"],
+  },
+
+  claude: {
+    description: "Claude 管够：市面上所有 Claude Sonnet 接在一起轮着用，用到爽",
+    strategy: "rotation",
+    aggregate: "claude-sonnet-4",
+    aggregateExclude: ["blackbox"],
     fallbackOn: ["403", "429", "quota_exceeded", "timeout", "5xx"],
   },
 

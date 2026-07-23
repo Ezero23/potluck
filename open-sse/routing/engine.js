@@ -18,6 +18,7 @@ import { RoutingTrace } from "./trace.js";
 import { parseModel } from "../services/model.js";
 import { getCapabilitiesForModel } from "../providers/capabilities.js";
 import { selectNextSource, markSourceUsed } from "./scheduler.js";
+import { buildAggregateCandidates } from "./aggregate.js";
 
 const IS_PROFILE_RE = /^profile:/i;
 
@@ -128,9 +129,25 @@ async function selectProviderByRotation(profileName, profile, body, excludeCandi
   if (detectImages(body)) requiredCaps.add("vision");
   if (detectTools(body)) requiredCaps.add("tool_use");
 
+  // Aggregate mode: dynamically discover all sources for a model family.
+  // Static candidates serve as optional pinning / extra sources on top.
+  let candidates = profile.candidates || [];
+  if (profile.aggregate) {
+    const discovered = buildAggregateCandidates(profile.aggregate, {
+      onlyProviders: profile.aggregateOnly,
+      excludeProviders: profile.aggregateExclude,
+    });
+    // Merge: discovered sources + any explicit candidates not already present
+    const seen = new Set(discovered.map((d) => `${d.provider}/${d.model}`));
+    for (const c of candidates) {
+      if (!seen.has(`${c.provider}/${c.model}`)) discovered.push(c);
+    }
+    candidates = discovered;
+  }
+
   // Pre-filter by capability so the scheduler only sees usable sources.
   const capable = [];
-  for (const candidate of profile.candidates) {
+  for (const candidate of candidates) {
     const parsed = parseModel(`${candidate.provider}/${candidate.model}`);
     if (!parsed || !parsed.provider) {
       trace.recordSkipped(candidate.provider, candidate.model, "model not found in registry");
