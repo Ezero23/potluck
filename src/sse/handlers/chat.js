@@ -230,6 +230,8 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
 
     const shouldFallback =
       firstTokenTimedOut ||
+      // Rotation pools: any non-200 → source can't serve → slide to next ("不断线")
+      (profile.strategy === "rotation" && statusCode !== 200) ||
       fallbackOn.has(statusStr) ||
       fallbackOn.has("5xx") && statusCode >= 500 && statusCode < 600 ||
       fallbackOn.has("timeout") && (statusCode === 0 || /timeout|aborted/i.test(errorText)) ||
