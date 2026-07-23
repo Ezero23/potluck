@@ -16,6 +16,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { DATA_DIR } from "@/lib/dataDir.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -109,8 +110,7 @@ const DEFAULT_CONFIG = {
 
 const CONFIG_PATHS = [
   join(process.cwd(), "routing.json"),
-  join(process.cwd(), ".9router", "routing.json"),
-  join(process.env.HOME || "~", ".9router", "routing.json"),
+  join(DATA_DIR, "routing.json"),
 ];
 
 let cachedConfig = null;
