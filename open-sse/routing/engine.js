@@ -17,6 +17,7 @@ import { getHealth, isEligible, recordSuccess, recordError } from "./usageCache.
 import { RoutingTrace } from "./trace.js";
 import { parseModel } from "../services/model.js";
 import { getCapabilitiesForModel } from "../providers/capabilities.js";
+import { selectNextSource, markSourceUsed } from "./scheduler.js";
 
 const IS_PROFILE_RE = /^profile:/i;
 
@@ -47,6 +48,19 @@ export async function selectProvider(profileName, body, excludeCandidates = []) 
     throw new Error(`Routing profile not found: ${profileName}`);
   }
 
+  // Rotation strategy spreads load across healthy sources (abundance model).
+  // Default/unknown strategies keep the legacy priority-ordered fallback.
+  if (profile.strategy === "rotation") {
+    return selectProviderByRotation(profileName, profile, body, excludeCandidates);
+  }
+  return selectProviderByPriority(profileName, profile, body, excludeCandidates);
+}
+
+/**
+ * Priority-ordered selection (legacy behavior): sort candidates by priority
+ * descending and return the first one that passes health + capability checks.
+ */
+async function selectProviderByPriority(profileName, profile, body, excludeCandidates) {
   const trace = new RoutingTrace(profileName);
   const candidates = sortCandidates(profile.candidates);
   const requiredCaps = new Set(profile.requiredCapabilities || []);
@@ -103,6 +117,47 @@ export async function selectProvider(profileName, body, excludeCandidates = []) 
 }
 
 /**
+ * Rotation selection: pick the least-recently-used healthy source so load is
+ * spread evenly across the pool. Capability checks still apply; sources that
+ * lack a required capability are skipped (recorded in the trace). The chosen
+ * source is marked used so the next call rotates to a different one.
+ */
+async function selectProviderByRotation(profileName, profile, body, excludeCandidates) {
+  const trace = new RoutingTrace(profileName);
+  const requiredCaps = new Set(profile.requiredCapabilities || []);
+  if (detectImages(body)) requiredCaps.add("vision");
+  if (detectTools(body)) requiredCaps.add("tool_use");
+
+  // Pre-filter by capability so the scheduler only sees usable sources.
+  const capable = [];
+  for (const candidate of profile.candidates) {
+    const parsed = parseModel(`${candidate.provider}/${candidate.model}`);
+    if (!parsed || !parsed.provider) {
+      trace.recordSkipped(candidate.provider, candidate.model, "model not found in registry");
+      continue;
+    }
+    const caps = getCapabilitiesForModel(parsed.provider, parsed.model);
+    const missing = [...requiredCaps].filter((cap) => !caps[cap]);
+    if (missing.length > 0) {
+      trace.recordSkipped(parsed.provider, parsed.model, `missing capabilities: ${missing.join(", ")}`);
+      continue;
+    }
+    capable.push({ ...candidate, provider: parsed.provider, model: parsed.model });
+  }
+
+  const selected = selectNextSource(capable, excludeCandidates);
+  if (!selected) {
+    throw new Error(
+      `No eligible provider for profile '${profileName}' (rotation) after ${excludeCandidates.length} excluded`
+    );
+  }
+
+  markSourceUsed(selected.provider, selected.model);
+  trace.recordSelected(selected.provider, selected.model);
+  return { provider: selected.provider, model: selected.model, trace, candidate: selected };
+}
+
+/**
  * Determine if the model string is a routing profile. If yes, return profile
  * info; otherwise resolve as a regular provider/model and return a trace-less
  * result so the legacy path can run normally.
@@ -151,3 +206,4 @@ function detectTools(body) {
 
 export { getHealth, isEligible, recordSuccess, recordError, RoutingTrace };
 export { loadRoutingConfig, getProfile, listProfiles } from "./profiles.js";
+export { getSourceStats, resetRotationState } from "./scheduler.js";

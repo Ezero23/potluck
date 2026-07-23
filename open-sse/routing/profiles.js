@@ -23,10 +23,11 @@ import { DATA_DIR } from "@/lib/dataDir.js";
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {{ provider: string, model: string, priority?: number, maxCostPer1k?: number }} Candidate
+ * @typedef {{ provider: string, model: string, priority?: number, weight?: number, maxCostPer1k?: number }} Candidate
  *
  * @typedef {{
  *   description?: string,
+ *   strategy?: "priority" | "rotation",
  *   candidates: Candidate[],
  *   fallbackOn?: string[],
  *   sticky?: boolean,
@@ -38,6 +39,12 @@ import { DATA_DIR } from "@/lib/dataDir.js";
  *   defaultProfile: string,
  *   fallbackMaxTries: number,
  * }} RoutingConfig
+ *
+ * strategy:
+ *   - "priority" (default): sort candidates by priority desc, use the first
+ *     healthy one, fall back down the list on failure.
+ *   - "rotation": spread load evenly across all healthy sources (least-recently
+ *     used first); weight breaks ties. Used for the 百家饭 "管够" pools.
  */
 
 // ---------------------------------------------------------------------------
@@ -45,6 +52,18 @@ import { DATA_DIR } from "@/lib/dataDir.js";
 // ---------------------------------------------------------------------------
 
 const PROFILES = {
+  auto: {
+    description: "百家饭：好模型轮着用，不挑、管够、不断线",
+    strategy: "rotation",
+    candidates: [
+      { provider: "qoder-cn", model: "qmodel_latest", weight: 1 },
+      { provider: "qoder", model: "qmodel_latest", weight: 1 },
+      { provider: "kimi-coding", model: "auto", weight: 1 },
+      { provider: "anthropic", model: "claude-sonnet-4", weight: 1 },
+    ],
+    fallbackOn: ["403", "429", "quota_exceeded", "timeout", "5xx"],
+  },
+
   code: {
     description: "Code tasks: prefer Qoder CN with fallback to Kimi Coding and Anthropic",
     candidates: [
