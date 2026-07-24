@@ -6,10 +6,25 @@
  * scheduler can pool them into one effectively-unlimited source.
  *
  * Matching: normalize model IDs (strip provider prefix, lowercase, unify
- * separators, strip date suffixes) then prefix-match against the query.
+ * separators, strip date suffixes) then segment-boundary prefix-match.
+ * "claude-sonnet-4" matches "claude-sonnet-4", "claude-sonnet-4-6" (4.6),
+ * but NOT "claude-sonnet-45" (no segment boundary after "4").
  */
 
 import { PROVIDER_MODELS } from "../providers/index.js";
+
+// ---------------------------------------------------------------------------
+// Cache — PROVIDER_MODELS is static (loaded at boot), so results are stable.
+// ---------------------------------------------------------------------------
+const cache = new Map();
+
+export function invalidateAggregateCache() {
+  cache.clear();
+}
+
+// ---------------------------------------------------------------------------
+// Normalization
+// ---------------------------------------------------------------------------
 
 /**
  * Normalize a model ID for comparison.
@@ -26,10 +41,31 @@ export function normalizeModelId(raw) {
   s = s.replace(/\./g, "-");
   // Strip date suffixes like -20250514 or -20241022
   s = s.replace(/-\d{8}$/, "");
-  // Strip trailing version-like suffix for family matching
-  // "claude-sonnet-4-6" → keep as-is (it's a sub-version, still matches prefix "claude-sonnet-4")
   return s;
 }
+
+// ---------------------------------------------------------------------------
+// Matching
+// ---------------------------------------------------------------------------
+
+/**
+ * Segment-boundary prefix match.
+ * norm matches normQuery if:
+ *   - exact equality, OR
+ *   - norm starts with normQuery AND the next char is "-" (segment boundary)
+ *
+ * This means "claude-sonnet-4" matches "claude-sonnet-4-6" (a 4.x variant)
+ * but NOT "claude-sonnet-45" (different model entirely).
+ */
+function matchesFamily(norm, normQuery) {
+  if (norm === normQuery) return true;
+  if (norm.startsWith(normQuery) && norm[normQuery.length] === "-") return true;
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Discovery
+// ---------------------------------------------------------------------------
 
 /**
  * Find all {provider, model} pairs whose model matches the query family.
@@ -42,6 +78,10 @@ export function normalizeModelId(raw) {
 export function findSourcesForModel(query, opts = {}) {
   const normQuery = normalizeModelId(query);
   if (!normQuery) return [];
+
+  // Cache key includes opts (provider filters are part of the query identity)
+  const cacheKey = `${normQuery}|${(opts.onlyProviders || []).join(",")}|${(opts.excludeProviders || []).join(",")}`;
+  if (cache.has(cacheKey)) return cache.get(cacheKey);
 
   const { onlyProviders, excludeProviders } = opts;
   const onlySet = onlyProviders ? new Set(onlyProviders) : null;
@@ -58,12 +98,13 @@ export function findSourcesForModel(query, opts = {}) {
       const modelId = m.id || m;
       if (typeof modelId !== "string") continue;
       const norm = normalizeModelId(modelId);
-      if (norm.startsWith(normQuery) || normQuery.startsWith(norm)) {
+      if (matchesFamily(norm, normQuery)) {
         results.push({ provider: providerId, model: modelId });
       }
     }
   }
 
+  cache.set(cacheKey, results);
   return results;
 }
 
