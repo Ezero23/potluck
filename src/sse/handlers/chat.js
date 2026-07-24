@@ -57,7 +57,7 @@ export async function handleChat(request, clientRawRequest = null) {
 
   // Log request endpoint and model
   const url = new URL(request.url);
-  const modelStr = body.model;
+  let modelStr = body.model;
 
   // Count messages (support both messages[] and input[] formats)
   const msgCount = body.messages?.length || body.input?.length || 0;
@@ -102,6 +102,13 @@ export async function handleChat(request, clientRawRequest = null) {
     const normalized = `profile:${intent}`;
     log.info("ROUTING", `Normalized ${modelStr} → ${normalized}`);
     modelStr = normalized;
+  }
+
+  // Bare profile name → "profile:{name}" (e.g. model:"auto" → "profile:auto")
+  // Only matches exact profile names; won't collide with "provider/model" format.
+  if (!modelStr.includes("/") && !modelStr.startsWith("profile:") && getProfile(modelStr)) {
+    log.info("ROUTING", `Bare profile name "${modelStr}" → profile:${modelStr}`);
+    modelStr = `profile:${modelStr}`;
   }
 
   // Bypass naming/warmup requests before combo rotation to avoid wasting rotation slots

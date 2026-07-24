@@ -150,9 +150,11 @@ const CONFIG_PATHS = [
 ];
 
 let cachedConfig = null;
+let cachedAt = 0;
+const CONFIG_TTL_MS = 30_000; // hot-reload: re-read routing.json every 30s
 
 export function loadRoutingConfig() {
-  if (cachedConfig) return cachedConfig;
+  if (cachedConfig && Date.now() - cachedAt < CONFIG_TTL_MS) return cachedConfig;
 
   for (const p of CONFIG_PATHS) {
     if (existsSync(p)) {
@@ -165,6 +167,7 @@ export function loadRoutingConfig() {
           fallbackMaxTries: raw.fallbackMaxTries ?? DEFAULT_CONFIG.fallbackMaxTries,
           usageCacheTtlMs: raw.usageCacheTtlMs ?? DEFAULT_CONFIG.usageCacheTtlMs,
         };
+        cachedAt = Date.now();
         return cachedConfig;
       } catch (err) {
         console.warn(`[routing] Failed to parse ${p}: ${err.message}. Using defaults.`);
@@ -173,6 +176,7 @@ export function loadRoutingConfig() {
   }
 
   cachedConfig = { ...DEFAULT_CONFIG };
+  cachedAt = Date.now();
   return cachedConfig;
 }
 
