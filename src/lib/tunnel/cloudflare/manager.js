@@ -1,5 +1,5 @@
 import { loadState, saveState, generateShortId } from "../shared/state.js";
-import { spawnQuickTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler } from "./cloudflared.js";
+import { spawnQuickTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler, killOrphanedCloudflared, registerGracefulShutdown } from "./cloudflared.js";
 import { clearPid } from "./pid.js";
 import { waitForHealth, probeUrlAlive } from "./healthCheck.js";
 import { WORKER_URL } from "./config.js";
@@ -33,6 +33,12 @@ function throwIfCancelled(token) {
 
 export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) || 20129) {
   console.log(`[Tunnel] enable start (port=${localPort})`);
+
+  // Startup self-cleanup: kill any orphaned cloudflared from a previous app instance.
+  // This handles the case where the app was kill -9'd or crashed without graceful shutdown,
+  // leaving a zombie cloudflared (PPID=1) holding a dead tunnel.
+  killOrphanedCloudflared();
+
   svc.cancelToken = { cancelled: false };
   svc.activeLocalPort = localPort;
   svc.spawnInProgress = true;
@@ -98,6 +104,7 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
     }
 
     console.log("[Tunnel] enable success");
+    registerGracefulShutdown();
     return { success: true, tunnelUrl, shortId, publicUrl };
   } catch (e) {
     // Suppress noise when spawn was deliberately killed (restart/disable superseded it)

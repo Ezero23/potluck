@@ -447,3 +447,55 @@ export function isCloudflaredRunning() {
     return false;
   }
 }
+
+/**
+ * Kill any orphaned cloudflared spawned from OUR binary path.
+ * Uses precise path match (e.g. ~/.potluck/bin/cloudflared) so it never
+ * touches another instance's tunnel (e.g. ~/.9router/bin/cloudflared).
+ * Call at the TOP of enableTunnel as a belt-and-suspenders startup cleanup.
+ */
+export function killOrphanedCloudflared() {
+  if (IS_WINDOWS) return; // Windows process model differs; skip
+  try {
+    // Regex-escape the binary path, then anchor it (^) so we only match
+    // processes whose command line STARTS with our binary — i.e. cloudflared
+    // itself — never tools that merely reference the path as an argument
+    // (cat/chmod/editors, another instance's watchdog, etc.).
+    // Use -9 (SIGKILL): cloudflared with --retries 99 may linger on SIGTERM,
+    // and we need it dead before the parent exits to prevent PPID=1 zombies.
+    const escaped = BIN_PATH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    execSync(`pkill -9 -f "^${escaped}" 2>/dev/null || true`, { stdio: "ignore", windowsHide: true });
+  } catch (e) { /* ignore */ }
+  clearPid();
+}
+
+let shutdownRegistered = false;
+
+/**
+ * Register SIGTERM/SIGINT handlers so that when the app is killed,
+ * it takes its child cloudflared with it — preventing zombie orphans.
+ * Safe to call multiple times (idempotent).
+ */
+export function registerGracefulShutdown() {
+  if (shutdownRegistered) return;
+  shutdownRegistered = true;
+
+  const cleanup = (signal) => {
+    console.log(`[Tunnel] received ${signal}, killing child cloudflared`);
+    intentionalKill = true;
+    if (cloudflaredProcess) {
+      try { cloudflaredProcess.kill("SIGTERM"); } catch (e) { /* ignore */ }
+      cloudflaredProcess = null;
+    }
+    const pid = loadPid();
+    if (pid) {
+      try { process.kill(pid, "SIGTERM"); } catch (e) { /* ignore */ }
+      clearPid();
+    }
+    // Give child a moment to exit, then let the process terminate
+    setTimeout(() => process.exit(0), 500);
+  };
+
+  process.on("SIGTERM", () => cleanup("SIGTERM"));
+  process.on("SIGINT", () => cleanup("SIGINT"));
+}

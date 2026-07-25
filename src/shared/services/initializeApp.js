@@ -7,7 +7,7 @@ import {
   enableTunnel, enableTailscale,
   isTunnelManuallyDisabled, isTunnelReconnecting, isTailscaleReconnecting,
   getTunnelService, getTailscaleService, setTunnelUnexpectedExitCallback,
-  killCloudflared, isCloudflaredRunning, ensureCloudflared,
+  killCloudflared, killOrphanedCloudflared, isCloudflaredRunning, ensureCloudflared,
   isTailscaleRunning, isTailscaleRunningStrict, isDaemonAlive, startFunnel,
   checkInternet,
   RESTART_COOLDOWN_MS, NETWORK_SETTLE_MS,
@@ -50,6 +50,13 @@ export async function initializeApp() {
     await cleanupProviderConnections();
     const settings = await getSettings();
 
+    // Boot-time orphan cleanup: this process just started and has NOT spawned any
+    // cloudflared yet. Any cloudflared matching our binary path is an orphan from a
+    // previous instance (PPID=1 zombie). Kill it BEFORE safeRestartTunnel checks
+    // isCloudflaredRunning(), otherwise the zombie is seen as "running" and the
+    // restart is skipped, leaving a dead tunnel squatting on a stale URL.
+    killOrphanedCloudflared();
+
     // Auto-resume tunnel (once per process)
     if (settings.tunnelEnabled && !g.tunnelAutoResumed) {
       g.tunnelAutoResumed = true;
@@ -66,8 +73,10 @@ export async function initializeApp() {
 
     if (!g.signalHandlersRegistered) {
       const cleanup = () => {
+        console.log("[InitApp] Shutdown signal received, cleaning up tunnel...");
         try { removeAllDNSEntriesSync(); } catch { /* best effort */ }
         killCloudflared();
+        killOrphanedCloudflared(); // synchronous pkill -9: child is dead when this returns
         process.exit();
       };
       process.on("SIGINT", cleanup);

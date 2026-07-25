@@ -10,6 +10,8 @@ export {
 } from "./cloudflare/manager.js";
 export {
   killCloudflared,
+  killOrphanedCloudflared,
+  registerGracefulShutdown,
   isCloudflaredRunning,
   ensureCloudflared,
   getDownloadStatus,
