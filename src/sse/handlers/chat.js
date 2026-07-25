@@ -28,6 +28,8 @@ import {
   recordError,
   RoutingTrace,
   loadRoutingConfig,
+  acquireSource,
+  releaseSource,
 } from "open-sse/routing/engine.js";
 
 /**
@@ -200,57 +202,71 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
     const candidateModelStr = `${provider}/${model}`;
     excludeCandidates.push(candidateModelStr);
 
-    log.info("ROUTING", `Profile ${profileName} selected ${candidateModelStr}`);
+    // Track concurrency: mark this source as busy so the scheduler
+    // deprioritizes it for subsequent requests until this one completes.
+    acquireSource(provider, model);
 
-    let result = await handleSingleModelChat(
-      body,
-      candidateModelStr,
-      clientRawRequest,
-      request,
-      apiKey,
-      trace
-    );
+    // The slot is released either by the finally below (throw, fallback,
+    // non-stream result) or by trackStreamForRelease when a streamed
+    // response actually ends (close / error / client disconnect).
+    let streamOwnsRelease = false;
+    try {
+      log.info("ROUTING", `Profile ${profileName} selected ${candidateModelStr}`);
 
-    lastResponse = result;
+      let result = await handleSingleModelChat(
+        body,
+        candidateModelStr,
+        clientRawRequest,
+        request,
+        apiKey,
+        trace
+      );
 
-    // Determine if we should fallback to the next candidate
-    if (!result) continue; // shouldn't happen, but defensive
+      lastResponse = result;
 
-    const statusCode = result.status || result.headers?.get?.("x-status") || 200;
-    const statusStr = String(statusCode);
-    const errorText = result.errorText || "";
+      // Determine if we should fallback to the next candidate
+      if (!result) continue; // shouldn't happen, but defensive
 
-    // Pre-flight: for 200 responses, wait for first chunk with a timeout.
-    // If first token arrives, continue normally. If timeout, treat as
-    // failure and fallback to next candidate (no half-response shown).
-    let firstTokenTimedOut = false;
-    if (statusCode === 200) {
-      const firstTokenTimeoutMs = getFirstTokenTimeout(profileName);
-      const wrapped = await wrapFirstTokenTimeout(result, firstTokenTimeoutMs);
-      if (!wrapped.success) {
-        firstTokenTimedOut = true;
-        log.warn("ROUTING", `Profile ${profileName} candidate ${candidateModelStr} first-token timeout (${firstTokenTimeoutMs}ms), trying next`);
-      } else {
-        result = wrapped.response;
+      const statusCode = result.status || result.headers?.get?.("x-status") || 200;
+      const statusStr = String(statusCode);
+      const errorText = result.errorText || "";
+
+      // Pre-flight: for 200 responses, wait for first chunk with a timeout.
+      // If first token arrives, continue normally. If timeout, treat as
+      // failure and fallback to next candidate (no half-response shown).
+      let firstTokenTimedOut = false;
+      if (statusCode === 200) {
+        const firstTokenTimeoutMs = getFirstTokenTimeout(profileName);
+        const wrapped = await wrapFirstTokenTimeout(result, firstTokenTimeoutMs);
+        if (!wrapped.success) {
+          firstTokenTimedOut = true;
+          log.warn("ROUTING", `Profile ${profileName} candidate ${candidateModelStr} first-token timeout (${firstTokenTimeoutMs}ms), trying next`);
+        } else {
+          result = wrapped.response;
+        }
       }
+
+      const shouldFallback =
+        firstTokenTimedOut ||
+        // Rotation pools: any non-200 → source can't serve → slide to next ("不断线")
+        (profile.strategy === "rotation" && statusCode !== 200) ||
+        fallbackOn.has(statusStr) ||
+        fallbackOn.has("5xx") && statusCode >= 500 && statusCode < 600 ||
+        fallbackOn.has("timeout") && (statusCode === 0 || /timeout|aborted/i.test(errorText)) ||
+        fallbackOn.has("quota_exceeded") && /quota|rate.?limit|usage.?limit/i.test(errorText);
+
+      if (!shouldFallback) {
+        recordSuccess(provider);
+        const tracked = trackStreamForRelease(result, () => releaseSource(provider, model));
+        streamOwnsRelease = true; // helper guarantees exactly-once release
+        return injectRoutingHeaders(tracked, trace);
+      }
+
+      recordError(provider, firstTokenTimedOut ? 0 : statusCode);
+      log.warn("ROUTING", `Profile ${profileName} candidate ${candidateModelStr} failed (${firstTokenTimedOut ? "first-token-timeout" : statusCode}), trying next`);
+    } finally {
+      if (!streamOwnsRelease) releaseSource(provider, model);
     }
-
-    const shouldFallback =
-      firstTokenTimedOut ||
-      // Rotation pools: any non-200 → source can't serve → slide to next ("不断线")
-      (profile.strategy === "rotation" && statusCode !== 200) ||
-      fallbackOn.has(statusStr) ||
-      fallbackOn.has("5xx") && statusCode >= 500 && statusCode < 600 ||
-      fallbackOn.has("timeout") && (statusCode === 0 || /timeout|aborted/i.test(errorText)) ||
-      fallbackOn.has("quota_exceeded") && /quota|rate.?limit|usage.?limit/i.test(errorText);
-
-    if (!shouldFallback) {
-      recordSuccess(provider);
-      return injectRoutingHeaders(result, trace);
-    }
-
-    recordError(provider, firstTokenTimedOut ? 0 : statusCode);
-    log.warn("ROUTING", `Profile ${profileName} candidate ${candidateModelStr} failed (${firstTokenTimedOut ? "first-token-timeout" : statusCode}), trying next`);
 
     // Safety cap; selectProvider throws on true exhaustion (caught above).
     if (excludeCandidates.length >= 50) {
@@ -355,6 +371,55 @@ async function wrapFirstTokenTimeout(response, timeoutMs) {
     success: true,
     response: new Response(rest, { status: response.status, headers }),
   };
+}
+
+/**
+ * Wrap a successful result so `release` fires exactly once when its body
+ * stream closes, errors, or is cancelled (client disconnect). The scheduler's
+ * in-flight count must reflect real concurrency — a minutes-long SSE stream
+ * holds its source for the whole generation, not just until first token.
+ *
+ * Results without a readable body (e.g. buffered JSON) release immediately
+ * and pass through untouched.
+ */
+function trackStreamForRelease(result, release) {
+  if (!result?.body || typeof result.body.getReader !== "function") {
+    release();
+    return result;
+  }
+
+  const reader = result.body.getReader();
+  let released = false;
+  const releaseOnce = () => {
+    if (released) return;
+    released = true;
+    release();
+  };
+
+  const tracked = new ReadableStream({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          releaseOnce();
+          controller.close();
+          return;
+        }
+        controller.enqueue(value);
+      } catch (e) {
+        releaseOnce();
+        controller.error(e);
+      }
+    },
+    async cancel(reason) {
+      releaseOnce();
+      await reader.cancel(reason).catch(() => {});
+    },
+  });
+
+  const headers = new Headers();
+  result.headers?.forEach?.((v, k) => headers.set(k, v));
+  return new Response(tracked, { status: result.status ?? 200, headers });
 }
 
 /**

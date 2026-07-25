@@ -17,7 +17,7 @@ import { getHealth, isEligible, recordSuccess, recordError } from "./usageCache.
 import { RoutingTrace } from "./trace.js";
 import { parseModel } from "../services/model.js";
 import { getCapabilitiesForModel } from "../providers/capabilities.js";
-import { selectNextSource, markSourceUsed } from "./scheduler.js";
+import { selectNextSource, markSourceUsed, acquireSource, releaseSource } from "./scheduler.js";
 import { buildAggregateCandidates } from "./aggregate.js";
 
 const IS_PROFILE_RE = /^profile:/i;
@@ -223,4 +223,4 @@ function detectTools(body) {
 
 export { getHealth, isEligible, recordSuccess, recordError, RoutingTrace };
 export { loadRoutingConfig, getProfile, listProfiles } from "./profiles.js";
-export { getSourceStats, resetRotationState } from "./scheduler.js";
+export { getSourceStats, resetRotationState, acquireSource, releaseSource } from "./scheduler.js";

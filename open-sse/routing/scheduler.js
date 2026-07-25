@@ -9,10 +9,12 @@
  * Selection rule:
  *   1. Hard-filter sources that are unavailable (quota exhausted, high error
  *      rate, recently errored). These mirror usageCache.isEligible semantics.
- *   2. Among what's left, pick the least-recently-used source. Weight breaks
- *      ties (higher weight wins when two sources were last used equally long
- *      ago), but weight never overrides recency — a high-weight source still
- *      waits its turn.
+ *   2. Among what's left, pick the source with the lowest effective recency:
+ *      effectiveSeq = lastUsedSeq + (inFlightCount * INFLIGHT_PENALTY).
+ *      This means a source handling 2 active requests looks 6 turns "newer",
+ *      so idle sources get picked first (concurrency-aware least-busy).
+ *      Weight breaks remaining ties (higher weight preferred), but weight
+ *      never overrides recency — a high-weight source still waits its turn.
  *
  * Rotation state is in-memory and process-local. It is deliberately NOT
  * persisted: on restart the rotation simply starts fresh, which is fine
@@ -23,6 +25,15 @@ import { getHealth } from "./usageCache.js";
 
 // source key ("provider/model") → { lastUsedAt, lastUsedSeq, useCount }
 const sourceState = new Map();
+
+// source key → number of currently in-flight requests
+const inFlight = new Map();
+
+// Each active request pushes a source back by this many "virtual turns" in the
+// LRU ordering. With 10 sources, a penalty of 3 means 1 in-flight request makes
+// a source look as if it was used 3 turns more recently — enough to prefer idle
+// sources without starving busy ones entirely.
+const INFLIGHT_PENALTY = 3;
 
 // Monotonic counter so recency comparisons survive equal timestamps.
 let seq = 0;
@@ -58,12 +69,17 @@ export function selectNextSource(sources, excludeKeys = []) {
 
   if (available.length === 0) return null;
 
-  // Least-recently-used first; weight breaks ties (higher weight preferred).
+  // Least-recently-used first, penalized by in-flight concurrency.
+  // effectiveSeq = lastUsedSeq + (inFlight * INFLIGHT_PENALTY)
+  // A source handling 2 active requests looks 6 turns "newer", so idle sources
+  // get picked first. Weight breaks remaining ties (higher weight preferred).
   available.sort((a, b) => {
-    const sa = sourceState.get(`${a.provider}/${a.model}`);
-    const sb = sourceState.get(`${b.provider}/${b.model}`);
-    const seqA = sa?.lastUsedSeq ?? -1;
-    const seqB = sb?.lastUsedSeq ?? -1;
+    const keyA = `${a.provider}/${a.model}`;
+    const keyB = `${b.provider}/${b.model}`;
+    const sa = sourceState.get(keyA);
+    const sb = sourceState.get(keyB);
+    const seqA = (sa?.lastUsedSeq ?? -1) + (inFlight.get(keyA) ?? 0) * INFLIGHT_PENALTY;
+    const seqB = (sb?.lastUsedSeq ?? -1) + (inFlight.get(keyB) ?? 0) * INFLIGHT_PENALTY;
     if (seqA !== seqB) return seqA - seqB;
     return (b.weight ?? 1) - (a.weight ?? 1);
   });
@@ -89,13 +105,47 @@ export function markSourceUsed(provider, model) {
 }
 
 /**
+ * Mark a source as having an active in-flight request. Call when a request is
+ * dispatched to the source. The scheduler will deprioritize this source until
+ * the request completes.
+ *
+ * @param {string} provider
+ * @param {string} model
+ */
+export function acquireSource(provider, model) {
+  const key = `${provider}/${model}`;
+  inFlight.set(key, (inFlight.get(key) ?? 0) + 1);
+}
+
+/**
+ * Release a source's in-flight slot. Call when the request completes (success
+ * or failure). Must be called exactly once per acquireSource call.
+ *
+ * @param {string} provider
+ * @param {string} model
+ */
+export function releaseSource(provider, model) {
+  const key = `${provider}/${model}`;
+  const current = inFlight.get(key) ?? 0;
+  if (current <= 1) {
+    inFlight.delete(key);
+  } else {
+    inFlight.set(key, current - 1);
+  }
+}
+
+/**
  * Snapshot of rotation state (for /status endpoints and the dashboard).
- * @returns {Record<string, { lastUsedAt: number|null, useCount: number }>}
+ * @returns {Record<string, { lastUsedAt: number|null, useCount: number, inFlight: number }>}
  */
 export function getSourceStats() {
   const out = {};
   for (const [key, s] of sourceState) {
-    out[key] = { lastUsedAt: s.lastUsedAt ?? null, useCount: s.useCount };
+    out[key] = { lastUsedAt: s.lastUsedAt ?? null, useCount: s.useCount, inFlight: inFlight.get(key) ?? 0 };
+  }
+  // Include sources that have in-flight but no recorded use yet
+  for (const [key, count] of inFlight) {
+    if (!out[key]) out[key] = { lastUsedAt: null, useCount: 0, inFlight: count };
   }
   return out;
 }
@@ -105,5 +155,6 @@ export function getSourceStats() {
  */
 export function resetRotationState() {
   sourceState.clear();
+  inFlight.clear();
   seq = 0;
 }
