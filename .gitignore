@@ -3,6 +3,7 @@ node_modules/
 *.log
 .env
 .env.*
+.potluck/
 .9router/
 
 # macOS

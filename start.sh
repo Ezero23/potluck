@@ -1,4 +1,4 @@
-docker stop 9router
-docker rm 9router
-docker build -t 9router .
-docker run -d --name 9router -p 20128:20128 --env-file .env -v 9router-data:/app/data 9router
+docker stop potluck
+docker rm potluck
+docker build -t potluck .
+docker run -d --name potluck -p 20129:20129 --env-file .env -v potluck-data:/app/data potluck

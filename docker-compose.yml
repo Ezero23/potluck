@@ -1,17 +1,18 @@
 services:
-  9router:
-    image: decolua/9router:latest
-    container_name: 9router
+  potluck:
+    build: .
+    image: potluck:latest
+    container_name: potluck
     restart: always
     ports:
-      - "20128:20128"
+      - "20129:20129"
     volumes:
-      - 9router-data:/app/data
+      - potluck-data:/app/data
     env_file:
       - .env
     environment:
       DATA_DIR: /app/data
-      PORT: "20128"
+      PORT: "20129"
       HOSTNAME: "0.0.0.0"
       NODE_ENV: production
       HEADROOM_URL: http://headroom:8787
@@ -26,5 +27,5 @@ services:
       - "8787:8787"
 
 volumes:
-  9router-data:
-    name: 9router-data
+  potluck-data:
+    name: potluck-data
