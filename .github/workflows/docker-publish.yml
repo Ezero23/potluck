@@ -29,16 +29,18 @@ jobs:
           DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          IMAGES="${{ env.GHCR_IMAGE }}"
+          ENABLED=false
+          if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
+            IMAGES="$IMAGES
+          ${{ env.DOCKERHUB_IMAGE }}"
+            ENABLED=true
+          fi
           {
             echo "images<<EOF"
-            echo "${{ env.GHCR_IMAGE }}"
-            if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
-              echo "${{ env.DOCKERHUB_IMAGE }}"
-              echo "dockerhub_enabled=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "dockerhub_enabled=false" >> "$GITHUB_OUTPUT"
-            fi
+            echo "$IMAGES"
             echo "EOF"
+            echo "dockerhub_enabled=$ENABLED"
           } >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
