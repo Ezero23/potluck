@@ -6,7 +6,7 @@
  * engine picks the first candidate whose health/usage check passes, and falls
  * through to subsequent candidates on failure.
  *
- * Profiles are loaded from routing.json (project root or ~/.9router/).
+ * Profiles are loaded from routing.json (project root or ~/.potluck/).
  * Default profiles are defined inline below.
  *
  * Usage: request body.model  =  "profile:code"   →  uses "code" profile
@@ -202,7 +202,7 @@ export function resolveModelOrProfile(modelStr) {
   if (slashIdx > 0 && slashIdx < modelStr.length - 1) {
     return { provider: modelStr.slice(0, slashIdx), model: modelStr.slice(slashIdx + 1) };
   }
-  // Bare model name — treat as a model without a provider (9Router will look up)
+  // Bare model name — treat as a model without a provider (Potluck will look up)
   return { model: modelStr };
 }
 
