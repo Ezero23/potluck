@@ -1,6 +1,6 @@
 # 安装
 
-9Router 的详细安装指南,附故障排除技巧。
+百家饭 的详细安装指南,附故障排除技巧。
 
 ---
 
@@ -29,62 +29,37 @@ npm --version
 
 ## 安装方式
 
-### 方式 1:全局安装(推荐)
+### 方式 1:源码安装(推荐)
 
-全局安装,任何位置都能使用:
-
-```bash
-npm install -g 9router
-```
-
-**启动 9Router:**
+从 GitHub 克隆并运行:
 
 ```bash
-9router
-```
-
-**优势:**
-- ✅ 任意目录均可运行
-- ✅ 命令简单:`9router`
-- ✅ 通过 `npm update -g 9router` 自动更新
-
-### 方式 2:本地安装
-
-在特定项目中安装:
-
-```bash
-mkdir my-9router
-cd my-9router
-npm install 9router
-```
-
-**启动 9Router:**
-
-```bash
-npx 9router
-```
-
-**优势:**
-- ✅ 项目隔离
-- ✅ 项目级版本控制
-- ✅ 不污染全局命名空间
-
-### 方式 3:源码安装(开发用)
-
-从 GitHub 克隆并构建:
-
-```bash
-git clone https://github.com/decolua/9router.git
-cd 9router/app
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
 npm install
-npm run build
-npm start
+PORT=20129 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run dev
 ```
 
 **优势:**
 - ✅ 最新开发特性
 - ✅ 可参与开发
 - ✅ 可自定义修改
+
+### 方式 2:Docker 部署
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+docker build -t potluck .
+docker run -d --name potluck -p 20129:20129 \
+  -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data potluck
+```
+
+**优势:**
+- ✅ 环境隔离
+- ✅ 一键部署
+- ✅ 适合生产环境
 
 ---
 
@@ -93,13 +68,14 @@ npm start
 ### 启动服务器
 
 ```bash
-9router
+cd potluck
+PORT=20129 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run dev
 ```
 
 **发生了什么:**
-1. 服务器启动在 `http://localhost:20128`
+1. 服务器启动在 `http://localhost:20129`
 2. 仪表盘在浏览器中自动打开
-3. 数据目录创建在 `~/.9router`
+3. 数据目录创建在 `~/.potluck`
 4. API key 自动生成
 
 ### 仪表盘登录
@@ -132,7 +108,7 @@ npm start
 ### 检查服务器状态
 
 ```bash
-curl http://localhost:20128/health
+curl http://localhost:20129/health
 ```
 
 **预期响应:**
@@ -146,7 +122,7 @@ curl http://localhost:20128/health
 ### 列出可用模型
 
 ```bash
-curl http://localhost:20128/v1/models \
+curl http://localhost:20129/v1/models \
   -H "Authorization: Bearer your-api-key"
 ```
 
@@ -168,7 +144,7 @@ curl http://localhost:20128/v1/models \
 ### 测试 Chat Completion
 
 ```bash
-curl http://localhost:20128/v1/chat/completions \
+curl http://localhost:20129/v1/chat/completions \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -193,10 +169,10 @@ export JWT_SECRET="your-secure-secret-change-this"
 export INITIAL_PASSWORD="your-password"
 
 # Storage
-export DATA_DIR="~/.9router"
+export DATA_DIR="~/.potluck"
 
 # Server
-export PORT="20128"
+export PORT="20129"
 export NODE_ENV="production"
 
 # Logging
@@ -205,11 +181,11 @@ export ENABLE_REQUEST_LOGS="false"
 
 ### 数据目录
 
-**默认位置:** `~/.9router`
+**默认位置:** `~/.potluck`
 
 **内容:**
 ```
-~/.9router/
+~/.potluck/
   ├── db.json           # 数据库(提供商、组合、使用)
   ├── api-keys.json     # API keys
   └── logs/             # 请求日志(若启用)
@@ -219,24 +195,18 @@ export ENABLE_REQUEST_LOGS="false"
 
 ```bash
 export DATA_DIR="/custom/path"
-9router
+npm run dev
 ```
 
 ### 端口配置
 
-**默认端口:** `20128`
+**默认端口:** `20129`
 
 **修改端口:**
 
 ```bash
 export PORT="3000"
-9router
-```
-
-**或用命令行:**
-
-```bash
-9router --port 3000
+npm run dev
 ```
 
 ---
@@ -247,14 +217,14 @@ export PORT="3000"
 
 **错误:**
 ```
-Error: listen EADDRINUSE: address already in use :::20128
+Error: listen EADDRINUSE: address already in use :::20129
 ```
 
 **方案 1:杀掉占用进程**
 
 ```bash
-# 找到使用 20128 端口的进程
-lsof -i :20128
+# 找到使用 20129 端口的进程
+lsof -i :20129
 
 # 杀掉进程
 kill -9 <PID>
@@ -263,17 +233,17 @@ kill -9 <PID>
 **方案 2:使用其他端口**
 
 ```bash
-9router --port 3000
+PORT=3000 npm run dev
 ```
 
 ### 权限被拒绝
 
 **错误:**
 ```
-Error: EACCES: permission denied, mkdir '/usr/local/lib/node_modules/9router'
+Error: EACCES: permission denied, mkdir '/usr/local/lib/node_modules'
 ```
 
-**方案:使用 sudo(不推荐)或修复 npm 权限**
+**方案:修复 npm 权限**
 
 ```bash
 # 修复 npm 权限(推荐)
@@ -282,8 +252,8 @@ npm config set prefix '~/.npm-global'
 echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 
-# 然后重新安装
-npm install -g 9router
+# 然后重新安装依赖
+npm install
 ```
 
 ### Node.js 版本过低
@@ -310,7 +280,7 @@ nvm use 20
 **方案 1:手动打开**
 
 ```
-http://localhost:20128
+http://localhost:20129
 ```
 
 **方案 2:检查防火墙**
@@ -345,23 +315,23 @@ ping google.com
 
 ### 内存占用过高
 
-**问题:** 9Router 占用过多 RAM
+**问题:** 百家饭 占用过多 RAM
 
 **方案:重启服务器**
 
 ```bash
 # 停止
-pkill -f 9router
+pkill -f "next"
 
 # 启动
-9router
+npm run dev
 ```
 
 **或用 PM2 自动重启:**
 
 ```bash
 npm install -g pm2
-pm2 start 9router --name 9router
+pm2 start npm --name potluck -- start
 pm2 save
 ```
 
@@ -372,8 +342,11 @@ pm2 save
 ### 本地开发
 
 ```bash
-npm install -g 9router
-9router
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm install
+npm run dev
 ```
 
 **适用场景:** 个人编码、测试
@@ -382,7 +355,10 @@ npm install -g 9router
 
 ```bash
 # 安装
-npm install -g 9router
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+npm install
+npm run build
 
 # 配置
 export JWT_SECRET="your-secure-secret"
@@ -391,7 +367,7 @@ export NODE_ENV="production"
 
 # 用 PM2 启动
 npm install -g pm2
-pm2 start 9router --name 9router
+pm2 start npm --name potluck -- start
 pm2 save
 pm2 startup
 ```
@@ -401,15 +377,17 @@ pm2 startup
 ### Docker
 
 ```bash
-docker pull 9router/9router:latest
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+docker build -t potluck .
 
 docker run -d \
-  -p 20128:20128 \
+  -p 20129:20129 \
   -e JWT_SECRET="your-secure-secret" \
   -e INITIAL_PASSWORD="your-password" \
-  -v 9router-data:/root/.9router \
-  --name 9router \
-  9router/9router:latest
+  -v potluck-data:/app/data \
+  --name potluck \
+  potluck
 ```
 
 **适用场景:** 容器化部署、Kubernetes
@@ -422,7 +400,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://localhost:20128;
+        proxy_pass http://localhost:20129;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -441,16 +419,16 @@ server {
 
 ## 卸载
 
-### 移除全局安装
+### 移除源码安装
 
 ```bash
-npm uninstall -g 9router
+rm -rf potluck
 ```
 
 ### 移除数据目录
 
 ```bash
-rm -rf ~/.9router
+rm -rf ~/.potluck
 ```
 
 ### 移除配置
@@ -458,7 +436,7 @@ rm -rf ~/.9router
 ```bash
 # 从 shell 配置中移除环境变量
 nano ~/.bashrc  # 或 ~/.zshrc
-# 删除 9router 相关的 export
+# 删除 potluck 相关的 export
 ```
 
 ---
@@ -473,6 +451,6 @@ nano ~/.bashrc  # 或 ~/.zshrc
 
 ## 需要帮助?
 
-- **网站**: [9router.com](https://9router.com)
-- **GitHub**: [github.com/decolua/9router](https://github.com/decolua/9router)
-- **Issues**: [github.com/decolua/9router/issues](https://github.com/decolua/9router/issues)
+- **网站**: [github.com/Ezero23/potluck](https://your-potluck-cloud.example.com)
+- **GitHub**: [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
+- **Issues**: [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)

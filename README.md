@@ -1,6 +1,5 @@
 <div align="center">
-  <!-- TODO: replace with Potluck screenshot -->
-  <img src="./images/9router.png?1" alt="Potluck Dashboard" width="800"/>
+  <img src="./images/potluck.png?1" alt="Potluck Dashboard" width="800"/>
 
   # Potluck · 百家饭
 
@@ -15,8 +14,7 @@
 
   [🚀 Quick Start](#-quick-start) • [🔀 Rotation & Aggregation](#-rotation--aggregation-the-core-of-potluck) • [💡 Features](#-key-features) • [📖 Setup](#-setup-guide)
 
-  [🇻🇳 Tiếng Việt](./i18n/README.vi.md) • [🇨🇳 中文](./i18n/README.zh-CN.md) • [🇯🇵 日本語](./i18n/README.ja-JP.md) • [🇷🇺 Русский](./i18n/README.ru.md)
-  <br/><sub>(Community translations may lag behind this English README.)</sub>
+  [🇨🇳 简体中文](./README.zh-CN.md)
 </div>
 
 ---

@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues and solutions when using 9Router.
+Common issues and solutions when using Potluck.
 
 ---
 
@@ -78,7 +78,7 @@ Common issues and solutions when using 9Router.
 **Solutions:**
 
 1. **Auto-refresh (default):**
-   9Router automatically refreshes tokens. Wait 30 seconds and retry.
+   Potluck automatically refreshes tokens. Wait 30 seconds and retry.
 
 2. **Manual reconnect:**
    ```
@@ -132,39 +132,39 @@ Common issues and solutions when using 9Router.
 
 ## Connection Refused
 
-**Problem:** "ECONNREFUSED" or "Cannot connect to localhost:20128".
+**Problem:** "ECONNREFUSED" or "Cannot connect to localhost:20129".
 
 **Causes:**
-- 9Router not running
-- Port 20128 blocked
+- Potluck not running
+- Port 20129 blocked
 - Firewall blocking connection
 
 **Solutions:**
 
-1. **Start 9Router:**
+1. **Start Potluck:**
    ```bash
-   9router
+   npm run dev
    ```
    Dashboard should open at http://localhost:3000
 
-2. **Verify port 20128:**
+2. **Verify port 20129:**
    ```bash
    # Check if port is listening
-   lsof -i :20128
+   lsof -i :20129
    
    # Or on Windows
-   netstat -ano | findstr :20128
+   netstat -ano | findstr :20129
    ```
 
 3. **Check firewall:**
    - macOS: System Settings → Network → Firewall
    - Windows: Windows Defender Firewall → Allow app
-   - Linux: `sudo ufw allow 20128`
+   - Linux: `sudo ufw allow 20129`
 
 4. **Use cloud endpoint:**
    If localhost doesn't work (e.g., Cursor IDE):
    ```
-   Endpoint: https://9router.com/v1
+   Endpoint: https://your-potluck-cloud.example.com/v1
    ```
 
 ---
@@ -175,15 +175,15 @@ Common issues and solutions when using 9Router.
 
 **Causes:**
 - Port 3000 already in use
-- 9Router crashed
+- Potluck crashed
 - Browser cache issues
 
 **Solutions:**
 
-1. **Check if 9Router is running:**
+1. **Check if Potluck is running:**
    ```bash
    # Check process
-   ps aux | grep 9router
+   ps aux | grep potluck
    
    # Check port 3000
    lsof -i :3000
@@ -199,13 +199,13 @@ Common issues and solutions when using 9Router.
    taskkill /PID <PID> /F
    ```
 
-3. **Restart 9Router:**
+3. **Restart Potluck:**
    ```bash
    # Stop
-   pkill -f 9router
+   pkill -f potluck
    
    # Start
-   9router
+   npm run dev
    ```
 
 4. **Clear browser cache:**
@@ -243,7 +243,7 @@ Common issues and solutions when using 9Router.
 
 3. **List available models:**
    ```bash
-   curl http://localhost:20128/v1/models \
+   curl http://localhost:20129/v1/models \
      -H "Authorization: Bearer your-api-key"
    ```
 
@@ -338,7 +338,7 @@ Common issues and solutions when using 9Router.
 
 4. **Test API key:**
    ```bash
-   curl http://localhost:20128/v1/models \
+   curl http://localhost:20129/v1/models \
      -H "Authorization: Bearer 9r_your_key"
    ```
 
@@ -346,6 +346,6 @@ Common issues and solutions when using 9Router.
 
 ## Need More Help?
 
-- **GitHub Issues:** [github.com/decolua/9router/issues](https://github.com/decolua/9router/issues)
-- **Documentation:** [9router.com/docs](https://9router.com/docs)
+- **GitHub Issues:** [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)
+- **Documentation:** [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
 - **FAQ:** [faq.md](faq.md)

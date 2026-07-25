@@ -1,15 +1,18 @@
 # 🏠 本地部署
 
-在本机运行 9Router,用于开发和个人使用。
+在本机运行 百家饭,用于开发和个人使用。
 
 ---
 
 ## 📦 安装
 
-通过 npm 全局安装 9Router:
+从源码安装 百家饭:
 
 ```bash
-npm install -g 9router
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm install
 ```
 
 **要求:**
@@ -20,18 +23,18 @@ npm install -g 9router
 
 ## 🚀 启动服务器
 
-一条命令启动 9Router:
+一条命令启动 百家饭:
 
 ```bash
-9router
+PORT=20129 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run dev
 ```
 
 仪表盘会自动在浏览器中打开,地址为 `http://localhost:3000`
 
 **默认配置:**
 - **仪表盘**: `http://localhost:3000`
-- **API Endpoint**: `http://localhost:20128/v1`
-- **数据目录**: `~/.9router`
+- **API Endpoint**: `http://localhost:20129/v1`
+- **数据目录**: `~/.potluck`
 
 ---
 
@@ -42,21 +45,21 @@ npm install -g 9router
 通过环境变量设置自定义数据目录:
 
 ```bash
-DATA_DIR=/path/to/data 9router
+DATA_DIR=/path/to/data npm run dev
 ```
 
 ### 自定义端口
 
-API 端口(20128)和仪表盘端口(3000)在应用中配置。如需修改,你需要改源码或使用支持的环境变量(如果有)。
+API 端口(20129)和仪表盘端口(3000)在应用中配置。如需修改,你需要改源码或使用支持的环境变量(如果有)。
 
 ---
 
 ## 🛑 停止服务器
 
-在运行 9Router 的终端中按 `Ctrl+C`。
+在运行 百家饭 的终端中按 `Ctrl+C`。
 
 ```bash
-# 在运行 9router 的终端中
+# 在运行百家饭的终端中
 ^C  # 按 Ctrl+C
 ```
 
@@ -69,25 +72,22 @@ API 端口(20128)和仪表盘端口(3000)在应用中配置。如需修改,你�
 再次运行启动命令即可:
 
 ```bash
-9router
+npm run dev
 ```
 
 所有配置、API keys 和组合都保存在数据目录中。
 
 ---
 
-## 📊 更新 9Router
+## 📊 更新 百家饭
 
 更新到最新版本:
 
 ```bash
-npm update -g 9router
-```
-
-查看当前版本:
-
-```bash
-npm list -g 9router
+cd potluck
+git pull origin main
+npm install
+npm run build
 ```
 
 ---
@@ -96,11 +96,11 @@ npm list -g 9router
 
 ### 端口已被占用
 
-如果端口 20128 或 3000 已被占用:
+如果端口 20129 或 3000 已被占用:
 
 ```bash
 # 找到使用该端口的进程(macOS/Linux)
-lsof -i :20128
+lsof -i :20129
 lsof -i :3000
 
 # 杀掉进程
@@ -112,10 +112,7 @@ kill -9 <PID>
 安装过程中遇到权限错误:
 
 ```bash
-# 使用 sudo(不推荐)
-sudo npm install -g 9router
-
-# 或修复 npm 权限(推荐)
+# 修复 npm 权限(推荐)
 mkdir ~/.npm-global
 npm config set prefix '~/.npm-global'
 echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
@@ -128,10 +125,10 @@ source ~/.bashrc
 
 ```bash
 # 检查权限
-ls -la ~/.9router
+ls -la ~/.potluck
 
 # 修复权限
-chmod 755 ~/.9router
+chmod 755 ~/.potluck
 ```
 
 ---
@@ -139,7 +136,7 @@ chmod 755 ~/.9router
 ## 📁 数据目录结构
 
 ```
-~/.9router/
+~/.potluck/
 ├── db.json           # 主数据库(提供商、组合、设置)
 ├── logs/             # 应用日志
 └── cache/            # 临时缓存文件
@@ -149,10 +146,10 @@ chmod 755 ~/.9router
 
 ```bash
 # 备份
-cp -r ~/.9router ~/.9router.backup
+cp -r ~/.potluck ~/.potluck.backup
 
 # 恢复
-cp -r ~/.9router.backup ~/.9router
+cp -r ~/.potluck.backup ~/.potluck
 ```
 
 ---
