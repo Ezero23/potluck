@@ -1,44 +1,77 @@
 <div align="center">
-  <img src="./images/9router.png?1" alt="9Router Dashboard" width="800"/>
-  
-  # Potluck - 百家饭 AI Gateway
-  
-  **Never stop coding. Save 20-40% tokens with RTK + auto-fallback to FREE & cheap AI models.**
-  
-  **Connect All AI Code Tools (Claude Code, Cursor, Antigravity, Copilot, Codex, Gemini, OpenCode, Cline, OpenClaw...) to 40+ AI Providers & 100+ Models.**
-  
-  [![npm](https://img.shields.io/npm/v/9router.svg)](https://www.npmjs.com/package/9router)
-  [![Downloads](https://img.shields.io/npm/dm/9router.svg)](https://www.npmjs.com/package/9router)
-  [![Docker Pulls](https://img.shields.io/docker/pulls/decolua/9router.svg?logo=docker&label=Docker%20pulls)](https://hub.docker.com/r/decolua/9router)
-  [![GHCR](https://img.shields.io/badge/GHCR-decolua%2F9router-blue?logo=github)](https://github.com/decolua/9router/pkgs/container/9router)
-  [![License](https://img.shields.io/npm/l/9router.svg)](https://github.com/decolua/9router/blob/main/LICENSE)
+  <!-- TODO: replace with Potluck screenshot -->
+  <img src="./images/9router.png?1" alt="Potluck Dashboard" width="800"/>
 
-  <a href="https://trendshift.io/repositories/22628" target="_blank"><img src="https://trendshift.io/api/badge/repositories/22628" alt="decolua%2F9router | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-  
-  [🚀 Quick Start](#-quick-start) • [💡 Features](#-key-features) • [📖 Setup](#-setup-guide) • [🌐 Website](https://9router.com)
+  # Potluck · 百家饭
+
+  ### A model SUPPLY platform — not an API relay, not an API-key reseller.
+
+  **好模型管够，不用选，用不完，不断线。**
+
+  *"Good models in abundance: no choosing, never runs out, never goes down."*
+
+  [![GitHub Repo](https://img.shields.io/badge/GitHub-Ezero23%2Fpotluck-blue?logo=github)](https://github.com/Ezero23/potluck)
+  [![License](https://img.shields.io/github/license/Ezero23/potluck)](https://github.com/Ezero23/potluck/blob/main/LICENSE)
+
+  [🚀 Quick Start](#-quick-start) • [🔀 Rotation & Aggregation](#-rotation--aggregation-the-core-of-potluck) • [💡 Features](#-key-features) • [📖 Setup](#-setup-guide)
 
   [🇻🇳 Tiếng Việt](./i18n/README.vi.md) • [🇨🇳 中文](./i18n/README.zh-CN.md) • [🇯🇵 日本語](./i18n/README.ja-JP.md) • [🇷🇺 Русский](./i18n/README.ru.md)
+  <br/><sub>(Community translations may lag behind this English README.)</sub>
 </div>
 
 ---
 
-## 🤔 Why 9Router?
+## 🍚 What is Potluck (百家饭)?
 
-**Stop wasting money, tokens and hitting limits:**
+**Potluck is a model SUPPLY platform (模型供给平台).**
 
-- ❌ Subscription quota expires unused every month
-- ❌ Rate limits stop you mid-coding
-- ❌ Tool outputs (git diff, grep, ls...) burn tokens fast
-- ❌ Expensive APIs ($20-50/month per provider)
-- ❌ Manual switching between providers
+It is **not** an API relay/proxy, and it is **not** a tool for managing, quota-limiting,
+or reselling API keys. Tools like One-API / New-API are about **scarcity management** —
+they wrap a fixed set of keys and meter out access. Potluck is the opposite: it is about
+**abundant consumption (丰裕消费)**. You pool many sources of the *same* good models so
+that capacity is effectively unlimited — everyone at the table gets fed.
 
-**9Router solves this:**
+> **好模型管够，不用选，用不完，不断线。**
+> *Good models in abundance: no choosing, never runs out, never goes down.*
 
-- ✅ **RTK Token Saver** - Auto-compress tool_result content, save 20-40% tokens per request
-- ✅ **Maximize subscriptions** - Track quota, use every bit before reset
-- ✅ **Auto fallback** - Subscription → Cheap → Free, zero downtime
-- ✅ **Multi-account** - Round-robin between accounts per provider
-- ✅ **Universal** - Works with Claude Code, Codex, Cursor, Cline, any CLI tool
+- **管够 / 用不完 (never runs out):** Pool many endpoints that serve the same model and
+  rotate across them, so no single source is drained and capacity stays abundant.
+- **不用选 (no choosing):** Ask for a model family (e.g. `claude-sonnet-4`); Potluck
+  discovers and pools every source that can serve it. You don't pick a provider.
+- **不断线 (never goes down):** If a source returns anything but a `200` mid-request,
+  Potluck immediately slides to the next source in the pool. One dead source never
+  fails your request.
+
+Two mechanisms make this real — **rotation-first scheduling** and **same-model
+multi-source aggregation** — documented in detail in
+[Rotation & Aggregation](#-rotation--aggregation-the-core-of-potluck) below.
+
+**Team sharing:** one person configures the pool (a `routing.json` of profiles); everyone
+on the team points their tools at the same Potluck instance and consumes from it.
+
+---
+
+## 🤔 Why Potluck / 百家饭?
+
+Most "AI gateway" tools answer the question *"how do I ration a scarce, expensive key?"*
+Potluck answers a different question: *"how do I make a good model always available, in
+unlimited quantity, for my whole team?"*
+
+- ✅ **Rotation-first, not priority-first** — Instead of hammering the #1 source until it
+  dies and *then* failing over, Potluck spreads requests evenly across a pool of healthy
+  sources (least-recently-used + quota-aware). No single quota is drained prematurely.
+- ✅ **Same-model multi-source aggregation** — Wire up N endpoints that all serve the
+  *same* model (e.g. a dozen Claude Sonnet sources across many providers) and treat them
+  as one effectively-unlimited source.
+- ✅ **不断线 contract** — Within a single request, any non-`200` from a pool source
+  slides to the next source instantly. The request never fails just because one source died.
+- ✅ **One config, whole team** — Profiles live in a plain `routing.json` that hot-reloads;
+  share the instance and everyone consumes from the same abundant pool.
+- ✅ **RTK Token Saver (built-in)** — Losslessly compress noisy tool outputs
+  (`git diff`, `grep`, `ls`, `tree`…) before they reach the model, saving 20–40% input
+  tokens per request. A feature, not the headline — but a nice one.
+- ✅ **Universal** — Works with Claude Code, Codex, Cursor, Cline, OpenCode, and any tool
+  that speaks an OpenAI-compatible endpoint, with automatic format translation.
 
 ---
 
@@ -46,157 +79,192 @@
 
 ```
 ┌─────────────┐
-│  Your CLI   │  (Claude Code, Codex, OpenClaw, Cursor, Cline...)
+│  Your CLI   │  (Claude Code, Codex, Cursor, Cline, OpenCode, OpenClaw…)
 │   Tool      │
 └──────┬──────┘
-       │ http://localhost:20128/v1
+       │ http://localhost:20129/v1     model: "profile:claude"
        ↓
-┌─────────────────────────────────────────────┐
-│           9Router (Smart Router)            │
-│  • RTK Token Saver (cut tool_result tokens) │
-│  • Format translation (OpenAI ↔ Claude)     │
-│  • Quota tracking                           │
-│  • Auto token refresh                       │
-└──────┬──────────────────────────────────────┘
-       │
-       ├─→ [Tier 1: SUBSCRIPTION] Claude Code, Codex, GitHub Copilot
-       │   ↓ quota exhausted
-       ├─→ [Tier 2: CHEAP] GLM ($0.6/1M), MiniMax ($0.2/1M)
-       │   ↓ budget limit
-       └─→ [Tier 3: FREE] Kiro, OpenCode Free, Vertex ($300 credits)
+┌──────────────────────────────────────────────────────────┐
+│                Potluck (Model Supply Platform)            │
+│  • Rotation scheduler  (LRU + quota-aware, even spread)   │
+│  • Same-model aggregation  (pool all "claude-sonnet-4")    │
+│  • 不断线 fallback  (any non-200 → slide to next source)    │
+│  • Format translation  (OpenAI ↔ Claude ↔ Gemini ↔ …)     │
+│  • RTK token saver · quota tracking · auto token refresh  │
+└──────┬───────────────────────────────────────────────────┘
+       │  rotate across the pool — never hammer one source
+       ├─→ source A: provider-1 / claude-sonnet-4
+       ├─→ source B: provider-2 / claude-sonnet-4
+       ├─→ source C: provider-3 / claude-sonnet-4
+       └─→ …  (every endpoint that serves the same model family)
 
-Result: Never stop coding, minimal cost + 20-40% token savings via RTK
+Result: good models in abundance — no choosing, never runs out, never goes down.
 ```
+
+---
+
+## 🔀 Rotation & Aggregation (the core of Potluck)
+
+These two mechanisms are what make Potluck a *supply* platform rather than a relay.
+
+### 1. Rotation-first scheduling (not priority-first)
+
+A classic gateway sorts sources by priority and always hits #1, failing over only when it
+breaks. That drains the best source first. Potluck's **rotation** strategy does the
+opposite: it spreads load evenly across every healthy source so no single quota is
+exhausted.
+
+Selection rule (see `open-sse/routing/scheduler.js`):
+
+1. **Hard-filter** unavailable sources — quota exhausted (`quotaPercent >= 100`), high
+   recent error rate (`errorRate5m > 0.3`), or errored within the last 30s.
+2. Among what's left, pick the **least-recently-used** source. `weight` only breaks ties
+   (higher weight wins when two sources were last used equally long ago) — weight never
+   overrides recency, so a high-weight source still waits its turn.
+
+Rotation state is in-memory and process-local by design: on restart the rotation simply
+starts fresh, because the goal is even spread over time, not exact accounting.
+
+A profile opts into rotation with `"strategy": "rotation"` (the default strategy is the
+legacy `"priority"` ordering).
+
+### 2. Same-model multi-source aggregation (同模型多源聚合)
+
+Instead of listing sources by hand, a rotation profile can declare a **model family** and
+let Potluck discover every endpoint that serves it (see `open-sse/routing/aggregate.js`).
+
+Given a query like `claude-sonnet-4`, Potluck scans the provider registry and pools **all**
+provider/model pairs whose ID matches that family. Matching normalizes IDs (strip provider
+prefix, lowercase, unify `.`→`-`, strip `-YYYYMMDD` date suffixes) and then does a
+segment-boundary prefix match — so `claude-sonnet-4` matches `claude-sonnet-4` and
+`claude-sonnet-4-6` (a 4.x variant) but **not** `claude-sonnet-45`.
+
+**Example — the built-in `claude` profile** (see `open-sse/routing/profiles.js`):
+
+```json
+{
+  "profiles": {
+    "claude": {
+      "description": "Claude 管够：市面上所有 Claude Sonnet 接在一起轮着用，用到爽",
+      "strategy": "rotation",
+      "aggregate": "claude-sonnet-4",
+      "aggregateExclude": ["blackbox"],
+      "fallbackOn": ["403", "429", "quota_exceeded", "timeout", "5xx"]
+    }
+  }
+}
+```
+
+Point your tool at `model: "profile:claude"` and Potluck aggregates every configured
+Claude Sonnet source into one pool and rotates across them — effectively one unlimited
+Claude Sonnet supply. `aggregateOnly` / `aggregateExclude` restrict the provider set; any
+static `candidates` you list are merged on top as pinned extras.
+
+### 3. The 不断线 (never-down) contract
+
+Within a single request, Potluck tries pool sources one at a time. For a **rotation**
+profile, **any non-`200` response means "this source can't serve right now" → slide to the
+next source immediately** (see `handleRoutingProfileChat` in `src/sse/handlers/chat.js`).
+It also falls through on the profile's `fallbackOn` triggers (`403`, `429`,
+`quota_exceeded`, `timeout`, `5xx`) and on a first-token timeout (a `200` that produces no
+output in time). Your request only fails when the entire pool is exhausted — one dead
+source never breaks it.
+
+### Inspect your pools
+
+```
+GET /api/routing/pools
+```
+
+Returns every routing profile as a "pool" with its resolved sources (aggregate discovery +
+static merge), per-source health (`quotaPercent`, `errorRate5m`, `healthy`), and rotation
+stats (`useCount`, `lastUsedAt`) — see `src/app/api/routing/pools/route.js`. This powers
+the pool view (池子视图).
+
+### Addressing models & profiles
+
+| `model` value | Meaning |
+|---------------|---------|
+| `profile:claude` | Use the named routing profile |
+| `claude` | Bare profile name → auto-resolved to `profile:claude` |
+| `potluck/code` | Alias (WeChat Bridge / kimi CLI) → `profile:code` |
+| `anthropic/claude-sonnet-4` | Direct provider/model, bypasses routing |
+
+### Config hot-reload
+
+Profiles are read from `routing.json` in the project root or your data directory
+(`DATA_DIR`, default `~/.potluck`). The file is re-read on a **30-second TTL cache**, so
+edits to `routing.json` take effect automatically — no restart needed. Built-in profiles
+ship with the app (`auto` and `claude` use rotation; `code`, `fast`, `vision`, `cheap`,
+`fallback` use priority); your `routing.json` is merged on top.
 
 ---
 
 ## ⚡ Quick Start
 
-**1. Install globally:**
+Potluck is a private package (`potluck-app`), so running from source or Docker is the
+expected path.
+
+**Run from source:**
 
 ```bash
-npm install -g 9router
-9router
-```
-
-🎉 Dashboard opens at `http://localhost:20128`
-
-**2. Connect a FREE provider (no signup needed):**
-
-Dashboard → Providers → Connect **Kiro AI** (free Claude unlimited) or **OpenCode Free** (no auth) → Done!
-
-**3. Use in your CLI tool:**
-
-```
-Claude Code/Codex/OpenClaw/Cursor/Cline Settings:
-  Endpoint: http://localhost:20128/v1
-  API Key: [copy from dashboard]
-  Model: kr/claude-sonnet-4.5
-```
-
-**That's it!** Start coding with FREE AI models.
-
-**Alternative: run from source (this repository):**
-
-This repository package is private (`9router-app`), so source/Docker execution is the expected local development path.
-
-```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
 cp .env.example .env
 npm install
-PORT=20128 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run dev
+PORT=20129 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run dev
 ```
 
 Production mode:
 
 ```bash
 npm run build
-PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run start
+PORT=20129 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run start
 ```
 
 Default URLs:
-- Dashboard: `http://localhost:20128/dashboard`
-- OpenAI-compatible API: `http://localhost:20128/v1`
 
----
+- Dashboard: `http://localhost:20129/dashboard`
+- OpenAI-compatible API: `http://localhost:20129/v1`
 
-## Video Guides
+**Connect a provider, then use a pool:**
 
-<div align="center">
+1. Dashboard → Providers → connect one or more providers (OAuth or API key). The more
+   sources you add for a model family, the more abundant the pool.
+2. Point your CLI tool at the API and request a profile:
 
-<table>
-  <tr>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=raEyZPg5xE0">
-        <img src="https://img.youtube.com/vi/raEyZPg5xE0/maxresdefault.jpg" alt="9Router Setup Tutorial" width="300"/>
-      </a><br/>
-      <b>🇺🇸 English</b><br/>
-      <sub>9Router + Claude Code FREE Setup<br/>by <a href="https://www.youtube.com/@BuildAIWithHamid">Build AI With Hamid</a></sub>
-    </td>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=X69n5Lm06Yw">
-        <img src="https://img.youtube.com/vi/X69n5Lm06Yw/maxresdefault.jpg" alt="Tiết kiệm chi phí LLM với 9Router" width="300"/>
-      </a><br/>
-      <b>🇻🇳 Tiếng Việt</b><br/>
-      <sub>Tiết kiệm chi phí LLM cho OpenClaw với 9Router<br/>by <a href="https://www.youtube.com/c/M%C3%ACAIblog">Mì AI</a></sub>
-    </td>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=o3qYCyjrFYg">
-        <img src="https://img.youtube.com/vi/o3qYCyjrFYg/maxresdefault.jpg" alt="Claude Code FREE Forever" width="300"/>
-      </a><br/>
-      <b>🇺🇸 English</b><br/>
-      <sub>Claude Code FREE Forever — Unlimited Models<br/>by <a href="https://www.youtube.com/@BuildAIWithHamid">Build AI With Hamid</a></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=Ttpc26m39Dw">
-        <img src="https://img.youtube.com/vi/Ttpc26m39Dw/maxresdefault.jpg" alt="Claude CLI Free Setup" width="300"/>
-      </a><br/>
-      <b>🇺🇸 English</b><br/>
-      <sub>Claude CLI Free Setup with 9Router 🚀<br/>by <a href="https://www.youtube.com/@CodeVerseSoban">CodeVerse Soban</a></sub>
-    </td>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=G-5A_D5Pm6Y">
-        <img src="https://img.youtube.com/vi/G-5A_D5Pm6Y/maxresdefault.jpg" alt="Cài đặt OpenClaw Free A-Z" width="300"/>
-      </a><br/>
-      <b>🇻🇳 Tiếng Việt</b><br/>
-      <sub>Cài Đặt OpenClaw Free Từ A-Z + 9Router<br/>by <a href="https://www.youtube.com/@maigia">Mai Gia</a></sub>
-    </td>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=JXmg8_gccgE">
-        <img src="https://img.youtube.com/vi/JXmg8_gccgE/maxresdefault.jpg" alt="FREE OpenClaw with Claude Opus" width="300"/>
-      </a><br/>
-      <b>🇺🇸 English</b><br/>
-      <sub>FREE OpenClaw + Claude Opus 4.6<br/>by <a href="https://www.youtube.com/@BuildAIWithHamid">Build AI With Hamid</a></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=CkVZZUSTXAI">
-        <img src="https://img.youtube.com/vi/CkVZZUSTXAI/mqdefault.jpg" alt="Claude CLI Free Setup" width="300"/>
-      </a><br/>
-      <b>🇮🇩 Indonesia</b><br/>
-      <sub>Koding 24 Jam Anti Rate Limit! Hemat Token AI 65% | Tutorial Quick Setup 9Router 🚀<br/>by <a href="https://www.youtube.com/@krisswuh">Krisswuh</a></sub>
-    </td>
-    <td align="center" width="320">
-      <a href="https://www.youtube.com/watch?v=TXGv4eofe1I">
-        <img src="https://img.youtube.com/vi/TXGv4eofe1I/mqdefault.jpg" alt="Cara Deploy 9Router di Hugging Face GRATIS Non-Stop! | Alternatif VPS RAM 16GB" width="300"/>
-      </a><br/>
-      <b>🇮🇩 Indonesia</b><br/>
-      <sub>Cara Deploy 9Router di Hugging Face GRATIS Non-Stop! | Alternatif VPS RAM 16GB<br/>by <a href="https://www.youtube.com/@krisswuh">Krisswuh</a></sub>
-    </td>
-  </tr>
-</table>
+```
+Endpoint: http://localhost:20129/v1
+API Key:  [copy from dashboard]
+Model:    profile:claude        # or "claude", "profile:auto", "profile:code"…
+```
 
-</div>
+That's it — Potluck rotates across every source that serves the model and slides past any
+that fail.
 
-> 🎬 **Made a video about 9Router?** Submit a [Pull Request](https://github.com/decolua/9router/pulls) adding your video to this section — we'll merge it!
+### 🔑 Configure your own OAuth clients (recommended)
+
+Gemini and Antigravity ship with shared public OAuth client credentials. For reliability
+and to avoid shared rate limits, register your own OAuth client and supply it via env vars:
+
+```bash
+# Gemini / Google
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+
+# Antigravity
+ANTIGRAVITY_OAUTH_CLIENT_ID=...
+ANTIGRAVITY_OAUTH_CLIENT_SECRET=...
+```
+
+These are read at startup (see `open-sse/providers/shared.js`).
 
 ---
 
 ## 🛠️ Supported CLI Tools
 
-9Router works seamlessly with all major AI coding tools:
+Potluck works with all major AI coding tools — anything that supports a custom
+OpenAI-compatible endpoint:
 
 <div align="center">
   <table>
@@ -258,6 +326,9 @@ Default URLs:
 ---
 
 ## 🌐 Supported Providers
+
+The more providers you connect that serve a given model family, the larger (and more
+abundant) that family's rotation pool becomes.
 
 ### 🔐 OAuth Providers
 
@@ -410,20 +481,21 @@ Default URLs:
 
 | Feature | What It Does | Why It Matters |
 |---------|--------------|----------------|
-| 🚀 **RTK Token Saver** ([RTK](https://github.com/rtk-ai/rtk) ⭐40K) | Compress tool outputs (`git diff`, `grep`, `ls`, `tree`...) before sending to LLM | Save **20-40% input tokens** per request |
-| 🧠 **Headroom Token Saver** ([Headroom](https://github.com/chopratejas/headroom)) | Optional external `/v1/compress` proxy before provider routing | Save more context tokens without changing clients |
-| 🪨 **Caveman Mode** ([Caveman](https://github.com/JuliusBrussee/caveman) ⭐52K) | Inject caveman-speak prompt → LLM replies terse, technical substance preserved | Save **up to 65% output tokens** |
-| 🐴 **Ponytail** ([Ponytail](https://github.com/DietrichGebert/ponytail)) | Inject "lazy senior dev" prompt → LLM writes minimal, YAGNI-first code (Lite/Full/Ultra) | **Fewer output tokens, less refactoring** |
-| 🎯 **Smart 3-Tier Fallback** | Auto-route: Subscription → Cheap → Free | Never stop coding, zero downtime |
-| 📊 **Real-Time Quota Tracking** | Live token count + reset countdown | Maximize subscription value |
+| 🔀 **Rotation Scheduling** | LRU + quota-aware rotation across a pool of healthy sources | Even load spread; no source drained prematurely |
+| 🧬 **Same-Model Aggregation** | Auto-discover & pool every endpoint serving a model family | One effectively-unlimited supply per model |
+| 🛡️ **不断线 Fallback** | Any non-200 mid-request slides to the next pool source | One dead source never fails your request |
+| 👥 **Team Sharing** | One `routing.json` of pools, hot-reloaded, shared by the team | Configure once, everyone consumes |
+| 🚀 **RTK Token Saver** ([RTK](https://github.com/rtk-ai/rtk)) | Compress tool outputs (`git diff`, `grep`, `ls`, `tree`…) before the LLM | Save **20–40% input tokens** per request |
+| 🧠 **Headroom Token Saver** ([Headroom](https://github.com/chopratejas/headroom)) | Optional external `/v1/compress` proxy before routing | Save more context tokens without changing clients |
+| 🪨 **Caveman Mode** ([Caveman](https://github.com/JuliusBrussee/caveman)) | Inject terse-output prompt → substance preserved | Save **up to 65% output tokens** |
+| 🐴 **Ponytail** ([Ponytail](https://github.com/DietrichGebert/ponytail)) | Inject "lazy senior dev" prompt → minimal, YAGNI-first code | Fewer output tokens, less refactoring |
+| 📊 **Real-Time Quota Tracking** | Live token count + reset countdown per source | See pool headroom at a glance |
 | 🔄 **Format Translation** | OpenAI ↔ Claude ↔ Gemini ↔ Cursor ↔ Kiro ↔ Vertex | Works with any CLI tool |
-| 👥 **Multi-Account Support** | Multiple accounts per provider | Load balancing + redundancy |
 | 🔄 **Auto Token Refresh** | OAuth tokens refresh automatically | No manual re-login needed |
-| 🎨 **Custom Combos** | Create unlimited model combinations | Tailor fallback to your needs |
-| 📝 **Request Logging** | Debug mode with full request/response logs | Troubleshoot issues easily |
+| 📝 **Request Logging** | Debug mode with full request/response logs | Troubleshoot easily |
 | 💾 **Cloud Sync** | Sync config across devices | Same setup everywhere |
-| 📊 **Usage Analytics** | Track tokens, cost, trends over time | Optimize spending |
-| 🌐 **Deploy Anywhere** | Localhost, VPS, Docker, Cloudflare Workers | Flexible deployment options |
+| 📊 **Usage Analytics** | Track tokens, cost, trends over time | Understand consumption |
+| 🌐 **Deploy Anywhere** | Localhost, VPS, Docker | Flexible deployment |
 
 <details>
 <summary><b>📖 Feature Details</b></summary>
@@ -445,10 +517,10 @@ With RTK:    28K tokens sent to LLM   (40% saved · same context · same answer)
 
 ### 🧠 Headroom Token Saver
 
-Headroom is optional and runs separately. 9Router calls Headroom's local `/v1/compress` endpoint, then keeps normal routing, fallback, auth, and usage tracking:
+Headroom is optional and runs separately. Potluck calls Headroom's local `/v1/compress` endpoint, then keeps normal routing, fallback, auth, and usage tracking:
 
 ```
-Client → 9Router → Headroom /v1/compress → 9Router → provider
+Client → Potluck → Headroom /v1/compress → Potluck → provider
 ```
 
 Local setup:
@@ -470,7 +542,7 @@ http://headroom:8787
 http://host.docker.internal:8787
 ```
 
-If Headroom is down or returns an error, 9Router fails open and sends the original request.
+If Headroom is down or returns an error, Potluck fails open and sends the original request.
 
 ### 🐴 Ponytail (Lazy Senior Dev)
 
@@ -480,25 +552,7 @@ Ponytail injects a *"lazy senior dev"* system prompt into every request, biasing
 - **Full** — YAGNI ladder enforced: stdlib → native → existing deps → one-liner → minimal code.
 - **Ultra** — YAGNI extremist: deletion first, ship the one-liner, challenge the rest of the requirement in the same response.
 
-```
-Without Ponytail: verbose code, extra abstractions, "just in case" scaffolding
-With Ponytail:    shortest working diff, no unrequested abstractions, fewer tokens
-```
-
 Never trades away: input validation, error handling that prevents data loss, security, accessibility, or anything explicitly requested. Enable in Dashboard → Endpoint → Ponytail. Stacks with Caveman (output terseness) and RTK (input compression).
-
-### 🎯 Smart 3-Tier Fallback
-
-Create combos with automatic fallback:
-
-```
-Combo: "my-coding-stack"
-  1. cc/claude-opus-4-6        (your subscription)
-  2. glm/glm-4.7               (cheap backup, $0.6/1M)
-  3. if/kimi-k2-thinking       (free fallback)
-
-→ Auto switches when quota runs out or errors occur
-```
 
 ### 📊 Real-Time Quota Tracking
 
@@ -511,7 +565,7 @@ Combo: "my-coding-stack"
 
 Seamless translation between formats:
 - **OpenAI** ↔ **Claude** ↔ **Gemini** ↔ **Cursor** ↔ **Kiro** ↔ **Vertex** ↔ **Antigravity** ↔ **Ollama** ↔ **OpenAI Responses**
-- Your CLI tool sends OpenAI format → 9Router translates → Provider receives native format
+- Your CLI tool sends OpenAI format → Potluck translates → Provider receives native format
 - Works with any tool that supports custom OpenAI endpoints
 
 ### 👥 Multi-Account Support
@@ -525,13 +579,6 @@ Seamless translation between formats:
 - OAuth tokens automatically refresh before expiration
 - No manual re-authentication needed
 - Seamless experience across all providers
-
-### 🎨 Custom Combos
-
-- Create unlimited model combinations
-- Mix subscription, cheap, and free tiers
-- Name your combos for easy access
-- Share combos across devices with Cloud Sync
 
 ### 📝 Request Logging
 
@@ -560,247 +607,32 @@ Seamless translation between formats:
 - Track token usage per provider and model
 - Cost estimation and spending trends
 - Monthly reports and insights
-- Optimize your AI spending
 
-> **💡 IMPORTANT - Understanding Dashboard Costs:**
-> 
-> The "cost" displayed in Usage Analytics is **for tracking and comparison purposes only**. 
-> 9Router itself **never charges** you anything. You only pay providers directly (if using paid services).
-> 
-> **Example:** If your dashboard shows "$290 total cost" while using iFlow models, this represents 
-> what you would have paid using paid APIs directly. Your actual cost = **$0** (iFlow is free unlimited).
-> 
-> Think of it as a "savings tracker" showing how much you're saving by using free models or 
-> routing through 9Router!
+> **💡 Understanding Dashboard Costs:**
+>
+> The "cost" displayed in Usage Analytics is **for tracking and comparison purposes only**.
+> Potluck itself **never charges** you anything. You only pay providers directly (if using paid services).
+> Think of it as a "savings tracker" showing how much you're saving by using free models or existing subscriptions.
 
 ### 🌐 Deploy Anywhere
 
 - 💻 **Localhost** - Default, works offline
-- ☁️ **VPS/Cloud** - Share across devices
+- ☁️ **VPS/Cloud** - Share across your team
 - 🐳 **Docker** - One-command deployment
-- 🚀 **Cloudflare Workers** - Global edge network
 
 </details>
 
 ---
 
-## 💰 Pricing at a Glance
+### 📊 Understanding Potluck Costs & Billing
 
-| Tier | Provider | Cost | Quota Reset | Best For |
-|------|----------|------|-------------|----------|
-| **🚀 TOKEN SAVER** | **RTK (built-in)** | **FREE** | Always on | **Save 20-40% tokens on EVERY request** |
-| **💳 SUBSCRIPTION** | Claude Code (Pro/Max) | $20-200/mo | 5h + weekly | Already subscribed |
-| | Codex (Plus/Pro) | $20-200/mo | 5h + weekly | OpenAI users |
-| | GitHub Copilot | $10-19/mo | Monthly | GitHub users |
-| | Cursor IDE | $20/mo | Monthly | Cursor users |
-| **💰 CHEAP** | GLM-5.1 / GLM-4.7 | $0.6/1M | Daily 10AM | Budget backup |
-| | MiniMax M2.7 | $0.2/1M | 5-hour rolling | Cheapest option |
-| | Kimi K2.5 | $9/mo flat | 10M tokens/mo | Predictable cost |
-| **🆓 FREE** | Kiro AI | $0 | Unlimited | Claude 4.5 + GLM-5 + MiniMax free |
-| | OpenCode Free | $0 | Unlimited | No auth, auto-fetch models |
-| | Vertex AI | $300 credits | New GCP accounts | Gemini 3 Pro + DeepSeek + GLM-5 |
+✅ **Potluck software = FREE forever** (open source, never charges)
+✅ **Dashboard "costs" = Display/tracking only** (not actual bills)
+✅ **You pay providers directly** (subscriptions or API fees)
+❌ **Potluck never sends invoices** or charges your card
 
-**💡 Pro Tip:** RTK + Kiro AI + OpenCode Free combo = **$0 cost + 20-40% token savings**!
-
----
-
-### 📊 Understanding 9Router Costs & Billing
-
-**9Router Billing Reality:**
-
-✅ **9Router software = FREE forever** (open source, never charges)  
-✅ **Dashboard "costs" = Display/tracking only** (not actual bills)  
-✅ **You pay providers directly** (subscriptions or API fees)  
-✅ **FREE providers stay FREE** (iFlow, Kiro, Qwen = $0 unlimited)  
-❌ **9Router never sends invoices** or charges your card
-
-**How Cost Display Works:**
-
-The dashboard shows **estimated costs** as if you were using paid APIs directly. This is **not billing** - it's a comparison tool to show your savings.
-
-**Example Scenario:**
-```
-Dashboard Display:
-• Total Requests: 1,662
-• Total Tokens: 47M
-• Display Cost: $290
-
-Reality Check:
-• Provider: iFlow (FREE unlimited)
-• Actual Payment: $0.00
-• What $290 Means: Amount you SAVED by using free models!
-```
-
-**Payment Rules:**
-- **Subscription providers** (Claude Code, Codex): Pay them directly via their websites
-- **Cheap providers** (GLM, MiniMax): Pay them directly, 9Router just routes
-- **FREE providers** (iFlow, Kiro, Qwen): Genuinely free forever, no hidden charges
-- **9Router**: Never charges anything, ever
-
----
-
-## 🎯 Use Cases
-
-### Case 1: "I have Claude Pro subscription"
-
-**Problem:** Quota expires unused, rate limits during heavy coding
-
-**Solution:**
-```
-Combo: "maximize-claude"
-  1. cc/claude-opus-4-7        (use subscription fully)
-  2. glm/glm-5.1               (cheap backup when quota out)
-  3. kr/claude-sonnet-4.5      (free emergency fallback)
-
-Monthly cost: $20 (subscription) + ~$5 (backup) = $25 total
-vs. $20 + hitting limits = frustration
-```
-
-### Case 2: "I want zero cost"
-
-**Problem:** Can't afford subscriptions, need reliable AI coding
-
-**Solution:**
-```
-Combo: "free-forever"
-  1. kr/claude-sonnet-4.5      (Claude 4.5 free unlimited)
-  2. kr/glm-5                  (GLM-5 free via Kiro)
-  3. oc/<auto>                 (OpenCode Free, no auth)
-
-Monthly cost: $0
-Quality: Production-ready models + RTK saves 20-40% tokens
-```
-
-### Case 3: "I need 24/7 coding, no interruptions"
-
-**Problem:** Deadlines, can't afford downtime
-
-**Solution:**
-```
-Combo: "always-on"
-  1. cc/claude-opus-4-7        (best quality)
-  2. cx/gpt-5.5                (second subscription)
-  3. glm/glm-5.1               (cheap, resets daily)
-  4. minimax/MiniMax-M2.7      (cheapest, 5h reset)
-  5. kr/claude-sonnet-4.5      (free unlimited)
-
-Result: 5 layers of fallback = zero downtime
-Monthly cost: $20-200 (subscriptions) + $10-20 (backup)
-```
-
-### Case 4: "I want FREE AI in OpenClaw"
-
-**Problem:** Need AI assistant in messaging apps (WhatsApp, Telegram, Slack...), completely free
-
-**Solution:**
-```
-Combo: "openclaw-free"
-  1. kr/claude-sonnet-4.5      (Claude 4.5 free)
-  2. kr/glm-5                  (GLM-5 free)
-  3. kr/MiniMax-M2.5           (MiniMax free)
-
-Monthly cost: $0
-Access via: WhatsApp, Telegram, Slack, Discord, iMessage, Signal...
-```
-
----
-
-## ❓ Frequently Asked Questions
-
-<details>
-<summary><b>📊 Why does my dashboard show high costs?</b></summary>
-
-The dashboard tracks your token usage and displays **estimated costs** as if you were using paid APIs directly. This is **not actual billing** - it's a reference to show how much you're saving by using free models or existing subscriptions through 9Router.
-
-**Example:**
-- **Dashboard shows:** "$290 total cost"
-- **Reality:** You're using iFlow (FREE unlimited)
-- **Your actual cost:** **$0.00**
-- **What $290 means:** Amount you **saved** by using free models instead of paid APIs!
-
-The cost display is a "savings tracker" to help you understand your usage patterns and optimization opportunities.
-
-</details>
-
-<details>
-<summary><b>💳 Will I be charged by 9Router?</b></summary>
-
-**No.** 9Router is free, open-source software that runs on your own computer. It never charges you anything.
-
-**You only pay:**
-- ✅ **Subscription providers** (Claude Code $20/mo, Codex $20-200/mo) → Pay them directly on their websites
-- ✅ **Cheap providers** (GLM, MiniMax) → Pay them directly, 9Router just routes your requests
-- ❌ **9Router itself** → **Never charges anything, ever**
-
-9Router is a local proxy/router. It doesn't have your credit card, can't send invoices, and has no billing system. It's completely free software.
-
-</details>
-
-<details>
-<summary><b>🆓 Are FREE providers really unlimited?</b></summary>
-
-**Yes!** The current FREE providers (Kiro, OpenCode Free, Vertex) are genuinely free with **no hidden charges**.
-
-These are free services offered by those respective companies:
-- **Kiro AI**: Free unlimited Claude 4.5 + GLM-5 + MiniMax via AWS Builder ID / Google / GitHub OAuth
-- **OpenCode Free**: No-auth passthrough proxy, models auto-fetched from `opencode.ai/zen/v1/models`
-- **Vertex AI**: $300 free credits for new Google Cloud accounts (90 days)
-
-9Router just routes your requests to them - there's no "catch" or future billing. They're truly free services, and 9Router makes them easy to use with fallback support.
-
-**Discontinued free tiers (no longer recommended):**
-- ❌ **iFlow**: Was free unlimited, now changed to paid (2026)
-- ❌ **Qwen Code**: Free OAuth tier discontinued by Alibaba on 2026-04-15
-- ❌ **Gemini CLI**: Still works, but using it with non-CLI tools (Claude, Codex, Cursor...) may result in account bans — only use if you stick to Gemini CLI itself
-
-</details>
-
-<details>
-<summary><b>💰 How do I minimize my actual AI costs?</b></summary>
-
-**Free-First Strategy:**
-
-1. **Start with 100% free combo:**
-   ```
-   1. gc/gemini-3-flash (180K/month free from Google)
-   2. if/kimi-k2-thinking (unlimited free from iFlow)
-   3. qw/qwen3-coder-plus (unlimited free from Qwen)
-   ```
-   **Cost: $0/month**
-
-2. **Add cheap backup** only if you need it:
-   ```
-   4. glm/glm-4.7 ($0.6/1M tokens)
-   ```
-   **Additional cost: Only pay for what you actually use**
-
-3. **Use subscription providers last:**
-   - Only if you already have them
-   - 9Router helps maximize their value through quota tracking
-
-**Result:** Most users can operate at $0/month using only free tiers!
-
-</details>
-
-<details>
-<summary><b>📈 What if my usage suddenly spikes?</b></summary>
-
-9Router's smart fallback prevents surprise charges:
-
-**Scenario:** You're on a coding sprint and blow through your quotas
-
-**Without 9Router:**
-- ❌ Hit rate limit → Work stops → Frustration
-- ❌ Or: Accidentally rack up huge API bills
-
-**With 9Router:**
-- ✅ Subscription hits limit → Auto-fallback to cheap tier
-- ✅ Cheap tier gets expensive → Auto-fallback to free tier
-- ✅ Never stop coding → Predictable costs
-
-**You're in control:** Set spending limits per provider in dashboard, and 9Router respects them.
-
-</details>
+Potluck is a local supply platform/router. It doesn't have your credit card, can't send
+invoices, and has no billing system.
 
 ---
 
@@ -823,7 +655,7 @@ Models:
   cc/claude-haiku-4-5-20251001
 ```
 
-**Pro Tip:** Use Opus for complex tasks, Sonnet for speed. 9Router tracks quota per model!
+**Pro Tip:** Use Opus for complex tasks, Sonnet for speed. Potluck tracks quota per model!
 
 ### OpenAI Codex (Plus/Pro)
 
@@ -960,55 +792,19 @@ Vertex Partner (Anthropic / DeepSeek / GLM / Qwen via Vertex):
 </details>
 
 <details>
-<summary><b>🎨 Create Combos</b></summary>
-
-### Example 1: Maximize Subscription → Cheap Backup
-
-```
-Dashboard → Combos → Create New
-
-Name: premium-coding
-Models:
-  1. cc/claude-opus-4-7 (Subscription primary)
-  2. glm/glm-5.1 (Cheap backup, $0.6/1M)
-  3. minimax/MiniMax-M2.7 (Cheapest fallback, $0.20/1M)
-
-Use in CLI: premium-coding
-
-Monthly cost example (100M tokens):
-  80M via Claude (subscription): $0 extra
-  15M via GLM: $9
-  5M via MiniMax: $1
-  Total: $10 + your subscription
-```
-
-### Example 2: Free-Only (Zero Cost)
-
-```
-Name: free-combo
-Models:
-  1. kr/claude-sonnet-4.5 (Claude 4.5 free unlimited)
-  2. kr/glm-5 (GLM-5 free via Kiro)
-  3. vertex/gemini-3.1-pro-preview ($300 free credits)
-
-Cost: $0 forever (+ 20-40% token savings via RTK)!
-```
-
-</details>
-
-<details>
 <summary><b>🔧 CLI Integration</b></summary>
+
+> All examples below use port **20129**. Request a routing profile (e.g. `profile:claude`)
+> to consume from an abundant pool, or a direct `provider/model` to bypass routing.
 
 ### Cursor IDE
 
 ```
 Settings → Models → Advanced:
-  OpenAI API Base URL: http://localhost:20128/v1
-  OpenAI API Key: [from 9router dashboard]
-  Model: cc/claude-opus-4-7
+  OpenAI API Base URL: http://localhost:20129/v1
+  OpenAI API Key: [from Potluck dashboard]
+  Model: profile:claude
 ```
-
-Or use combo: `premium-coding`
 
 ### Claude Code
 
@@ -1016,16 +812,16 @@ Edit `~/.claude/config.json`:
 
 ```json
 {
-  "anthropic_api_base": "http://localhost:20128/v1",
-  "anthropic_api_key": "your-9router-api-key"
+  "anthropic_api_base": "http://localhost:20129/v1",
+  "anthropic_api_key": "your-potluck-api-key"
 }
 ```
 
 ### Codex CLI
 
 ```bash
-export OPENAI_BASE_URL="http://localhost:20128"
-export OPENAI_API_KEY="your-9router-api-key"
+export OPENAI_BASE_URL="http://localhost:20129"
+export OPENAI_API_KEY="your-potluck-api-key"
 
 codex "your prompt"
 ```
@@ -1045,15 +841,15 @@ Dashboard → CLI Tools → OpenClaw → Select Model → Apply
   "agents": {
     "defaults": {
       "model": {
-        "primary": "9router/kr/claude-sonnet-4.5"
+        "primary": "potluck/kr/claude-sonnet-4.5"
       }
     }
   },
   "models": {
     "providers": {
-      "9router": {
-        "baseUrl": "http://127.0.0.1:20128/v1",
-        "apiKey": "sk_9router",
+      "potluck": {
+        "baseUrl": "http://127.0.0.1:20129/v1",
+        "apiKey": "sk_potluck",
         "api": "openai-completions",
         "models": [
           {
@@ -1067,15 +863,15 @@ Dashboard → CLI Tools → OpenClaw → Select Model → Apply
 }
 ```
 
-> **Note:** OpenClaw only works with local 9Router. Use `127.0.0.1` instead of `localhost` to avoid IPv6 resolution issues.
+> **Note:** OpenClaw only works with a local Potluck instance. Use `127.0.0.1` instead of `localhost` to avoid IPv6 resolution issues.
 
 ### Cline / Continue / RooCode
 
 ```
 Provider: OpenAI Compatible
-Base URL: http://localhost:20128/v1
+Base URL: http://localhost:20129/v1
 API Key: [from dashboard]
-Model: cc/claude-opus-4-7
+Model: profile:claude
 ```
 
 </details>
@@ -1087,20 +883,19 @@ Model: cc/claude-opus-4-7
 
 ```bash
 # Clone and install
-git clone https://github.com/decolua/9router.git
-cd 9router
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
 npm install
 npm run build
 
 # Configure
 export JWT_SECRET="your-secure-secret-change-this"
 export INITIAL_PASSWORD="your-password"
-export DATA_DIR="/var/lib/9router"
-export PORT="20128"
+export DATA_DIR="/var/lib/potluck"
+export PORT="20129"
 export HOSTNAME="0.0.0.0"
 export NODE_ENV="production"
-export NEXT_PUBLIC_BASE_URL="http://localhost:20128"
-export NEXT_PUBLIC_CLOUD_URL="https://9router.com"
+export NEXT_PUBLIC_BASE_URL="http://localhost:20129"
 export API_KEY_SECRET="endpoint-proxy-api-key-secret"
 export MACHINE_ID_SALT="endpoint-proxy-salt"
 
@@ -1109,88 +904,73 @@ npm run start
 
 # Or use PM2
 npm install -g pm2
-pm2 start npm --name 9router -- start
+pm2 start npm --name potluck -- start
 pm2 save
 pm2 startup
 ```
 
 ### Docker
 
-Published images (multi-platform `linux/amd64` + `linux/arm64`):
-- Docker Hub: [`decolua/9router`](https://hub.docker.com/r/decolua/9router)
-- GHCR: [`ghcr.io/decolua/9router`](https://github.com/decolua/9router/pkgs/container/9router)
-
-**Quick start (use published image):**
+**Build from source:**
 
 ```bash
-docker run -d \
-  --name 9router \
-  -p 20128:20128 \
-  -v "$HOME/.9router:/app/data" \
-  -e DATA_DIR=/app/data \
-  decolua/9router:latest
+git clone https://github.com/Ezero23/potluck.git
+cd potluck/app
+docker build -t potluck .
+docker run -d --name potluck -p 20129:20129 \
+  -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data potluck
 ```
 
-→ Open http://localhost:20128
-
-**Build from source (dev):**
-
-```bash
-git clone https://github.com/decolua/9router.git
-cd 9router/app
-docker build -t 9router .
-docker run -d --name 9router -p 20128:20128 \
-  -v "$HOME/.9router:/app/data" -e DATA_DIR=/app/data 9router
-```
+→ Open http://localhost:20129
 
 **Container defaults:**
-- `PORT=20128`
+- `PORT=20129`
 - `HOSTNAME=0.0.0.0`
 
 **Useful commands:**
 
 ```bash
-docker logs -f 9router
-docker restart 9router
-docker stop 9router && docker rm 9router
-docker pull decolua/9router:latest   # update to latest
+docker logs -f potluck
+docker restart potluck
+docker stop potluck && docker rm potluck
 ```
 
-**Data persistence:** `$HOME/.9router/db/data.sqlite` on host ↔ `/app/data/db/data.sqlite` in container.
+**Data persistence:** `$DATA_DIR/db/data.sqlite` on host ↔ `/app/data/db/data.sqlite` in container.
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JWT_SECRET` | Auto-generated (`~/.9router/jwt-secret`) | JWT signing secret for dashboard auth cookie (override to share across instances) |
+| `JWT_SECRET` | Auto-generated (`$DATA_DIR/jwt-secret`) | JWT signing secret for dashboard auth cookie (override to share across instances) |
 | `INITIAL_PASSWORD` | `123456` | First login password when no saved hash exists |
-| `DATA_DIR` | `~/.9router` | Main app data location (SQLite at `$DATA_DIR/db/data.sqlite`) |
-| `PORT` | framework default | Service port (`20128` in examples) |
+| `DATA_DIR` | `~/.potluck` | Main app data location (SQLite at `$DATA_DIR/db/data.sqlite`; also where `routing.json` is read from) |
+| `PORT` | framework default | Service port (`20129` in examples) |
 | `HOSTNAME` | framework default | Bind host (Docker defaults to `0.0.0.0`) |
 | `NODE_ENV` | runtime default | Set `production` for deploy |
-| `BASE_URL` | `http://localhost:20128` | Server-side internal base URL used by cloud sync jobs |
-| `CLOUD_URL` | `https://9router.com` | Server-side cloud sync endpoint base URL |
+| `BASE_URL` | `http://localhost:20129` | Server-side internal base URL used by cloud sync jobs |
+| `CLOUD_URL` | — | Server-side cloud sync endpoint base URL |
 | `NEXT_PUBLIC_BASE_URL` | `http://localhost:3000` | Backward-compatible/public base URL (prefer `BASE_URL` for server runtime) |
-| `NEXT_PUBLIC_CLOUD_URL` | `https://9router.com` | Backward-compatible/public cloud URL (prefer `CLOUD_URL` for server runtime) |
+| `NEXT_PUBLIC_CLOUD_URL` | — | Backward-compatible/public cloud URL (prefer `CLOUD_URL` for server runtime) |
 | `API_KEY_SECRET` | `endpoint-proxy-api-key-secret` | HMAC secret for generated API keys |
 | `MACHINE_ID_SALT` | `endpoint-proxy-salt` | Salt for stable machine ID hashing |
 | `ENABLE_REQUEST_LOGS` | `false` | Enables request/response logs under `logs/` |
 | `AUTH_COOKIE_SECURE` | `false` | Force `Secure` auth cookie (set `true` behind HTTPS reverse proxy) |
 | `REQUIRE_API_KEY` | `false` | Enforce Bearer API key on `/v1/*` routes (recommended for internet-exposed deploys) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | shared public client | Your own Gemini/Google OAuth client credentials |
+| `ANTIGRAVITY_OAUTH_CLIENT_ID` / `ANTIGRAVITY_OAUTH_CLIENT_SECRET` | shared public client | Your own Antigravity OAuth client credentials |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY` | empty | Optional outbound proxy for upstream provider calls |
 
 Notes:
 - Lowercase proxy variables are also supported: `http_proxy`, `https_proxy`, `all_proxy`, `no_proxy`.
-- `.env` is not baked into Docker image (`.dockerignore`); inject runtime config with `--env-file` or `-e`.
+- `.env` is not baked into the Docker image (`.dockerignore`); inject runtime config with `--env-file` or `-e`.
 - On Windows, `APPDATA` can be used for local storage path resolution.
-- `INSTANCE_NAME` appears in older docs/env templates, but is currently not used at runtime.
 
 ### Runtime Files and Storage
 
 - Main app state: `${DATA_DIR}/db/data.sqlite` (SQLite — providers, combos, aliases, keys, settings, usage history)
+- Routing profiles: `routing.json` in the project root or `${DATA_DIR}` (hot-reloaded every 30s)
 - Auto backups: `${DATA_DIR}/db/backups/`
 - Optional request/translator logs: `<repo>/logs/...` when `ENABLE_REQUEST_LOGS=true`
-- Both `${DATA_DIR}` and `~/.9router` resolve to the same location in a Docker container — the symlink `/root/.9router -> /app/data` is created at build time.
 
 </details>
 
@@ -1266,29 +1046,32 @@ Notes:
 ## 🐛 Troubleshooting
 
 **"Language model did not provide messages"**
-- Provider quota exhausted → Check dashboard quota tracker
-- Solution: Use combo fallback or switch to cheaper tier
+- Provider quota exhausted → check the pool view (`GET /api/routing/pools`) or dashboard quota tracker
+- Solution: use a rotation profile so the request slides to the next healthy source
 
 **Rate limiting**
-- Subscription quota out → Fallback to GLM/MiniMax
-- Add combo: `cc/claude-opus-4-7 → glm/glm-5.1 → kr/claude-sonnet-4.5`
+- A source hit its limit → rotation profiles automatically slide to the next source
+- Add more sources to the pool (connect more providers serving the same model family)
 
 **OAuth token expired**
-- Auto-refreshed by 9Router
+- Auto-refreshed by Potluck
 - If issues persist: Dashboard → Provider → Reconnect
 
 **High costs**
 - Enable RTK in Dashboard → Endpoint settings (default ON, saves 20-40% tokens)
 - Check usage stats in Dashboard
-- Switch primary model to GLM/MiniMax
-- Use free tier (Kiro, OpenCode Free, Vertex) for non-critical tasks
+- Add cheap/free sources to the relevant pool
 
 **Dashboard opens on wrong port**
-- Set `PORT=20128` and `NEXT_PUBLIC_BASE_URL=http://localhost:20128`
+- Set `PORT=20129` and `NEXT_PUBLIC_BASE_URL=http://localhost:20129`
 
 **First login not working**
 - Check `INITIAL_PASSWORD` in `.env`
 - If unset, fallback password is `123456`
+
+**routing.json changes not taking effect**
+- Config is cached for 30s; wait up to 30 seconds or restart
+- Confirm the file is valid JSON in the project root or `${DATA_DIR}`
 
 **No request logs under `logs/`**
 - Set `ENABLE_REQUEST_LOGS=true`
@@ -1311,12 +1094,12 @@ Notes:
 ### Chat Completions
 
 ```bash
-POST http://localhost:20128/v1/chat/completions
+POST http://localhost:20129/v1/chat/completions
 Authorization: Bearer your-api-key
 Content-Type: application/json
 
 {
-  "model": "cc/claude-opus-4-6",
+  "model": "profile:claude",
   "messages": [
     {"role": "user", "content": "Write a function to..."}
   ],
@@ -1327,37 +1110,27 @@ Content-Type: application/json
 ### List Models
 
 ```bash
-GET http://localhost:20128/v1/models
+GET http://localhost:20129/v1/models
 Authorization: Bearer your-api-key
 
-→ Returns all models + combos in OpenAI format
+→ Returns all models + profiles in OpenAI format
 ```
+
+### Routing Pools
+
+```bash
+GET http://localhost:20129/api/routing/pools
+
+→ Every profile as a pool: resolved sources, per-source health
+  (quotaPercent, errorRate5m, healthy), and rotation stats (useCount, lastUsedAt)
+```
+
+---
 
 ## 📧 Support
 
-- **Website**: [9router.com](https://9router.com)
-- **GitHub**: [github.com/decolua/9router](https://github.com/decolua/9router)
-- **Issues**: [github.com/decolua/9router/issues](https://github.com/decolua/9router/issues)
-
----
-
-## 👥 Contributors
-
-Thanks to all contributors who helped make 9Router better!
-
-[![Contributors](https://contrib.rocks/image?repo=decolua/9router&max=150&columns=15&anon=1&v=20260309)](https://github.com/decolua/9router/graphs/contributors)
-
----
-
-## 📊 Star Chart
-
-[![Star Chart](https://starchart.cc/decolua/9router.svg?variant=adaptive)](https://starchart.cc/decolua/9router)
-
-
-
-## 🔀 Forks
-
-**[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — A full-featured TypeScript fork of 9Router. Adds 36+ providers, 4-tier auto-fallback, multi-modal APIs (images, embeddings, audio, TTS), circuit breaker, semantic cache, LLM evaluations, and a polished dashboard. 368+ unit tests. Available via npm and Docker.
+- **GitHub**: [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
+- **Issues**: [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)
 
 ---
 
@@ -1366,11 +1139,11 @@ Thanks to all contributors who helped make 9Router better!
 Built on the shoulders of giants:
 
 - **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** — original Go implementation that inspired this JavaScript port.
-- **[RTK](https://github.com/rtk-ai/rtk)** ![Stars](https://img.shields.io/github/stars/rtk-ai/rtk?style=flat&color=yellow) — Rust token-saver. 9Router ports its compression pipeline to JS → **−20-40% input tokens** on every request.
-- **[Caveman](https://github.com/JuliusBrussee/caveman)** ![Stars](https://img.shields.io/github/stars/JuliusBrussee/caveman?style=flat&color=yellow) by **[@JuliusBrussee](https://github.com/JuliusBrussee)** — viral *"why use many token when few token do trick"*. 9Router adapts its prompt → **−65% output tokens**.
-- **[Ponytail](https://github.com/DietrichGebert/ponytail)** ![Stars](https://img.shields.io/github/stars/DietrichGebert/ponytail?style=flat&color=yellow) by **[@DietrichGebert](https://github.com/DietrichGebert)** — *"lazy senior dev"* skill. 9Router injects its YAGNI-first ladder → **fewer tokens, less code, shorter diffs**.
+- **[RTK](https://github.com/rtk-ai/rtk)** — Rust token-saver. Potluck ports its compression pipeline to JS → **−20-40% input tokens** on every request.
+- **[Caveman](https://github.com/JuliusBrussee/caveman)** by **[@JuliusBrussee](https://github.com/JuliusBrussee)** — *"why use many token when few token do trick"*. Potluck adapts its prompt → **−65% output tokens**.
+- **[Ponytail](https://github.com/DietrichGebert/ponytail)** by **[@DietrichGebert](https://github.com/DietrichGebert)** — *"lazy senior dev"* skill. Potluck injects its YAGNI-first ladder → **fewer tokens, less code, shorter diffs**.
 
-Huge thanks to these authors — without their work, 9Router's token-saving features wouldn't exist. ⭐ them on GitHub!
+Huge thanks to these authors — without their work, Potluck's token-saving features wouldn't exist. ⭐ them on GitHub!
 
 ---
 
@@ -1381,5 +1154,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for developers who code 24/7</sub>
+  <sub>好模型管够，不用选，用不完，不断线 · Built for teams who code 24/7</sub>
 </div>
