@@ -54,14 +54,18 @@ export const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/v1/messages";
 export const OPENAI_COMPAT_BASE = "https://api.openai.com/v1";
 export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 
-// Antigravity OAuth client credentials (public CLI client — duplicated in usage.js + src/lib/oauth)
+// Antigravity OAuth client credentials (public CLI client — shared by registry + src/lib/oauth).
+// These are native-app OAuth credentials (no real secret). Configure your own via env:
+//   ANTIGRAVITY_OAUTH_CLIENT_ID / ANTIGRAVITY_OAUTH_CLIENT_SECRET
 export const ANTIGRAVITY_OAUTH_CLIENT = {
-  clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
-  clientSecret: "GOCSPX-REDACTED-ANTIGRAVITY-CONFIGURE-VIA-ENV"
+  clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
+  clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "GOCSPX-REDACTED-ANTIGRAVITY-CONFIGURE-VIA-ENV"
 };
 
-// Gemini (Google) OAuth client credentials (public CLI client — shared by gemini, gemini-cli, src/lib/oauth)
+// Gemini (Google) OAuth client credentials (public CLI client — shared by gemini, gemini-cli, src/lib/oauth).
+// Configure your own via env:
+//   GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET
 export const GOOGLE_OAUTH_CLIENT = {
-  clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
-  clientSecret: "GOCSPX-REDACTED-GOOGLE-CONFIGURE-VIA-ENV"
+  clientId: process.env.GOOGLE_OAUTH_CLIENT_ID || "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+  clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "GOCSPX-REDACTED-GOOGLE-CONFIGURE-VIA-ENV"
 };

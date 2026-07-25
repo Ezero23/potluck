@@ -1,5 +1,5 @@
 // Guards the deduped Antigravity OAuth client: same values across all 3 sources after refactor.
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 const EXPECTED = {
   clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
@@ -46,5 +46,21 @@ describe("antigravity oauth client (deduped)", () => {
     expect(src).toContain('PROVIDER_OAUTH["gemini-cli"]');
     expect(src).not.toContain(EXPECTED.clientSecret); // antigravity secret no longer hardcoded here
     expect(src).not.toContain(GOOGLE.clientSecret);   // gemini secret no longer hardcoded here
+  });
+
+  // Shared clients are configure-your-own: env vars override the bundled defaults.
+  it("respects env overrides for clientId/clientSecret", async () => {
+    vi.stubEnv("GOOGLE_OAUTH_CLIENT_ID", "env-google-id");
+    vi.stubEnv("GOOGLE_OAUTH_CLIENT_SECRET", "env-google-secret");
+    vi.stubEnv("ANTIGRAVITY_OAUTH_CLIENT_SECRET", "env-antigravity-secret");
+    vi.resetModules(); // force shared.js to re-evaluate against the stubbed env
+    const { GOOGLE_OAUTH_CLIENT, ANTIGRAVITY_OAUTH_CLIENT } = await import("../../open-sse/providers/shared.js");
+    expect(GOOGLE_OAUTH_CLIENT.clientId).toBe("env-google-id");
+    expect(GOOGLE_OAUTH_CLIENT.clientSecret).toBe("env-google-secret");
+    expect(ANTIGRAVITY_OAUTH_CLIENT.clientSecret).toBe("env-antigravity-secret");
+    // clientId falls back to the bundled default when only the secret is overridden
+    expect(ANTIGRAVITY_OAUTH_CLIENT.clientId).toBe(EXPECTED.clientId);
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });
