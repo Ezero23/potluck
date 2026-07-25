@@ -115,6 +115,14 @@ docker run --rm -p 20129:20129 \
   potluck
 ```
 
+> **Building inside China?** Alpine and npm registries can be very slow there.
+> Add `--build-arg USE_CN_MIRROR=true` to swap them for fast China mirrors
+> (Aliyun alpine + npmmirror). No effect outside China:
+>
+> ```bash
+> docker build --build-arg USE_CN_MIRROR=true -t potluck .
+> ```
+
 ## Publish (automatic via CI)
 
 Push a git tag `v*` → GitHub Actions builds multi-platform (amd64+arm64) and pushes to:

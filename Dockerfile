@@ -5,10 +5,18 @@ WORKDIR /app
 
 FROM base AS builder
 
+# Opt-in fast mirrors for builds inside China (no effect elsewhere):
+#   docker build --build-arg USE_CN_MIRROR=true -t potluck .
+ARG USE_CN_MIRROR=false
+RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
+      sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories; \
+    fi
+
 RUN apk --no-cache upgrade && apk --no-cache add python3 make g++ linux-headers
 
 COPY package.json ./
 RUN --mount=type=cache,target=/root/.npm \
+  if [ "$USE_CN_MIRROR" = "true" ]; then npm config set registry https://registry.npmmirror.com; fi && \
   npm install
 
 COPY . ./
@@ -43,7 +51,11 @@ RUN mkdir -p /app/data && chown -R node:node /app && \
   ln -sf /app/data-home /root/.potluck 2>/dev/null || true
 
 # Fix permissions at runtime (handles mounted volumes)
-RUN apk --no-cache upgrade && apk --no-cache add su-exec && \
+ARG USE_CN_MIRROR=false
+RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
+      sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories; \
+    fi && \
+  apk --no-cache upgrade && apk --no-cache add su-exec && \
   printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh
 
