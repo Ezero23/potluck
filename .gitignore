@@ -3,6 +3,7 @@ node_modules/
 *.log
 .env
 .env.*
+!.env.example
 .potluck/
 .9router/
 
