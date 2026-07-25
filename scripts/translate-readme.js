@@ -12,7 +12,6 @@ const TEMPERATURE = parseFloat(process.env.GLM_TEMPERATURE || '0.3');
 const BATCH_SIZE = parseInt(process.env.TRANSLATE_BATCH_SIZE || '2'); // Number of languages to translate in parallel
 
 const SUPPORTED_LANGUAGES = {
-  vi: 'Vietnamese',
   'zh-CN': 'Simplified Chinese'
 };
 

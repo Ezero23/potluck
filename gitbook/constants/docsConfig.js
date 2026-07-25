@@ -54,7 +54,7 @@ const NAV_STRUCTURE = [
   }
 ];
 
-// Translations for section/item titles (5 langs).
+// Translations for section/item titles (2 langs).
 const TRANSLATIONS = {
   en: {
     gettingStarted: "Getting Started",
@@ -87,37 +87,6 @@ const TRANSLATIONS = {
     selectLanguage: "Select Language",
     onThisPage: "On this page"
   },
-  vi: {
-    gettingStarted: "Bắt đầu",
-    introduction: "Giới thiệu",
-    quickStart: "Bắt đầu nhanh",
-    installation: "Cài đặt",
-    providers: "Nhà cung cấp",
-    subscription: "Subscription (Tối đa hóa)",
-    cheap: "Giá rẻ (Dự phòng)",
-    free: "Miễn phí (Phương án cuối)",
-    features: "Tính năng",
-    smartRouting: "Định tuyến thông minh",
-    combos: "Combo & Fallback",
-    quotaTracking: "Theo dõi Quota",
-    integration: "Tích hợp",
-    claudeCode: "Claude Code",
-    codex: "OpenAI Codex",
-    cursor: "Cursor",
-    cline: "Cline",
-    roo: "Roo",
-    continue: "Continue",
-    otherTools: "Công cụ khác",
-    deployment: "Triển khai",
-    localhost: "Localhost",
-    cloud: "Cloud (VPS/Docker)",
-    help: "Trợ giúp",
-    troubleshooting: "Khắc phục sự cố",
-    faq: "Câu hỏi thường gặp",
-    goToApp: "Vào ứng dụng",
-    selectLanguage: "Chọn ngôn ngữ",
-    onThisPage: "Trên trang này"
-  },
   "zh-CN": {
     gettingStarted: "开始使用",
     introduction: "简介",
@@ -148,68 +117,6 @@ const TRANSLATIONS = {
     goToApp: "前往应用",
     selectLanguage: "选择语言",
     onThisPage: "本页内容"
-  },
-  es: {
-    gettingStarted: "Comenzar",
-    introduction: "Introducción",
-    quickStart: "Inicio rápido",
-    installation: "Instalación",
-    providers: "Proveedores",
-    subscription: "Suscripción (Maximizar)",
-    cheap: "Económico (Respaldo)",
-    free: "Gratis (Alternativa)",
-    features: "Funciones",
-    smartRouting: "Enrutamiento inteligente",
-    combos: "Combos y Fallback",
-    quotaTracking: "Seguimiento de cuota",
-    integration: "Integración",
-    claudeCode: "Claude Code",
-    codex: "OpenAI Codex",
-    cursor: "Cursor",
-    cline: "Cline",
-    roo: "Roo",
-    continue: "Continue",
-    otherTools: "Otras herramientas",
-    deployment: "Despliegue",
-    localhost: "Localhost",
-    cloud: "Nube (VPS/Docker)",
-    help: "Ayuda",
-    troubleshooting: "Solución de problemas",
-    faq: "Preguntas frecuentes",
-    goToApp: "Ir a la app",
-    selectLanguage: "Seleccionar idioma",
-    onThisPage: "En esta página"
-  },
-  ja: {
-    gettingStarted: "はじめに",
-    introduction: "概要",
-    quickStart: "クイックスタート",
-    installation: "インストール",
-    providers: "プロバイダー",
-    subscription: "サブスクリプション (最大化)",
-    cheap: "格安 (バックアップ)",
-    free: "無料 (フォールバック)",
-    features: "機能",
-    smartRouting: "スマートルーティング",
-    combos: "コンボとフォールバック",
-    quotaTracking: "クォータ追跡",
-    integration: "連携",
-    claudeCode: "Claude Code",
-    codex: "OpenAI Codex",
-    cursor: "Cursor",
-    cline: "Cline",
-    roo: "Roo",
-    continue: "Continue",
-    otherTools: "その他のツール",
-    deployment: "デプロイ",
-    localhost: "ローカル",
-    cloud: "クラウド (VPS/Docker)",
-    help: "ヘルプ",
-    troubleshooting: "トラブルシューティング",
-    faq: "よくある質問",
-    goToApp: "アプリへ",
-    selectLanguage: "言語を選択",
-    onThisPage: "このページ"
   }
 };
 
@@ -233,10 +140,10 @@ export function getNavigation(lang) {
 
 // Static config (logo, urls, default English nav for backward compatibility).
 export const DOCS_CONFIG = {
-  title: "9Router Documentation",
+  title: "Potluck Documentation",
   description: "Smart AI model router - Maximize subscriptions, minimize costs",
-  logo: "9Router",
-  appUrl: "https://9router.com",
-  githubUrl: "https://github.com/decolua/9router",
+  logo: "Potluck",
+  appUrl: "https://your-potluck-cloud.example.com",
+  githubUrl: "https://github.com/Ezero23/potluck",
   navigation: getNavigation(DEFAULT_LANG)
 };
