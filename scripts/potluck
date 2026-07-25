@@ -1,0 +1,116 @@
+#!/usr/bin/env node
+/**
+ * Potluck launcher — spawns custom-server.js as child process and restarts on crash.
+ * Mirrors /opt/homebrew/bin/9router (startServer + tryRestart pattern).
+ *
+ * Usage: scripts/potluck [port]
+ *   port defaults to 20129
+ */
+const { spawn } = require("child_process");
+const path = require("path");
+const fs = require("fs");
+const net = require("net");
+
+const PORT = parseInt(process.argv[2], 10) || 20129;
+// Repo layout: this script lives in <repo>/scripts/, standalone build in <repo>/.next/standalone
+const STANDALONE_DIR = path.join(__dirname, "..", ".next", "standalone");
+const SERVER_SCRIPT = path.join(STANDALONE_DIR, "custom-server.js");
+// Resolve node binary — match how 9Router handles it (use process.execPath,
+// but if it points to a symlink/alias that spawn can't follow, fall back to
+// the on-disk binary resolved via `which`).
+const { execSync } = require("child_process");
+let RUNTIME;
+try {
+  const resolved = execSync("which node", { encoding: "utf8" }).trim();
+  if (resolved && fs.existsSync(resolved)) {
+    RUNTIME = resolved;
+  } else {
+    RUNTIME = process.execPath;
+  }
+} catch (_) {
+  RUNTIME = process.execPath;
+}
+
+const MAX_RESTARTS = 5;
+const RESTART_RESET_MS = 10 * 60 * 1000; // 10 min — reset restart count if server ran this long
+
+let restartCount = 0;
+let server = null;
+let serverStartTime = 0;
+
+function log(msg) {
+  const ts = new Date().toISOString().slice(11, 19);
+  process.stderr.write(`[potluck] ${ts} ${msg}\n`);
+}
+
+function spawnServer() {
+  serverStartTime = Date.now();
+  server = spawn(RUNTIME, [
+    "--dns-result-order=ipv4first",
+    "--max-old-space-size=6144",
+    SERVER_SCRIPT,
+  ], {
+    cwd: STANDALONE_DIR,
+    stdio: "inherit",
+    env: { ...process.env, PORT: String(PORT) },
+  });
+  log(`Server started (PID ${server.pid}) on port ${PORT}`);
+  return server;
+}
+
+function attachServerEvents() {
+  server.on("error", (err) => {
+    log(`Server error: ${err.message}`);
+    if (!isShuttingDown) tryRestart();
+    else cleanup();
+  });
+  server.on("close", (code) => {
+    if (isShuttingDown || code === 0) {
+      log(`Server exited cleanly (code=${code})`);
+      return;
+    }
+    tryRestart(code);
+  });
+}
+
+function tryRestart(code) {
+  const aliveMs = Date.now() - serverStartTime;
+
+  // Reset counter if last run was stable
+  if (aliveMs >= RESTART_RESET_MS) restartCount = 0;
+
+  restartCount++;
+  if (restartCount > MAX_RESTARTS) {
+    log(`Crashed ${MAX_RESTARTS} times — giving up`);
+    cleanup();
+    process.exit(1);
+  }
+
+  const delay = Math.min(1000 * restartCount, 10000);
+  log(`Restarting in ${delay / 1000}s (${restartCount}/${MAX_RESTARTS})`);
+  setTimeout(() => {
+    server = spawnServer();
+    attachServerEvents();
+  }, delay);
+}
+
+let isShuttingDown = false;
+function cleanup() {
+  isShuttingDown = true;
+  if (server && server.pid) {
+    try { process.kill(server.pid, "SIGKILL"); } catch (_) {}
+  }
+  server = null;
+}
+
+process.on("SIGINT", () => { cleanup(); process.exit(0); });
+process.on("SIGTERM", () => { cleanup(); process.exit(0); });
+
+// ── Start ───────────────────────────────────────────────────────────
+console.log(`━━━ Potluck ━━━`);
+console.log(`Port: ${PORT}`);
+console.log(`Server: ${SERVER_SCRIPT}`);
+console.log(`Cwd: ${STANDALONE_DIR}\n`);
+
+server = spawnServer();
+attachServerEvents();
