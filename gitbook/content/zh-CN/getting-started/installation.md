@@ -48,6 +48,16 @@ PORT=20129 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run dev
 
 ### 方式 2:Docker 部署
 
+直接运行预构建多架构镜像（`amd64` + `arm64`，每个 release 自动更新）：
+
+```bash
+docker run -d --name potluck -p 20129:20129 \
+  -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data \
+  ghcr.io/ezero23/potluck:latest
+```
+
+或从源码构建：
+
 ```bash
 git clone https://github.com/Ezero23/potluck.git
 cd potluck

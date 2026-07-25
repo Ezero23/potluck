@@ -1039,6 +1039,18 @@ pm2 startup
 
 ### Docker
 
+**使用预构建镜像（推荐）：**
+
+```bash
+docker run -d --name potluck -p 20129:20129 \
+  -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data \
+  ghcr.io/ezero23/potluck:latest
+```
+
+多架构（`amd64` + `arm64`），每个 release 标签自动重新构建。
+
+**从源码构建：**
+
 ```bash
 # 构建镜像（从仓库根目录）
 docker build -t potluck .

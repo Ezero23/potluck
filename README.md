@@ -909,6 +909,16 @@ pm2 startup
 
 ### Docker
 
+**Use the prebuilt image (recommended):**
+
+```bash
+docker run -d --name potluck -p 20129:20129 \
+  -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data \
+  ghcr.io/ezero23/potluck:latest
+```
+
+Multi-arch (`amd64` + `arm64`), rebuilt on every release tag.
+
 **Build from source:**
 
 ```bash

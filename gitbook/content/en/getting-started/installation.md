@@ -55,7 +55,15 @@ npm run start
 
 ### Method 2: Docker
 
-Build and run from source:
+Run the prebuilt multi-arch image (`amd64` + `arm64`, rebuilt on every release):
+
+```bash
+docker run -d --name potluck -p 20129:20129 \
+  -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data \
+  ghcr.io/ezero23/potluck:latest
+```
+
+Or build from source:
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git
