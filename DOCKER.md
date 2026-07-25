@@ -107,7 +107,7 @@ docker rm -f potluck
 ## Build image locally (test)
 
 ```bash
-cd app && docker build -t potluck .
+docker build -t potluck .
 
 docker run --rm -p 20129:20129 \
   -v "$HOME/.potluck:/app/data" \

@@ -915,7 +915,7 @@ pm2 startup
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git
-cd potluck/app
+cd potluck
 docker build -t potluck .
 docker run -d --name potluck -p 20129:20129 \
   -v "$HOME/.potluck:/app/data" -e DATA_DIR=/app/data potluck
