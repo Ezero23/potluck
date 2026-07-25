@@ -55,17 +55,19 @@ export const OPENAI_COMPAT_BASE = "https://api.openai.com/v1";
 export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 
 // Antigravity OAuth client credentials (public CLI client — shared by registry + src/lib/oauth).
-// These are native-app OAuth credentials (no real secret). Configure your own via env:
+// These are native-app OAuth credentials (no real secret), the same public pair
+// Antigravity-compatible tooling embeds. Override with your own via env:
 //   ANTIGRAVITY_OAUTH_CLIENT_ID / ANTIGRAVITY_OAUTH_CLIENT_SECRET
 export const ANTIGRAVITY_OAUTH_CLIENT = {
   clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
-  clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "GOCSPX-REDACTED-ANTIGRAVITY-CONFIGURE-VIA-ENV"
+  clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "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"
 };
 
 // Gemini (Google) OAuth client credentials (public CLI client — shared by gemini, gemini-cli, src/lib/oauth).
-// Configure your own via env:
+// Same public pair google-gemini/gemini-cli embeds (installed-app client; per Google,
+// "the client secret is obviously not treated as a secret"). Override via env:
 //   GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET
 export const GOOGLE_OAUTH_CLIENT = {
   clientId: process.env.GOOGLE_OAUTH_CLIENT_ID || "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
-  clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "GOCSPX-REDACTED-GOOGLE-CONFIGURE-VIA-ENV"
+  clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "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"
 };

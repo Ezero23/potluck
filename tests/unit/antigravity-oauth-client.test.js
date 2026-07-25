@@ -3,11 +3,11 @@ import { describe, it, expect, vi } from "vitest";
 
 const EXPECTED = {
   clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
-  clientSecret: "GOCSPX-REDACTED-ANTIGRAVITY-CONFIGURE-VIA-ENV",
+  clientSecret: "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",
 };
 const GOOGLE = {
   clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
-  clientSecret: "GOCSPX-REDACTED-GOOGLE-CONFIGURE-VIA-ENV",
+  clientSecret: "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",
 };
 
 describe("antigravity oauth client (deduped)", () => {
