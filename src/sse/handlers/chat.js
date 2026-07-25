@@ -321,7 +321,7 @@ function getFirstTokenTimeout(profileName) {
  * Non-streaming (JSON) responses pass through immediately.
  */
 async function wrapFirstTokenTimeout(response, timeoutMs) {
-  if (!response.body || !response.status === 200) {
+  if (!response.body || response.status !== 200) {
     return { success: true, response };
   }
 
