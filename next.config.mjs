@@ -7,7 +7,7 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 const tracingRoot = process.env.NEXT_TRACING_ROOT_MODE === "workspace"
   ? join(projectRoot, "..")
   : projectRoot;
-const proxyClientMaxBodySize = process.env.NINEROUTER_PROXY_CLIENT_MAX_BODY_SIZE || "128mb";
+const proxyClientMaxBodySize = process.env.POTLUCK_PROXY_CLIENT_MAX_BODY_SIZE || process.env.NINEROUTER_PROXY_CLIENT_MAX_BODY_SIZE || "128mb";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -32,12 +32,23 @@ const nextConfig = {
     serverComponentsHmrCache: true,
   },
   webpack: (config, { isServer }) => {
-    // Ignore fs/path modules in browser bundle
+    // Ignore Node builtin modules in browser bundle. instrumentation → bootstrap
+    // pulls in fs/path/crypto/os/child_process/etc.; without these fallbacks webpack
+    // errors out on every page compile.
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         path: false,
+        child_process: false,
+        crypto: false,
+        os: false,
+        net: false,
+        https: false,
+        zlib: false,
+        stream: false,
+        dns: false,
+        http: false,
       };
     }
     // Exclude non-source dirs from watcher to reduce inotify load
