@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./images/potluck.png?1" alt="Potluck Dashboard" width="800"/>
+ 
 
   # Potluck · 百家饭
 
