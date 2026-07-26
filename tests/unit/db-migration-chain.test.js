@@ -5,9 +5,14 @@ import path from "node:path";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 let tempDir;
+let originalProcessListeners;
 const originalDataDir = process.env.DATA_DIR;
+const PROCESS_EVENTS = ["beforeExit", "SIGINT", "SIGTERM"];
 
 beforeEach(() => {
+  originalProcessListeners = new Map(
+    PROCESS_EVENTS.map((event) => [event, new Set(process.listeners(event))]),
+  );
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-mig-"));
   process.env.DATA_DIR = tempDir;
   // Reset global singleton so each test gets fresh adapter pointed at tempDir
@@ -19,6 +24,13 @@ afterEach(() => {
   // Close adapter to release file handles before rm
   try { global._dbAdapter?.instance?.close?.(); } catch {}
   delete global._dbAdapter;
+  for (const event of PROCESS_EVENTS) {
+    for (const listener of process.listeners(event)) {
+      if (!originalProcessListeners.get(event).has(listener)) {
+        process.off(event, listener);
+      }
+    }
+  }
   if (tempDir) fs.rmSync(tempDir, { recursive: true, force: true });
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -60,6 +72,55 @@ describe("Schema migrations", () => {
     expect(JSON.parse(settings.data)).toEqual({ foo: "bar" });
   });
 
+  it("removes the obsolete MITM localhost default while preserving other settings", async () => {
+    const { getAdapter } = await import("@/lib/db/driver.js");
+    const db = await getAdapter();
+    db.run(
+      `INSERT INTO settings(id, data) VALUES(1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data`,
+      [JSON.stringify({
+        foo: "bar",
+        mitmRouterBaseUrl: "http://localhost:20128",
+      })],
+    );
+    db.run(`UPDATE _meta SET value = '1' WHERE key = 'schemaVersion'`);
+    db.close?.();
+
+    delete global._dbAdapter;
+    vi.resetModules();
+    const { getAdapter: getAdapter2 } = await import("@/lib/db/driver.js");
+    const db2 = await getAdapter2();
+    const settings = JSON.parse(
+      db2.get(`SELECT data FROM settings WHERE id=1`).data,
+    );
+
+    expect(settings).toEqual({ foo: "bar" });
+  });
+
+  it.each([
+    "http://localhost:20127",
+    "http://localhost:20129",
+    "https://potluck.example.com",
+  ])("preserves a custom MITM endpoint: %s", async (mitmRouterBaseUrl) => {
+    const { getAdapter } = await import("@/lib/db/driver.js");
+    const db = await getAdapter();
+    db.run(
+      `INSERT INTO settings(id, data) VALUES(1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data`,
+      [JSON.stringify({ mitmRouterBaseUrl })],
+    );
+    db.run(`UPDATE _meta SET value = '1' WHERE key = 'schemaVersion'`);
+    db.close?.();
+
+    delete global._dbAdapter;
+    vi.resetModules();
+    const { getAdapter: getAdapter2 } = await import("@/lib/db/driver.js");
+    const db2 = await getAdapter2();
+    const settings = JSON.parse(
+      db2.get(`SELECT data FROM settings WHERE id=1`).data,
+    );
+
+    expect(settings.mitmRouterBaseUrl).toBe(mitmRouterBaseUrl);
+  });
+
   it("fresh DB + legacy db.json → imports data automatically", async () => {
     // Simulate user upgrading: place legacy JSON in DATA_DIR before first boot
     const legacy = {
@@ -81,6 +142,24 @@ describe("Schema migrations", () => {
 
     const aliases = db.all(`SELECT * FROM kv WHERE scope='modelAliases'`);
     expect(aliases).toHaveLength(1);
+  });
+
+  it("removes the obsolete MITM default while importing legacy JSON", async () => {
+    const legacy = {
+      settings: {
+        foo: "legacy-value",
+        mitmRouterBaseUrl: "http://localhost:20128",
+      },
+    };
+    fs.writeFileSync(path.join(tempDir, "db.json"), JSON.stringify(legacy));
+
+    const { getAdapter } = await import("@/lib/db/driver.js");
+    const db = await getAdapter();
+    const settings = JSON.parse(
+      db.get(`SELECT data FROM settings WHERE id=1`).data,
+    );
+
+    expect(settings).toEqual({ foo: "legacy-value" });
   });
 
   it("auto-sync re-creates missing index when DB lacks it", async () => {

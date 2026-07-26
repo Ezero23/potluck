@@ -1,109 +1,103 @@
-# Claude Code 集成
+# Claude Code
 
-将 百家饭 与 Claude Code CLI 集成,通过 百家饭 的智能路由系统转发你的 Anthropic API 请求。
+Potluck 为 Claude Code 提供 Anthropic 兼容的 Messages API。推荐通过
+Potluck 仪表盘配置；它写入的也是 Anthropic 为 LLM Gateway 定义的环境变量。
 
-## 前置要求
+## 开始前
 
-- 已安装 Claude Code CLI
-- 百家饭 本地运行或已配置云端 endpoint
-- 来自 百家饭 仪表盘的 API key
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 按照 [Claude Code 官方安装文档](https://docs.anthropic.com/en/docs/claude-code/getting-started)
+   安装 Claude Code。
 
-## 设置
+模型 ID 由你的 Potluck 实例决定。请查询模型列表或在仪表盘中选择，不要从
+教程中照抄固定模型名。
 
-### 1. 配置环境变量
+## 自动配置
 
-在 shell 配置文件(`~/.bashrc`、`~/.zshrc` 或 `~/.bash_profile`)中设置以下环境变量:
+1. 打开 `http://localhost:21023/dashboard/cli-tools`。
+2. 展开 **Claude Code**。
+3. 选择本地端点和 API Key。
+4. 将 Opus、Sonnet、Haiku 别名映射到 Potluck 中实际可用的模型。
+5. 点击 **Apply settings**。
 
-```bash
-# 百家饭 的 Base URL
-export ANTHROPIC_BASE_URL="http://localhost:20129/v1"
+Potluck 会将这些值合并到 `~/.claude/settings.json` 的 `env` 对象中，
+并保留其他无关的 Claude Code 设置。
 
-# 可选: 为别名设置默认模型
-export ANTHROPIC_DEFAULT_OPUS_MODEL="cc/claude-opus-4-5-20251101"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="cc/claude-sonnet-4-5-20250929"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="cc/claude-haiku-4-5-20251001"
-```
-
-### 2. 重新加载 Shell 配置
-
-```bash
-source ~/.zshrc  # 或 ~/.bashrc
-```
-
-### 3. 验证配置
-
-检查环境变量是否设置正确:
+进入项目目录后启动：
 
 ```bash
-echo $ANTHROPIC_BASE_URL
+cd /你的/项目路径
+claude
 ```
 
-## 模型别名
+## 手动配置
 
-Claude Code 支持以下模型别名,映射到 百家饭 模型:
-
-| 别名 | 模型 | 环境变量 |
-|-------|-------|---------------------|
-| `opus` | Claude Opus 4.5 | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
-| `sonnet` | Claude Sonnet 4.5 | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
-| `haiku` | Claude Haiku 4.5 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
-
-## 使用示例
-
-### 使用模型别名
-
-```bash
-# 使用 Opus 模型
-claude --model opus "Explain quantum computing"
-
-# 使用 Sonnet 模型
-claude --model sonnet "Write a Python function"
-
-# 使用 Haiku 模型
-claude --model haiku "Quick code review"
-```
-
-### 使用完整模型名
-
-```bash
-claude --model cc/claude-opus-4-5-20251101 "Your prompt here"
-```
-
-## 配置文件
-
-Claude Code 将配置存储在 `~/.claude/settings.json`。如有需要可手动编辑:
+如果仪表盘无法访问 Claude Code 的配置目录，请将下面内容合并到
+`~/.claude/settings.json`：
 
 ```json
 {
-  "baseUrl": "http://localhost:20129/v1",
-  "defaultModel": "sonnet"
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:21023/v1",
+    "ANTHROPIC_AUTH_TOKEN": "YOUR_POTLUCK_API_KEY",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "MODEL_ID",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "MODEL_ID",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "MODEL_ID"
+  }
 }
 ```
 
-## 故障排除
+三个别名可以映射到不同模型，但必须使用当前 Potluck 实例返回的模型 ID。
+`ANTHROPIC_AUTH_TOKEN` 是 Potluck 网关的认证密钥，不要在这里填写上游
+提供商密钥。
 
-### 连接问题
+## 验证连接
 
-遇到连接错误时:
-
-1. 确认 百家饭 正在运行:`curl http://localhost:20129/health`
-2. 检查环境变量设置是否正确
-3. 确保防火墙没有阻止 20129 端口
-
-### 模型未找到
-
-出现 "model not found" 错误时:
-
-1. 确认模型名与 百家饭 配置一致
-2. 检查 百家饭 仪表盘中提供商连接是否激活
-3. 确认所连接的提供商中包含该模型
-
-## 云端 Endpoint
-
-使用 百家饭 云端 endpoint 而非 localhost:
+检查 Potluck：
 
 ```bash
-export ANTHROPIC_BASE_URL="https://your-potluck-cloud.example.com"
+curl http://localhost:21023/api/health
 ```
 
-确保已在 百家饭 云端仪表盘中配置 API key。
+查询当前密钥可用的模型：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+然后执行一次非交互请求：
+
+```bash
+claude -p "只回复：Potluck connection OK"
+```
+
+## 远程部署
+
+远程实例应使用 HTTPS 地址：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://potluck.example.com/v1",
+    "ANTHROPIC_AUTH_TOKEN": "YOUR_POTLUCK_API_KEY"
+  }
+}
+```
+
+暴露公网前，请先在 **Dashboard → Endpoint** 中开启端点 API Key 验证。
+
+## 故障排查
+
+- **连接被拒绝：**确认 Potluck 正在 `21023` 端口运行。
+- **返回 401：**重新选择或创建 Potluck API Key；不要把 Anthropic
+  上游密钥当作 Potluck 网关密钥。
+- **模型不存在：**使用 `/v1/models` 返回的完整 ID 更新模型别名映射。
+- **Claude 仍进入常规登录流程：**确认 `ANTHROPIC_BASE_URL` 和
+  `ANTHROPIC_AUTH_TOKEN` 都位于 `env` 对象内。
+- **远程连接失败：**使用 HTTPS；`localhost` 指运行 Claude Code 的机器。
+
+这些环境变量的上游含义可参考 Anthropic 的
+[LLM Gateway 官方文档](https://docs.anthropic.com/en/docs/claude-code/llm-gateway)。

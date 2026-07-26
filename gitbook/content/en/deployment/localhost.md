@@ -1,164 +1,158 @@
-# 🏠 Localhost Deployment
+# Local Deployment
 
-Run Potluck on your local machine for development and personal use.
-
----
-
-## 📦 Installation
-
-Install Potluck globally via npm:
-
-```bash
-npm install -g potluck
-```
-
-**Requirements:**
-- Node.js 20 or higher
-- npm 9 or higher
+Use this path for development, evaluation, and personal use on one computer.
+This page covers a source checkout. For the packaged desktop command, install
+`potluck-cli` as described in the project README.
 
 ---
 
-## 🚀 Starting the Server
+## Install
 
-Start Potluck with a single command:
+Requirements:
 
-```bash
-potluck
-```
-
-The dashboard will automatically open in your browser at `http://localhost:3000`
-
-**Default Configuration:**
-- **Dashboard**: `http://localhost:3000`
-- **API Endpoint**: `http://localhost:20129/v1`
-- **Data Directory**: `~/.potluck`
-
----
-
-## 🔧 Configuration
-
-### Custom Data Directory
-
-Set a custom data directory using environment variable:
+- Node.js 22
+- npm
+- Git
 
 ```bash
-DATA_DIR=/path/to/data potluck
-```
-
-### Custom Port
-
-The API port (20129) and dashboard port (3000) are configured in the application. To change them, you'll need to modify the source code or use environment variables if supported.
-
----
-
-## 🛑 Stopping the Server
-
-Press `Ctrl+C` in the terminal where Potluck is running.
-
-```bash
-# In the terminal running potluck
-^C  # Press Ctrl+C
-```
-
-The server will gracefully shut down and save all data.
-
----
-
-## 🔄 Restarting the Server
-
-Simply run the start command again:
-
-```bash
-potluck
-```
-
-All your configurations, API keys, and combos are preserved in the data directory.
-
----
-
-## 📊 Updating Potluck
-
-Update to the latest version:
-
-```bash
-npm update -g potluck
-```
-
-Check your current version:
-
-```bash
-npm list -g potluck
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
 ```
 
 ---
 
-## 🔍 Troubleshooting
-
-### Port Already in Use
-
-If port 20129 or 3000 is already in use:
+## Start development mode
 
 ```bash
-# Find process using the port (macOS/Linux)
-lsof -i :20129
-lsof -i :3000
-
-# Kill the process
-kill -9 <PID>
+npm run dev
 ```
 
-### Permission Errors
+Open the dashboard manually:
 
-If you encounter permission errors during installation:
+```text
+http://localhost:21023/dashboard
+```
+
+Client base URL:
+
+```text
+http://localhost:21023/v1
+```
+
+Health check:
 
 ```bash
-# Use sudo (not recommended)
-sudo npm install -g potluck
-
-# Or fix npm permissions (recommended)
-mkdir ~/.npm-global
-npm config set prefix '~/.npm-global'
-echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
-source ~/.bashrc
+curl http://localhost:21023/api/health
 ```
 
-### Data Directory Issues
+Expected response:
 
-If the data directory is not accessible:
-
-```bash
-# Check permissions
-ls -la ~/.potluck
-
-# Fix permissions
-chmod 755 ~/.potluck
+```json
+{"ok":true}
 ```
+
+The development script explicitly uses the project default port `21023`.
 
 ---
 
-## 📁 Data Directory Structure
+## Configure a provider and client
 
-```
-~/.potluck/
-├── db.json           # Main database (providers, combos, settings)
-├── logs/             # Application logs
-└── cache/            # Temporary cache files
-```
+1. Sign in with the initial password `123456`, unless `INITIAL_PASSWORD` was
+   set before the first start.
+2. Change the password from the application settings.
+3. Open **Dashboard → Providers**, add a connection, and run its test.
+4. Open **Dashboard → Endpoint** to create a Potluck key if endpoint API-key
+   enforcement is enabled.
+5. Configure a compatible client with the local `/v1` base URL and an available
+   model or combo name.
 
-**Backup Your Data:**
-
-```bash
-# Backup
-cp -r ~/.potluck ~/.potluck.backup
-
-# Restore
-cp -r ~/.potluck.backup ~/.potluck
-```
+Provider access, quota, and billing remain the provider's responsibility.
 
 ---
 
-## 🔗 Next Steps
+## Stop and restart
 
-- [Connect Providers](/providers/subscription.md)
-- [Create Combos](/features/combos.md)
-- [Integrate with CLI Tools](/integration/cursor.md)
+Press `Ctrl+C` in the terminal running `npm run dev`. Start it again with the
+same command.
+
+Application data remains in `DATA_DIR`; stopping the server does not remove it.
+
+---
+
+## Data and backups
+
+When `DATA_DIR` is unset:
+
+- macOS/Linux: `~/.potluck`
+- Windows: `%APPDATA%\potluck`
+
+Current storage:
+
+```text
+${DATA_DIR}/
+└── db/
+    ├── data.sqlite
+    └── backups/
+```
+
+Legacy JSON files may remain after an upgrade because they are retained as
+migration inputs. They are not the active database.
+
+Before upgrading, stop Potluck and back up the complete `DATA_DIR`.
+
+---
+
+## Update the source checkout
+
+Review the release notes and back up `DATA_DIR` first. Then:
+
+```bash
+git pull --ff-only
+npm ci
+npm run build
+```
+
+Run `npm run dev` again after the build succeeds.
+
+---
+
+## Troubleshooting
+
+### Port `21023` is occupied
+
+On macOS or Linux:
+
+```bash
+lsof -i :21023
+```
+
+Stop the owning process gracefully. Avoid `kill -9` unless normal termination
+has already failed.
+
+### Data directory is not writable
+
+Check the directory selected by `DATA_DIR`. On macOS or Linux:
+
+```bash
+ls -ld "$HOME/.potluck"
+```
+
+Do not make credential-containing data world-readable.
+
+### A client cannot connect
+
+- Confirm `curl http://localhost:21023/api/health` succeeds.
+- Confirm the client base URL ends in `/v1` where required.
+- Confirm the model ID is returned by this Potluck instance.
+- If endpoint-key enforcement is enabled, supply an active Potluck endpoint
+  key.
+
+---
+
+## Next steps
+
+- [Connect subscription providers](../providers/subscription.md)
+- [Create combos](../features/combos.md)
+- [Connect a compatible client](../integration/other-tools.md)

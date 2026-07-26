@@ -168,6 +168,7 @@ function resolveRelaunchCommand() {
 export function spawnUpdaterAndExit(packageName = UPDATER_CONFIG.npmPackageName) {
   const updaterPath = ensureRuntimeUpdater(resolveBundledUpdaterPath());
   const isTray = process.env.TRAY_MODE === "1";
+  const appPort = parseInt(process.env.PORT, 10) || UPDATER_CONFIG.appPort;
   const relaunch = resolveRelaunchCommand();
   // Relaunch matching original env: tray stays tray, foreground stays foreground
   const relaunchArgs = isTray
@@ -181,7 +182,6 @@ export function spawnUpdaterAndExit(packageName = UPDATER_CONFIG.npmPackageName)
     env: {
       ...process.env,
       UPDATER_PKG_NAME: packageName,
-      UPDATER_PORT: String(UPDATER_CONFIG.statusPort),
       UPDATER_TAIL_LINES: String(UPDATER_CONFIG.statusLogTailLines),
       UPDATER_RETRIES: String(UPDATER_CONFIG.installRetries),
       UPDATER_RETRY_DELAY_MS: String(UPDATER_CONFIG.installRetryDelayMs),
@@ -189,7 +189,7 @@ export function spawnUpdaterAndExit(packageName = UPDATER_CONFIG.npmPackageName)
       UPDATER_WAIT_MIN_MS: String(UPDATER_CONFIG.waitForExitMinMs),
       UPDATER_WAIT_MAX_MS: String(UPDATER_CONFIG.waitForExitMaxMs),
       UPDATER_WAIT_CHECK_MS: String(UPDATER_CONFIG.waitForExitCheckMs),
-      UPDATER_APP_PORT: String(UPDATER_CONFIG.appPort),
+      UPDATER_APP_PORT: String(appPort),
       UPDATER_RELAUNCH: "1",
       UPDATER_RELAUNCH_CMD: relaunch.cmd,
       UPDATER_RELAUNCH_ARGS: JSON.stringify(relaunchArgs),

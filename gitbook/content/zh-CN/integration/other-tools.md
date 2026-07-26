@@ -1,261 +1,66 @@
-# 其他工具集成
+# OpenAI 兼容客户端
 
-百家饭 兼容任何支持 OpenAI API 格式的工具。本指南介绍各种工具和自定义应用的通用集成模式。
+能够自定义 OpenAI 兼容 Base URL、Bearer API Key 和模型 ID 的客户端，可以
+连接 Potluck。但工具只要写着“支持 OpenAI”并不代表一定兼容；它还必须支持
+自己所发送的接口和请求格式。
 
-## 概览
+## 连接参数
 
-百家饭 提供 OpenAI 兼容的 API endpoint,可与以下场景配合使用:
-- 自定义脚本与应用
-- API 客户端与测试工具
-- CLI 工具与实用程序
-- 第三方集成
-- 开发框架
-
-## 通用设置模式
-
-任何 OpenAI 兼容的工具都可以通过以下设置连接到 百家饭:
-
-**本地 百家饭:**
-```
-Base URL: http://localhost:20129/v1
-API Key: your-api-key-from-dashboard
-Model: 任意 百家饭 模型(cc/*, cx/*, glm/*, 等)
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model: MODEL_ID_FROM_POTLUCK
 ```
 
-**云端 百家饭:**
-```
-Base URL: https://your-potluck-cloud.example.com/v1
-API Key: your-api-key-from-dashboard
-Model: 任意 百家饭 模型(cc/*, cx/*, glm/*, 等)
-```
+远程部署时，将 Base URL 换成 `https://potluck.example.com/v1`。
 
-## 可用模型
+在 **Dashboard → Endpoint** 创建网关密钥。客户端既然连接 Potluck，就不要
+填写上游提供商密钥。
 
-### Claude 模型(Anthropic)
-- `cc/claude-opus-4-5-20251101`
-- `cc/claude-sonnet-4-20250514`
-- `cc/claude-haiku-4-20250514`
-
-### DeepSeek 模型
-- `cx/deepseek-chat`
-- `cx/deepseek-reasoner`
-
-### GLM 模型(Zhipu AI)
-- `glm/glm-4-plus`
-- `glm/glm-4-flash`
-
-## 集成示例
-
-### Python 使用 OpenAI SDK
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="your-api-key-from-dashboard",
-    base_url="http://localhost:20129/v1"
-)
-
-response = client.chat.completions.create(
-    model="cc/claude-sonnet-4-20250514",
-    messages=[
-        {"role": "user", "content": "Hello, how are you?"}
-    ]
-)
-
-print(response.choices[0].message.content)
-```
-
-### Node.js 使用 OpenAI SDK
-
-```javascript
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: "your-api-key-from-dashboard",
-  baseURL: "http://localhost:20129/v1"
-});
-
-const response = await client.chat.completions.create({
-  model: "cc/claude-sonnet-4-20250514",
-  messages: [
-    { role: "user", content: "Hello, how are you?" }
-  ]
-});
-
-console.log(response.choices[0].message.content);
-```
-
-### cURL 命令
+## 查询模型
 
 ```bash
-curl http://localhost:20129/v1/chat/completions \
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+使用一个完整的 `data[].id`。实际模型取决于该 Potluck 实例中的连接、别名、
+禁用项和 Combo 配置。
+
+## 使用 curl 测试
+
+临时设置终端变量：
+
+```bash
+export POTLUCK_BASE_URL="http://localhost:21023/v1"
+export POTLUCK_API_KEY="YOUR_POTLUCK_API_KEY"
+export POTLUCK_MODEL="MODEL_ID_FROM_POTLUCK"
+```
+
+发送非流式 Chat Completions 请求：
+
+```bash
+curl "$POTLUCK_BASE_URL/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-from-dashboard" \
-  -d '{
-    "model": "cc/claude-sonnet-4-20250514",
-    "messages": [
-      {"role": "user", "content": "Hello, how are you?"}
-    ]
-  }'
+  -H "Authorization: Bearer $POTLUCK_API_KEY" \
+  -d "{
+    \"model\": \"$POTLUCK_MODEL\",
+    \"messages\": [
+      {\"role\": \"user\", \"content\": \"只回复：Potluck connection OK\"}
+    ],
+    \"stream\": false
+  }"
 ```
 
-### HTTP 客户端(Postman、Insomnia)
+应先通过这个测试，再配置第三方工具。这样可以区分 Potluck 或提供商问题与
+客户端自身的配置问题。
 
-**Request:**
-```
-POST http://localhost:20129/v1/chat/completions
-```
+## Python OpenAI SDK
 
-**Headers:**
-```
-Content-Type: application/json
-Authorization: Bearer your-api-key-from-dashboard
-```
-
-**Body:**
-```json
-{
-  "model": "cc/claude-sonnet-4-20250514",
-  "messages": [
-    {"role": "user", "content": "Hello, how are you?"}
-  ],
-  "temperature": 0.7,
-  "max_tokens": 1000
-}
-```
-
-### LangChain 集成
-
-```python
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
-
-llm = ChatOpenAI(
-    model_name="cc/claude-sonnet-4-20250514",
-    openai_api_key="your-api-key-from-dashboard",
-    openai_api_base="http://localhost:20129/v1",
-    temperature=0.7
-)
-
-messages = [HumanMessage(content="Explain quantum computing")]
-response = llm(messages)
-print(response.content)
-```
-
-### LlamaIndex 集成
-
-```python
-from llama_index.llms import OpenAI
-
-llm = OpenAI(
-    model="cc/claude-sonnet-4-20250514",
-    api_key="your-api-key-from-dashboard",
-    api_base="http://localhost:20129/v1"
-)
-
-response = llm.complete("What is machine learning?")
-print(response.text)
-```
-
-## 自定义脚本示例
-
-### 批处理脚本
-
-```python
-import openai
-import json
-
-openai.api_key = "your-api-key-from-dashboard"
-openai.api_base = "http://localhost:20129/v1"
-
-def process_batch(prompts, model="cx/deepseek-chat"):
-    results = []
-    for prompt in prompts:
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        results.append({
-            "prompt": prompt,
-            "response": response.choices[0].message.content
-        })
-    return results
-
-prompts = [
-    "Explain AI in one sentence",
-    "What is machine learning?",
-    "Define neural networks"
-]
-
-results = process_batch(prompts)
-print(json.dumps(results, indent=2))
-```
-
-### 流式响应处理
-
-```javascript
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: "your-api-key-from-dashboard",
-  baseURL: "http://localhost:20129/v1"
-});
-
-async function streamResponse(prompt) {
-  const stream = await client.chat.completions.create({
-    model: "cc/claude-sonnet-4-20250514",
-    messages: [{ role: "user", content: prompt }],
-    stream: true
-  });
-
-  for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content || "";
-    process.stdout.write(content);
-  }
-}
-
-streamResponse("Write a short story about AI");
-```
-
-### 多模型对比
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="your-api-key-from-dashboard",
-    base_url="http://localhost:20129/v1"
-)
-
-models = [
-    "cc/claude-sonnet-4-20250514",
-    "cx/deepseek-chat",
-    "glm/glm-4-plus"
-]
-
-prompt = "Explain quantum computing in simple terms"
-
-for model in models:
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    print(f"\n=== {model} ===")
-    print(response.choices[0].message.content)
-```
-
-## 常见集成模式
-
-### 环境变量
-
-安全地存储凭据:
+安装当前 SDK：
 
 ```bash
-# .env file
-ROUTER_API_KEY=your-api-key-from-dashboard
-ROUTER_BASE_URL=http://localhost:20129/v1
-ROUTER_MODEL=cc/claude-sonnet-4-20250514
+python -m pip install openai
 ```
 
 ```python
@@ -263,154 +68,109 @@ import os
 from openai import OpenAI
 
 client = OpenAI(
-    api_key=os.getenv("ROUTER_API_KEY"),
-    base_url=os.getenv("ROUTER_BASE_URL")
-)
-```
-
-### 错误处理
-
-```python
-from openai import OpenAI, OpenAIError
-
-client = OpenAI(
-    api_key="your-api-key",
-    base_url="http://localhost:20129/v1"
+    api_key=os.environ["POTLUCK_API_KEY"],
+    base_url=os.getenv("POTLUCK_BASE_URL", "http://localhost:21023/v1"),
 )
 
-try:
-    response = client.chat.completions.create(
-        model="cc/claude-sonnet-4-20250514",
-        messages=[{"role": "user", "content": "Hello"}]
-    )
-    print(response.choices[0].message.content)
-except OpenAIError as e:
-    print(f"Error: {e}")
-```
-
-### 重试逻辑
-
-```python
-import time
-from openai import OpenAI, RateLimitError
-
-client = OpenAI(
-    api_key="your-api-key",
-    base_url="http://localhost:20129/v1"
+response = client.chat.completions.create(
+    model=os.environ["POTLUCK_MODEL"],
+    messages=[
+        {"role": "user", "content": "只回复：Potluck connection OK"}
+    ],
 )
 
-def chat_with_retry(prompt, max_retries=3):
-    for attempt in range(max_retries):
-        try:
-            response = client.chat.completions.create(
-                model="cc/claude-sonnet-4-20250514",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except RateLimitError:
-            if attempt < max_retries - 1:
-                time.sleep(2 ** attempt)  # Exponential backoff
-            else:
-                raise
+print(response.choices[0].message.content)
 ```
 
-## 故障排除
+## JavaScript OpenAI SDK
 
-### 连接问题
+安装当前 SDK：
 
-**问题:** 无法连接到 百家饭
 ```bash
-# 检查 百家饭 是否运行
-curl http://localhost:20129/health
-
-# 预期响应:
-{"status": "ok"}
+npm install openai
 ```
 
-**方案:**
-- 确认 百家饭 正在运行
-- 检查 20129 端口未被阻止
-- 确保 base URL 正确(包含 `/v1`)
+```javascript
+import OpenAI from "openai";
 
-### 认证错误
+const client = new OpenAI({
+  apiKey: process.env.POTLUCK_API_KEY,
+  baseURL: process.env.POTLUCK_BASE_URL ?? "http://localhost:21023/v1",
+});
 
-**问题:** 401 Unauthorized
-```
-Error: Invalid API key
-```
+const response = await client.chat.completions.create({
+  model: process.env.POTLUCK_MODEL,
+  messages: [
+    { role: "user", content: "只回复：Potluck connection OK" },
+  ],
+});
 
-**方案:**
-- 在仪表盘中确认 API key
-- 检查 Authorization 头格式:`Bearer your-api-key`
-- 确保 API key 中没有多余的空格或换行
-
-### 模型未找到
-
-**问题:** 404 Model not found
-```
-Error: Model 'cc/claude-opus' not found
+console.log(response.choices[0].message.content);
 ```
 
-**方案:**
-- 使用精确的模型名(大小写敏感)
-- 查看可用模型:`curl http://localhost:20129/v1/models`
-- 确认套餐中已启用该模型
+## HTTP 客户端
 
-### 超时问题
+Postman、Insomnia 或类似客户端填写：
 
-**问题:** 请求超时
-```
-Error: Request timed out after 30s
-```
-
-**方案:**
-- 在客户端配置中增大超时
-- 时间敏感任务使用更快的模型
-- 检查到 百家饭 的网络连接
-
-### 速率限制
-
-**问题:** 429 Too Many Requests
-```
-Error: Rate limit exceeded
+```text
+Method: POST
+URL: http://localhost:21023/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer YOUR_POTLUCK_API_KEY
 ```
 
-**方案:**
-- 实现指数退避
-- 降低请求频率
-- 在仪表盘中查看速率限制
-- 考虑升级套餐
+Body：
 
-## 最佳实践
+```json
+{
+  "model": "MODEL_ID_FROM_POTLUCK",
+  "messages": [
+    {
+      "role": "user",
+      "content": "只回复：Potluck connection OK"
+    }
+  ],
+  "stream": false
+}
+```
 
-### 安全
-- 将 API key 存储在环境变量中
-- 绝不将 API key 提交到版本控制
-- 云端部署使用 HTTPS
-- 定期轮换 API keys
+## 兼容 API 类型
 
-### 性能
-- 根据任务复杂度选择合适的模型
-- 对重复查询实现缓存
-- 长响应使用流式输出
-- 尽可能批量请求
+Potluck 提供的兼容路由包括：
 
-### 错误处理
-- 始终用 try-catch 块包裹
-- 添加带指数退避的重试逻辑
-- 记录错误以便调试
-- 提供回退机制
+| 客户端格式 | 路由 |
+| --- | --- |
+| OpenAI Chat Completions | `/v1/chat/completions` |
+| OpenAI Responses | `/v1/responses` |
+| Anthropic Messages | `/v1/messages` |
+| 模型查询 | `/v1/models` |
+| Embeddings | `/v1/embeddings` |
+| 图片生成 | `/v1/images/generations` |
+| 语音生成 | `/v1/audio/speech` |
+| 语音转文字 | `/v1/audio/transcriptions` |
 
-### 成本优化
-- 简单任务选择高性价比的模型
-- 适当时缓存响应
-- 在仪表盘监控使用
-- 在代码中设置请求上限
+存在某条路由不代表每个上游模型都支持该能力。请求时必须选择类型和提供商
+能力相匹配的模型。
 
-## 下一步
+## 故障排查
 
-- [配置 Cursor](cursor.md) 进行 IDE 集成
-- [设置 Continue](continue.md) 用于 VSCode
-- [探索 CLI 用法](../cli/basic-usage.md)
-- [了解模型选择](../models/overview.md)
-- [API 参考](../api/reference.md)
+- **连接被拒绝：**检查 `http://localhost:21023/api/health`。
+- **返回 401：**检查 Potluck 网关密钥和 Bearer 请求头。
+- **返回 404：**确认客户端 Base URL 只包含一次 `/v1`。
+- **模型错误：**查询 `/v1/models`，使用完整返回值。
+- **工具调用失败：**换成支持原生工具调用的模型。
+- **远程客户端无法连接：**使用 HTTPS；`localhost` 表示客户端所在机器。
+- **客户端没有 Base URL 字段：**不能假设它兼容 Potluck，请改用已有正式
+  文档的集成。
+
+## 安全要求
+
+- 将 API Key 保存在环境变量或客户端密钥存储中。
+- 不要提交 `.env` 文件。
+- 暴露公网前开启端点 API Key 验证。
+- 远程连接使用 HTTPS。
+- 将 Potluck 网关密钥与上游提供商凭据分开。
+
+LangChain、LlamaIndex 等框架的 API 变化很快。应从它们当前的 OpenAI
+兼容提供商文档开始，再应用本文开头的三个连接参数，不再复制容易过期的
+旧版代码。

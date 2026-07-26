@@ -1,17 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UPDATER_CONFIG } from "@/shared/constants/config";
+import { buildEndpointOptions } from "./cliEndpointOptions";
 
 const STORAGE_KEY = "potluck.cliToolEndpointPresets";
 const CUSTOM_VALUE = "__custom__";
 const SAVE_VALUE = "__save__";
-
-const ensureV1 = (url) => {
-  const trimmed = (url || "").replace(/\/+$/, "");
-  if (!trimmed) return "";
-  return /\/v1$/.test(trimmed) ? trimmed : `${trimmed}/v1`;
-};
 
 const readSavedPresets = () => {
   if (typeof window === "undefined") return [];
@@ -29,32 +23,6 @@ const writeSavedPresets = (presets) => {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
 };
 
-const buildOptions = ({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, cloudEnabled, cloudUrl, savedPresets, withV1 }) => {
-  const opts = [];
-  const wrap = (url) => (withV1 ? ensureV1(url) : (url || "").replace(/\/+$/, ""));
-  if (!requiresExternalUrl) {
-    const localUrl = wrap(`http://127.0.0.1:${UPDATER_CONFIG.appPort}`);
-    opts.push({ value: "local", label: localUrl, url: localUrl });
-  }
-  if (tunnelEnabled && tunnelPublicUrl) {
-    const u = wrap(tunnelPublicUrl);
-    opts.push({ value: "tunnel", label: u, url: u });
-  }
-  if (tailscaleEnabled && tailscaleUrl) {
-    const u = wrap(tailscaleUrl);
-    opts.push({ value: "tailscale", label: u, url: u });
-  }
-  if (cloudEnabled && cloudUrl) {
-    const u = wrap(cloudUrl);
-    opts.push({ value: "cloud", label: u, url: u });
-  }
-  savedPresets.forEach((p) => {
-    opts.push({ value: `saved:${p.name}`, label: p.baseUrl, url: p.baseUrl, saved: true });
-  });
-  opts.push({ value: CUSTOM_VALUE, label: "Custom URL...", url: "" });
-  return opts;
-};
-
 export default function BaseUrlSelect({
   value,
   onChange,
@@ -67,33 +35,49 @@ export default function BaseUrlSelect({
   cloudUrl = "",
   withV1 = true,
 }) {
-  const [savedPresets, setSavedPresets] = useState([]);
-  const [mode, setMode] = useState("");
-  const [customInput, setCustomInput] = useState("");
-  const initializedRef = useRef(false);
-
-  useEffect(() => {
-    setSavedPresets(readSavedPresets());
-  }, []);
-
-  const options = useMemo(
-    () => buildOptions({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, cloudEnabled, cloudUrl, savedPresets, withV1 }),
-    [requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, cloudEnabled, cloudUrl, savedPresets, withV1]
+  const [localBaseUrl] = useState(() =>
+    typeof window === "undefined" ? "" : window.location.origin
   );
+  const [savedPresets, setSavedPresets] = useState(readSavedPresets);
 
-  // Always default to first option (127.0.0.1) on mount, ignore persisted value
+  const options = useMemo(() => {
+    const endpointOptions = buildEndpointOptions({
+      localBaseUrl: localBaseUrl || "",
+      requiresExternalUrl,
+      tunnelEnabled,
+      tunnelPublicUrl,
+      tailscaleEnabled,
+      tailscaleUrl,
+      cloudEnabled,
+      cloudUrl,
+      savedPresets,
+      withV1,
+    });
+    endpointOptions.push({ value: CUSTOM_VALUE, label: "Custom URL...", url: "" });
+    return endpointOptions;
+  }, [
+    localBaseUrl,
+    requiresExternalUrl,
+    tunnelEnabled,
+    tunnelPublicUrl,
+    tailscaleEnabled,
+    tailscaleUrl,
+    cloudEnabled,
+    cloudUrl,
+    savedPresets,
+    withV1,
+  ]);
+
+  const initialOption = options.find((option) => option.value !== CUSTOM_VALUE);
+  const [mode, setMode] = useState(initialOption?.value || CUSTOM_VALUE);
+  const [customInput, setCustomInput] = useState("");
+  const initialUrlRef = useRef(initialOption?.url || "");
+  const onChangeRef = useRef(onChange);
+
+  // Synchronize the parent card with the endpoint shown as selected.
   useEffect(() => {
-    if (initializedRef.current) return;
-    if (options.length === 0) return;
-    initializedRef.current = true;
-    const first = options.find((o) => o.value !== CUSTOM_VALUE);
-    if (first) {
-      setMode(first.value);
-      onChange(first.url);
-    } else {
-      setMode(CUSTOM_VALUE);
-    }
-  }, [options, onChange]);
+    if (initialUrlRef.current) onChangeRef.current(initialUrlRef.current);
+  }, []);
 
   const handleSelect = (e) => {
     const next = e.target.value;

@@ -1,473 +1,285 @@
-# ☁️ Cloud Deployment
+# Server Deployment
 
-Deploy Potluck on VPS or Docker for remote access and production use.
+This guide deploys one self-hosted Potluck instance on a Linux server. Potluck
+does not provide a hosted cloud service; the domain, server, TLS certificate,
+provider accounts, and operating costs are yours.
+
+For a new installation, Docker with a persistent data directory is the
+recommended path.
 
 ---
 
-## 🖥️ VPS Deployment
+## Before you start
 
-### Prerequisites
+You need:
 
-- Ubuntu 20.04+ or similar Linux distribution
-- Node.js 20+
-- Git
-- Root or sudo access
+- a Linux server with Docker;
+- a domain name if the instance will be used over the internet;
+- permission to create DNS records and firewall rules;
+- at least one model-provider account that you are authorized to use.
 
-### Step 1: Clone Repository
+Choose unique values for:
+
+```bash
+openssl rand -hex 32
+```
+
+Use the generated value as `JWT_SECRET`, and choose a separate strong dashboard
+password.
+
+---
+
+## Docker deployment
+
+### 1. Create a private data directory
+
+```bash
+sudo install -d -m 700 /var/lib/potluck
+sudo chown "$(id -u):$(id -g)" /var/lib/potluck
+```
+
+### 2. Start the container
+
+Bind Potluck to loopback when Nginx runs on the same server:
+
+```bash
+docker run -d \
+  --name potluck \
+  --restart unless-stopped \
+  -p 127.0.0.1:21023:21023 \
+  -e DATA_DIR=/app/data \
+  -e JWT_SECRET="REPLACE_WITH_RANDOM_SECRET" \
+  -e INITIAL_PASSWORD="REPLACE_WITH_STRONG_PASSWORD" \
+  -v /var/lib/potluck:/app/data \
+  ghcr.io/ezero23/potluck:latest
+```
+
+The container listens on `21023`. Potluck serves the dashboard and compatible
+API routes through the same port.
+
+Check it locally on the server:
+
+```bash
+curl http://127.0.0.1:21023/api/health
+```
+
+Expected response:
+
+```json
+{"ok":true}
+```
+
+View logs with:
+
+```bash
+docker logs --tail 100 -f potluck
+```
+
+If the release image is unavailable for a version, build from the repository:
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git
 cd potluck
-```
-
-### Step 2: Install Dependencies
-
-```bash
-npm install
-```
-
-### Step 3: Build Application
-
-```bash
-npm run build
-```
-
-### Step 4: Configure Environment Variables
-
-Create a `.env` file or export variables:
-
-```bash
-export JWT_SECRET="your-secure-secret-change-this-to-random-string"
-export INITIAL_PASSWORD="your-secure-password"
-export DATA_DIR="/var/lib/potluck"
-export NODE_ENV="production"
-```
-
-**Environment Variables:**
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `JWT_SECRET` | Auto-generated | **MUST change in production!** Used for JWT token signing |
-| `INITIAL_PASSWORD` | `123456` | Dashboard login password |
-| `DATA_DIR` | `~/.potluck` | Database and data storage path |
-| `NODE_ENV` | `development` | Set to `production` for deployment |
-| `ENABLE_REQUEST_LOGS` | `false` | Enable debug request/response logs |
-
-### Step 5: Create Data Directory
-
-```bash
-sudo mkdir -p /var/lib/potluck
-sudo chown $USER:$USER /var/lib/potluck
-```
-
-### Step 6: Start Application
-
-```bash
-npm run start
-```
-
-### Step 7: Setup PM2 for Production
-
-PM2 keeps your application running and restarts it on crashes:
-
-```bash
-# Install PM2 globally
-npm install -g pm2
-
-# Start Potluck with PM2
-pm2 start npm --name potluck -- start
-
-# Save PM2 configuration
-pm2 save
-
-# Setup PM2 to start on system boot
-pm2 startup
-# Follow the instructions printed by the command above
-```
-
-**PM2 Management Commands:**
-
-```bash
-# View logs
-pm2 logs potluck
-
-# Restart application
-pm2 restart potluck
-
-# Stop application
-pm2 stop potluck
-
-# View status
-pm2 status
-
-# Monitor resources
-pm2 monit
-```
-
----
-
-## 🐳 Docker Deployment
-
-### Option 1: Using Dockerfile
-
-Create a `Dockerfile` in the `app` directory:
-
-```dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy application files
-COPY . .
-
-# Build application
-RUN npm run build
-
-# Expose ports
-EXPOSE 3000 20128
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV DATA_DIR=/app/data
-
-# Create data directory
-RUN mkdir -p /app/data
-
-# Start application
-CMD ["npm", "run", "start"]
-```
-
-**Build and Run:**
-
-```bash
-# Build image
 docker build -t potluck .
-
-# Run container
-docker run -d \
-  --name potluck \
-  -p 3000:3000 \
-  -p 20128:20128 \
-  -e JWT_SECRET="your-secure-secret-change-this" \
-  -e INITIAL_PASSWORD="your-secure-password" \
-  -v potluck-data:/app/data \
-  potluck
 ```
 
-### Option 2: Docker Compose
-
-Create `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  potluck:
-    build: .
-    container_name: potluck
-    ports:
-      - "3000:3000"
-      - "20128:20128"
-    environment:
-      - NODE_ENV=production
-      - JWT_SECRET=your-secure-secret-change-this
-      - INITIAL_PASSWORD=your-secure-password
-      - DATA_DIR=/app/data
-    volumes:
-      - potluck-data:/app/data
-    restart: unless-stopped
-
-volumes:
-  potluck-data:
-```
-
-**Run with Docker Compose:**
-
-```bash
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Rebuild and restart
-docker-compose up -d --build
-```
+Then replace the image name in the run command with `potluck`.
 
 ---
 
-## 🌐 Reverse Proxy with Nginx
+## Docker Compose
 
-### Why Use Nginx?
-
-- SSL/TLS termination
-- Domain name mapping
-- Load balancing
-- Better security
-
-### Step 1: Install Nginx
+The repository includes `docker-compose.yml`. It builds Potluck from the
+checkout and also starts the optional Headroom service:
 
 ```bash
-sudo apt update
-sudo apt install nginx
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
 ```
 
-### Step 2: Configure Nginx
+Edit `.env` before starting:
 
-Create `/etc/nginx/sites-available/potluck`:
+```dotenv
+JWT_SECRET=REPLACE_WITH_RANDOM_SECRET
+INITIAL_PASSWORD=REPLACE_WITH_STRONG_PASSWORD
+PORT=21023
+NODE_ENV=production
+```
+
+Then run:
+
+```bash
+docker compose up -d --build
+docker compose ps
+curl http://127.0.0.1:21023/api/health
+```
+
+The included Compose file publishes Potluck on `21023` and the optional
+Headroom service on `8787`. Restrict both with the host firewall when the
+server is public; only the reverse proxy should be internet-facing.
+
+Before enabling the public reverse proxy, connect through an SSH tunnel:
+
+```bash
+ssh -L 21023:127.0.0.1:21023 user@your-server
+```
+
+Open `http://localhost:21023/dashboard`, change the dashboard password, and use
+**Dashboard → Endpoint** to create a Potluck endpoint key and enable API-key
+enforcement.
+
+---
+
+## Nginx and HTTPS
+
+Install Nginx and Certbot using your distribution's supported packages. Point
+the domain's DNS record to the server before requesting a certificate.
+
+Use one upstream for both the dashboard and API:
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
-
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
+    server_name potluck.example.com;
+    return 301 https://$host$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
+    listen 443 ssl;
+    server_name potluck.example.com;
 
-    # SSL certificates (use certbot to generate)
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/potluck.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/potluck.example.com/privkey.pem;
 
-    # SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
+    client_max_body_size 128m;
 
-    # Proxy to Potluck
     location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        
-        # SSE support - CRITICAL for streaming
-        proxy_buffering off;
-        proxy_read_timeout 86400;
-    }
-
-    # API endpoint
-    location /v1 {
-        proxy_pass http://localhost:20128;
+        proxy_pass http://127.0.0.1:21023;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # SSE support - CRITICAL for streaming
         proxy_buffering off;
         proxy_read_timeout 86400;
     }
 }
 ```
 
-### Step 3: Enable Site
+Replace `potluck.example.com`, test the Nginx configuration, and reload Nginx:
 
 ```bash
-# Create symbolic link
-sudo ln -s /etc/nginx/sites-available/potluck /etc/nginx/sites-enabled/
-
-# Test configuration
 sudo nginx -t
-
-# Reload Nginx
 sudo systemctl reload nginx
 ```
 
-### Step 4: Setup SSL with Let's Encrypt
+The public URLs are then:
 
-```bash
-# Install certbot
-sudo apt install certbot python3-certbot-nginx
-
-# Obtain SSL certificate
-sudo certbot --nginx -d your-domain.com
-
-# Auto-renewal is configured automatically
-# Test renewal
-sudo certbot renew --dry-run
+```text
+Dashboard: https://potluck.example.com/dashboard
+API base:  https://potluck.example.com/v1
+Health:    https://potluck.example.com/api/health
 ```
+
+There is no separate dashboard port.
 
 ---
 
-## 🔒 Security Considerations
+## Security checklist
 
-### 1. Change Default Credentials
+Before allowing external access:
 
-**CRITICAL:** Change `JWT_SECRET` and `INITIAL_PASSWORD` before deployment:
+- replace the default dashboard password;
+- set a persistent, random `JWT_SECRET`;
+- keep dashboard login enabled;
+- enable Potluck endpoint API-key enforcement;
+- use HTTPS;
+- expose only ports `80` and `443` publicly;
+- keep `21023` and the optional Headroom port private;
+- protect `.env`, `DATA_DIR`, logs, and backups;
+- do not reuse provider credentials as Potluck endpoint keys;
+- review release notes before upgrading.
 
-```bash
-# Generate secure JWT secret
-openssl rand -base64 32
-
-# Use this value for JWT_SECRET
-export JWT_SECRET="generated-secret-here"
-```
-
-### 2. Firewall Configuration
-
-```bash
-# Allow SSH
-sudo ufw allow 22/tcp
-
-# Allow HTTP/HTTPS (if using Nginx)
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-
-# If NOT using reverse proxy, allow Potluck ports
-sudo ufw allow 3000/tcp
-sudo ufw allow 20128/tcp
-
-# Enable firewall
-sudo ufw enable
-```
-
-### 3. Restrict Dashboard Access
-
-If you only need API access, restrict dashboard port:
-
-```bash
-# Only allow localhost access to dashboard
-sudo ufw deny 3000/tcp
-```
-
-Access dashboard via SSH tunnel:
-
-```bash
-ssh -L 3000:localhost:3000 user@your-server.com
-# Then open http://localhost:3000 in your browser
-```
-
-### 4. Regular Updates
-
-```bash
-# Update system packages
-sudo apt update && sudo apt upgrade -y
-
-# Update Potluck
-cd /path/to/potluck
-git pull
-npm install
-npm run build
-pm2 restart potluck
-```
-
-### 5. Backup Strategy
-
-```bash
-# Backup data directory
-tar -czf potluck-backup-$(date +%Y%m%d).tar.gz /var/lib/potluck
-
-# Automated daily backup (add to crontab)
-0 2 * * * tar -czf /backups/potluck-$(date +\%Y\%m\%d).tar.gz /var/lib/potluck
-```
+Potluck credentials grant access to third-party services. Treat the complete
+data directory as sensitive.
 
 ---
 
-## 📊 Monitoring
+## Back up and update
 
-### Check Application Status
+The active database is:
 
-```bash
-# PM2 status
-pm2 status
-
-# View logs
-pm2 logs potluck --lines 100
-
-# Monitor resources
-pm2 monit
+```text
+/var/lib/potluck/db/data.sqlite
 ```
 
-### Nginx Logs
+Stop the container before taking a filesystem-level backup:
 
 ```bash
-# Access logs
-sudo tail -f /var/log/nginx/access.log
-
-# Error logs
-sudo tail -f /var/log/nginx/error.log
+sudo install -d -m 700 /var/backups
+docker stop potluck
+sudo tar -C /var/lib -czf "/var/backups/potluck-$(date +%Y%m%d-%H%M%S).tar.gz" potluck
+docker start potluck
 ```
 
-### System Resources
+Verify that the backup exists and can be listed:
 
 ```bash
-# CPU and memory usage
-htop
-
-# Disk usage
-df -h
-
-# Network connections
-netstat -tulpn | grep -E '3000|20128'
+sudo tar -tzf /var/backups/potluck-YYYYMMDD-HHMMSS.tar.gz | head
 ```
+
+To update an image-based installation:
+
+1. Read the release notes.
+2. Back up `/var/lib/potluck`.
+3. Pull the intended image tag.
+4. Recreate the container with the same environment and data mount.
+5. Check `/api/health`, sign in, and test one provider before restoring normal
+   traffic.
+
+Avoid unattended upgrades for a service that stores credentials and routes
+billable requests.
 
 ---
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
-### Application Won't Start
-
-```bash
-# Check logs
-pm2 logs potluck
-
-# Check if ports are in use
-sudo lsof -i :3000
-sudo lsof -i :20128
-
-# Check environment variables
-pm2 env potluck
-```
-
-### Nginx 502 Bad Gateway
+### Nginx returns 502
 
 ```bash
-# Check if Potluck is running
-pm2 status
-
-# Check Nginx error logs
-sudo tail -f /var/log/nginx/error.log
-
-# Test Nginx configuration
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+curl http://127.0.0.1:21023/api/health
 sudo nginx -t
 ```
 
-### SSE Streaming Not Working
+### Streaming is delayed
 
-Ensure `proxy_buffering off` is set in Nginx configuration for SSE support.
+Confirm that the active Nginx location has `proxy_buffering off` and a
+sufficient `proxy_read_timeout`.
 
-### Permission Denied Errors
+### The container cannot write data
 
 ```bash
-# Fix data directory permissions
-sudo chown -R $USER:$USER /var/lib/potluck
-chmod 755 /var/lib/potluck
+ls -ld /var/lib/potluck
+docker logs --tail 100 potluck
+```
+
+Do not solve a permission problem by making the data directory world-readable.
+
+### A client receives 401
+
+Confirm that it sends an active Potluck endpoint key, not a provider API key:
+
+```http
+Authorization: Bearer YOUR_POTLUCK_KEY
 ```
 
 ---
 
-## 🔗 Next Steps
+## Next steps
 
-- [Connect Providers](/providers/subscription.md)
-- [Setup Combos](/features/combos.md)
-- [Integrate with Tools](/integration/cursor.md)
+- [Connect subscription providers](../providers/subscription.md)
+- [Create combos](../features/combos.md)
+- [Connect a compatible client](../integration/other-tools.md)

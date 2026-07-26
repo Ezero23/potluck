@@ -7,7 +7,7 @@ import {
   enableTunnel, enableTailscale,
   isTunnelManuallyDisabled, isTunnelReconnecting, isTailscaleReconnecting,
   getTunnelService, getTailscaleService, setTunnelUnexpectedExitCallback,
-  killCloudflared, killOrphanedCloudflared, isCloudflaredRunning, ensureCloudflared,
+  killCloudflared, killOrphanedCloudflared, isCloudflaredRunning,
   isTailscaleRunning, isTailscaleRunningStrict, isDaemonAlive, startFunnel,
   checkInternet,
   RESTART_COOLDOWN_MS, NETWORK_SETTLE_MS,
@@ -16,6 +16,8 @@ import {
 import { getMitmStatus, startMitm, loadEncryptedPassword, initDbHooks, restoreToolDNS, removeAllDNSEntriesSync } from "@/mitm/manager";
 import { startQuotaAutoPing } from "@/shared/services/quotaAutoPing";
 import { syncToJson as syncMitmAliasCache } from "@/lib/mitmAliasCache";
+import { ensureOutboundProxyInitialized } from "@/lib/network/initOutboundProxy";
+import { APP_CONFIG } from "@/shared/constants/config";
 
 // Inject correct paths and DB hooks into manager.js (CJS) from ESM context
 (function bootstrapMitm() {
@@ -47,6 +49,7 @@ const g = global.__appSingleton ??= {
 
 export async function initializeApp() {
   try {
+    await ensureOutboundProxyInitialized();
     await cleanupProviderConnections();
     const settings = await getSettings();
 
@@ -84,8 +87,6 @@ export async function initializeApp() {
       process.on("exit", () => { try { removeAllDNSEntriesSync(); } catch { /* ignore */ } });
       g.signalHandlersRegistered = true;
     }
-
-    ensureCloudflared().catch(() => {});
 
     // Sync mitmAlias DB → JSON cache so standalone MITM server can read it
     syncMitmAliasCache().catch(() => {});
@@ -164,7 +165,7 @@ async function safeRestartTunnel(reason) {
   if (!await checkInternet()) return;
 
   console.log(`[Tunnel] safeRestart (${reason}) — tunnel unreachable${force ? " [force]" : ""}`);
-  const tunnelPort = parseInt(process.env.PORT, 10) || 20129;
+  const tunnelPort = parseInt(process.env.PORT, 10) || APP_CONFIG.defaultPort;
   try {
     await enableTunnel(tunnelPort);
     svc.lastRestartAt = Date.now();

@@ -1,16 +1,14 @@
 // Standalone detached updater process.
-// Spawns `npm i -g <pkg>@latest`, exposes progress via tiny HTTP server.
+// Spawns `npm i -g <pkg>@latest` and persists progress to the data directory.
 // Survives after parent Next server exits (detached + unref by spawner).
 
 const { spawn } = require("child_process");
-const http = require("http");
 const net = require("net");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
 const packageName = process.env.UPDATER_PKG_NAME || "potluck";
-const port = parseInt(process.env.UPDATER_PORT || "20129", 10);
 const tailLines = parseInt(process.env.UPDATER_TAIL_LINES || "8", 10);
 const maxRetries = parseInt(process.env.UPDATER_RETRIES || "3", 10);
 const retryDelayMs = parseInt(process.env.UPDATER_RETRY_DELAY_MS || "5000", 10);
@@ -18,7 +16,7 @@ const lingerMs = parseInt(process.env.UPDATER_LINGER_MS || "30000", 10);
 const waitMinMs = parseInt(process.env.UPDATER_WAIT_MIN_MS || "3000", 10);
 const waitMaxMs = parseInt(process.env.UPDATER_WAIT_MAX_MS || "15000", 10);
 const waitCheckMs = parseInt(process.env.UPDATER_WAIT_CHECK_MS || "500", 10);
-const appPort = parseInt(process.env.UPDATER_APP_PORT || "20128", 10);
+const appPort = parseInt(process.env.UPDATER_APP_PORT || "21023", 10);
 
 // Data directory (match mitm/paths.js logic)
 function getDataDir() {
@@ -63,29 +61,6 @@ function setPhase(phase) {
   state.phase = phase;
   persistStatus();
 }
-
-// HTTP server exposing status (browser polls this while Next server is dead)
-const server = http.createServer((req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-store");
-  if (req.url === "/update/status" || req.url === "/") {
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(state));
-    return;
-  }
-  res.statusCode = 404;
-  res.end("not found");
-});
-
-server.on("error", (e) => {
-  state.error = `status server error: ${e.message}`;
-  persistStatus();
-});
-
-server.listen(port, "127.0.0.1", () => {
-  persistStatus();
-  waitForAppExit().then(runInstall);
-});
 
 // Check if app port is still being listened on (= app server still alive)
 function isAppPortBusy() {
@@ -227,9 +202,11 @@ function finalize(success, exitCode, error) {
   state.finishedAt = Date.now();
   setPhase(success ? "done" : "error");
   if (success) relaunchApp();
-  // Linger so browser can poll final status, then exit & close the port
+  // Keep the detached process alive briefly so relaunch logging can finish.
   setTimeout(() => {
-    try { server.close(); } catch { /* ignore */ }
     process.exit(success ? 0 : 1);
   }, lingerMs);
 }
+
+persistStatus();
+waitForAppExit().then(runInstall);

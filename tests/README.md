@@ -1,25 +1,15 @@
-# Potluck Embeddings Tests
+# Potluck Test Suite
 
-Unit tests for the `/v1/embeddings` endpoint implementation.
+Vitest coverage for Potluck's local application, API handlers, routing, providers, translators, and persistence.
 
 ## Setup
 
-Vitest must be installed globally or in `/tmp/node_modules` (due to npm workspace hoisting from the root Next.js project):
-
-```bash
-cd /tmp && npm install vitest
-```
+Install the root and test dependencies with the repository's normal `npm install` flow.
 
 ## Running Tests
 
 ```bash
-cd tests/
-NODE_PATH=/tmp/node_modules /tmp/node_modules/.bin/vitest run --reporter=verbose --config ./vitest.config.js
-```
-
-Or using the package script (from the `tests/` directory):
-
-```bash
+cd /path/to/potluck
 npm test
 ```
 
@@ -28,9 +18,9 @@ npm test
 | File | What it tests |
 |------|--------------|
 | `unit/embeddingsCore.test.js` | `open-sse/handlers/embeddingsCore.js` — core logic: body builder, URL router, headers, handler flow |
-| `unit/embeddings.cloud.test.js` | `cloud/src/handlers/embeddings.js` — cloud worker handler: auth, validation, rate limits, CORS |
+| `unit/embeddings-handler.test.js` | Local Next.js/SSE handler: auth, validation, fallback, CORS, and route delegation |
 
-## Coverage Summary (59 tests)
+## Embeddings coverage
 
 ### `embeddingsCore.test.js` (36 tests)
 - `buildEmbeddingsBody`: single string, array, encoding_format, default float
@@ -41,11 +31,10 @@ npm test
 - `handleEmbeddingsCore` errors: 400/429/500, network error, invalid JSON
 - `handleEmbeddingsCore` token refresh: 401 retry, graceful fallback
 
-### `embeddings.cloud.test.js` (23 tests)
+### `embeddings-handler.test.js`
 - CORS OPTIONS: 200 response, empty body, correct headers
-- Authentication: missing key, bad format, old-format key, wrong key value, valid key
+- Authentication: optional local access, required keys, invalid keys
 - Body validation: invalid JSON, missing model, missing input, bad model
-- Happy path: single string, array, correct delegation, CORS header, machineId override
-- Rate limiting: all accounts rate-limited → 503 + Retry-After, no credentials → 400
-- Error propagation: non-fallback errors passed through, 429 exhausts accounts
-- machineId override: validates key, rejects wrong key
+- Happy path: route delegation, resolved model, credentials, and request body
+- Account fallback: rotate after a retryable failure; return `Retry-After` when exhausted
+- Error propagation: non-fallback provider errors pass through unchanged

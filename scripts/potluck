@@ -4,14 +4,16 @@
  * Mirrors /opt/homebrew/bin/9router (startServer + tryRestart pattern).
  *
  * Usage: scripts/potluck [port]
- *   port defaults to 20129
+ *   port defaults to PORT or 21023
  */
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const net = require("net");
 
-const PORT = parseInt(process.argv[2], 10) || 20129;
+const PORT = parseInt(process.argv[2], 10)
+  || parseInt(process.env.PORT, 10)
+  || 21023;
 // Repo layout: this script lives in <repo>/scripts/, standalone build in <repo>/.next/standalone
 const STANDALONE_DIR = path.join(__dirname, "..", ".next", "standalone");
 const SERVER_SCRIPT = path.join(STANDALONE_DIR, "custom-server.js");

@@ -5,6 +5,7 @@ export const APP_CONFIG = {
   name: "Potluck Proxy",
   description: "AI Infrastructure Management",
   version: pkg.version,
+  defaultPort: 21023,
 };
 
 // GitHub configuration
@@ -20,8 +21,6 @@ export const UPDATER_CONFIG = {
   installCmdLatest: "npm i -g potluck@latest --prefer-online",
   shutdownCountdownSec: 3,
   exitDelayMs: 500,
-  statusPort: 20129,
-  statusPollIntervalMs: 1000,
   statusLogTailLines: 8,
   installRetries: 3,
   installRetryDelayMs: 5000,
@@ -29,7 +28,7 @@ export const UPDATER_CONFIG = {
   waitForExitMinMs: 5000,
   waitForExitMaxMs: 20000,
   waitForExitCheckMs: 500,
-  appPort: 20128,
+  appPort: APP_CONFIG.defaultPort,
 };
 
 // Theme configuration

@@ -1,261 +1,68 @@
-# Other Tools Integration
+# OpenAI-compatible clients
 
-Potluck is compatible with any tool that supports the OpenAI API format. This guide covers generic integration patterns for various tools and custom applications.
+Potluck can be used by clients that let you configure an OpenAI-compatible
+Base URL, bearer API key, and model ID. Compatibility is not automatic for
+every tool that mentions OpenAI: the client must support the endpoint and
+request format it sends.
 
-## Overview
+## Connection values
 
-Potluck provides an OpenAI-compatible API endpoint that works with:
-- Custom scripts and applications
-- API clients and testing tools
-- CLI tools and utilities
-- Third-party integrations
-- Development frameworks
-
-## Generic Setup Pattern
-
-Any OpenAI-compatible tool can connect to Potluck using these settings:
-
-**Local Potluck:**
-```
-Base URL: http://localhost:20128/v1
-API Key: your-api-key-from-dashboard
-Model: any Potluck model (cc/*, cx/*, glm/*, etc.)
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model: MODEL_ID_FROM_POTLUCK
 ```
 
-**Cloud Potluck:**
-```
-Base URL: http://localhost:20129/v1
-API Key: your-api-key-from-dashboard
-Model: any Potluck model (cc/*, cx/*, glm/*, etc.)
-```
+For a remote deployment, replace the Base URL with
+`https://potluck.example.com/v1`.
 
-## Available Models
+Create the gateway key under **Dashboard → Endpoint**. Do not put an upstream
+provider key into a client configured to call Potluck.
 
-### Claude Models (Anthropic)
-- `cc/claude-opus-4-5-20251101`
-- `cc/claude-sonnet-4-20250514`
-- `cc/claude-haiku-4-20250514`
-
-### DeepSeek Models
-- `cx/deepseek-chat`
-- `cx/deepseek-reasoner`
-
-### GLM Models (Zhipu AI)
-- `glm/glm-4-plus`
-- `glm/glm-4-flash`
-
-## Integration Examples
-
-### Python with OpenAI SDK
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="your-api-key-from-dashboard",
-    base_url="http://localhost:20128/v1"
-)
-
-response = client.chat.completions.create(
-    model="cc/claude-sonnet-4-20250514",
-    messages=[
-        {"role": "user", "content": "Hello, how are you?"}
-    ]
-)
-
-print(response.choices[0].message.content)
-```
-
-### Node.js with OpenAI SDK
-
-```javascript
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: "your-api-key-from-dashboard",
-  baseURL: "http://localhost:20128/v1"
-});
-
-const response = await client.chat.completions.create({
-  model: "cc/claude-sonnet-4-20250514",
-  messages: [
-    { role: "user", content: "Hello, how are you?" }
-  ]
-});
-
-console.log(response.choices[0].message.content);
-```
-
-### cURL Command
+## Discover models
 
 ```bash
-curl http://localhost:20128/v1/chat/completions \
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Use an exact `data[].id` value. Available models depend on the connections,
+aliases, disabled models, and combos configured in that Potluck instance.
+
+## Test with curl
+
+Set temporary shell variables:
+
+```bash
+export POTLUCK_BASE_URL="http://localhost:21023/v1"
+export POTLUCK_API_KEY="YOUR_POTLUCK_API_KEY"
+export POTLUCK_MODEL="MODEL_ID_FROM_POTLUCK"
+```
+
+Send a non-streaming Chat Completions request:
+
+```bash
+curl "$POTLUCK_BASE_URL/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-from-dashboard" \
-  -d '{
-    "model": "cc/claude-sonnet-4-20250514",
-    "messages": [
-      {"role": "user", "content": "Hello, how are you?"}
-    ]
-  }'
+  -H "Authorization: Bearer $POTLUCK_API_KEY" \
+  -d "{
+    \"model\": \"$POTLUCK_MODEL\",
+    \"messages\": [
+      {\"role\": \"user\", \"content\": \"Reply with: Potluck connection OK\"}
+    ],
+    \"stream\": false
+  }"
 ```
 
-### HTTP Client (Postman, Insomnia)
+Run this test before configuring a third-party tool. It separates Potluck or
+provider problems from client-specific configuration problems.
 
-**Request:**
-```
-POST http://localhost:20128/v1/chat/completions
-```
+## Python OpenAI SDK
 
-**Headers:**
-```
-Content-Type: application/json
-Authorization: Bearer your-api-key-from-dashboard
-```
-
-**Body:**
-```json
-{
-  "model": "cc/claude-sonnet-4-20250514",
-  "messages": [
-    {"role": "user", "content": "Hello, how are you?"}
-  ],
-  "temperature": 0.7,
-  "max_tokens": 1000
-}
-```
-
-### LangChain Integration
-
-```python
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
-
-llm = ChatOpenAI(
-    model_name="cc/claude-sonnet-4-20250514",
-    openai_api_key="your-api-key-from-dashboard",
-    openai_api_base="http://localhost:20128/v1",
-    temperature=0.7
-)
-
-messages = [HumanMessage(content="Explain quantum computing")]
-response = llm(messages)
-print(response.content)
-```
-
-### LlamaIndex Integration
-
-```python
-from llama_index.llms import OpenAI
-
-llm = OpenAI(
-    model="cc/claude-sonnet-4-20250514",
-    api_key="your-api-key-from-dashboard",
-    api_base="http://localhost:20128/v1"
-)
-
-response = llm.complete("What is machine learning?")
-print(response.text)
-```
-
-## Custom Script Examples
-
-### Batch Processing Script
-
-```python
-import openai
-import json
-
-openai.api_key = "your-api-key-from-dashboard"
-openai.api_base = "http://localhost:20128/v1"
-
-def process_batch(prompts, model="cx/deepseek-chat"):
-    results = []
-    for prompt in prompts:
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        results.append({
-            "prompt": prompt,
-            "response": response.choices[0].message.content
-        })
-    return results
-
-prompts = [
-    "Explain AI in one sentence",
-    "What is machine learning?",
-    "Define neural networks"
-]
-
-results = process_batch(prompts)
-print(json.dumps(results, indent=2))
-```
-
-### Streaming Response Handler
-
-```javascript
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: "your-api-key-from-dashboard",
-  baseURL: "http://localhost:20128/v1"
-});
-
-async function streamResponse(prompt) {
-  const stream = await client.chat.completions.create({
-    model: "cc/claude-sonnet-4-20250514",
-    messages: [{ role: "user", content: prompt }],
-    stream: true
-  });
-
-  for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content || "";
-    process.stdout.write(content);
-  }
-}
-
-streamResponse("Write a short story about AI");
-```
-
-### Multi-Model Comparison
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="your-api-key-from-dashboard",
-    base_url="http://localhost:20128/v1"
-)
-
-models = [
-    "cc/claude-sonnet-4-20250514",
-    "cx/deepseek-chat",
-    "glm/glm-4-plus"
-]
-
-prompt = "Explain quantum computing in simple terms"
-
-for model in models:
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    print(f"\n=== {model} ===")
-    print(response.choices[0].message.content)
-```
-
-## Common Integration Patterns
-
-### Environment Variables
-
-Store credentials securely:
+Install the current SDK:
 
 ```bash
-# .env file
-ROUTER_API_KEY=your-api-key-from-dashboard
-ROUTER_BASE_URL=http://localhost:20128/v1
-ROUTER_MODEL=cc/claude-sonnet-4-20250514
+python -m pip install openai
 ```
 
 ```python
@@ -263,154 +70,110 @@ import os
 from openai import OpenAI
 
 client = OpenAI(
-    api_key=os.getenv("ROUTER_API_KEY"),
-    base_url=os.getenv("ROUTER_BASE_URL")
-)
-```
-
-### Error Handling
-
-```python
-from openai import OpenAI, OpenAIError
-
-client = OpenAI(
-    api_key="your-api-key",
-    base_url="http://localhost:20128/v1"
+    api_key=os.environ["POTLUCK_API_KEY"],
+    base_url=os.getenv("POTLUCK_BASE_URL", "http://localhost:21023/v1"),
 )
 
-try:
-    response = client.chat.completions.create(
-        model="cc/claude-sonnet-4-20250514",
-        messages=[{"role": "user", "content": "Hello"}]
-    )
-    print(response.choices[0].message.content)
-except OpenAIError as e:
-    print(f"Error: {e}")
-```
-
-### Retry Logic
-
-```python
-import time
-from openai import OpenAI, RateLimitError
-
-client = OpenAI(
-    api_key="your-api-key",
-    base_url="http://localhost:20128/v1"
+response = client.chat.completions.create(
+    model=os.environ["POTLUCK_MODEL"],
+    messages=[
+        {"role": "user", "content": "Reply with: Potluck connection OK"}
+    ],
 )
 
-def chat_with_retry(prompt, max_retries=3):
-    for attempt in range(max_retries):
-        try:
-            response = client.chat.completions.create(
-                model="cc/claude-sonnet-4-20250514",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except RateLimitError:
-            if attempt < max_retries - 1:
-                time.sleep(2 ** attempt)  # Exponential backoff
-            else:
-                raise
+print(response.choices[0].message.content)
 ```
+
+## JavaScript OpenAI SDK
+
+Install the current SDK:
+
+```bash
+npm install openai
+```
+
+```javascript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.POTLUCK_API_KEY,
+  baseURL: process.env.POTLUCK_BASE_URL ?? "http://localhost:21023/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: process.env.POTLUCK_MODEL,
+  messages: [
+    { role: "user", content: "Reply with: Potluck connection OK" },
+  ],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+## HTTP clients
+
+For Postman, Insomnia, or a similar client:
+
+```text
+Method: POST
+URL: http://localhost:21023/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer YOUR_POTLUCK_API_KEY
+```
+
+Body:
+
+```json
+{
+  "model": "MODEL_ID_FROM_POTLUCK",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Reply with: Potluck connection OK"
+    }
+  ],
+  "stream": false
+}
+```
+
+## Supported API families
+
+Potluck exposes several compatibility routes, including:
+
+| Client format | Route |
+| --- | --- |
+| OpenAI Chat Completions | `/v1/chat/completions` |
+| OpenAI Responses | `/v1/responses` |
+| Anthropic Messages | `/v1/messages` |
+| Model discovery | `/v1/models` |
+| Embeddings | `/v1/embeddings` |
+| Image generation | `/v1/images/generations` |
+| Speech | `/v1/audio/speech` |
+| Transcription | `/v1/audio/transcriptions` |
+
+A route existing does not mean every upstream model supports that capability.
+Use a model whose kind and provider support match the request.
 
 ## Troubleshooting
 
-### Connection Issues
+- **Connection refused:** check `http://localhost:21023/api/health`.
+- **401 response:** verify the Potluck gateway key and Bearer header.
+- **404 response:** confirm the client Base URL includes `/v1` exactly once.
+- **Model error:** query `/v1/models` and use an exact returned ID.
+- **Tool calls fail:** select a model with native tool support.
+- **Remote client cannot connect:** use HTTPS and remember that `localhost`
+  refers to the client machine.
+- **A client has no Base URL field:** it cannot be assumed compatible with
+  Potluck; use a documented integration instead.
 
-**Problem:** Cannot connect to Potluck
-```bash
-# Check if Potluck is running
-curl http://localhost:20128/health
+## Security
 
-# Expected response:
-{"status": "ok"}
-```
+- Keep API keys in environment variables or the client's secret store.
+- Do not commit `.env` files.
+- Enable endpoint API-key authentication before exposing Potluck publicly.
+- Use HTTPS for remote connections.
+- Treat the Potluck key separately from upstream provider credentials.
 
-**Solution:**
-- Verify Potluck is running
-- Check port 20128 is not blocked
-- Ensure correct base URL (include `/v1`)
-
-### Authentication Errors
-
-**Problem:** 401 Unauthorized
-```
-Error: Invalid API key
-```
-
-**Solution:**
-- Verify API key from dashboard
-- Check Authorization header format: `Bearer your-api-key`
-- Ensure no extra spaces or newlines in API key
-
-### Model Not Found
-
-**Problem:** 404 Model not found
-```
-Error: Model 'cc/claude-opus' not found
-```
-
-**Solution:**
-- Use exact model name (case-sensitive)
-- Check available models: `curl http://localhost:20128/v1/models`
-- Verify model is enabled in your plan
-
-### Timeout Issues
-
-**Problem:** Request timeout
-```
-Error: Request timed out after 30s
-```
-
-**Solution:**
-- Increase timeout in client configuration
-- Use faster models for time-sensitive tasks
-- Check network connection to Potluck
-
-### Rate Limiting
-
-**Problem:** 429 Too Many Requests
-```
-Error: Rate limit exceeded
-```
-
-**Solution:**
-- Implement exponential backoff
-- Reduce request frequency
-- Check rate limits in dashboard
-- Consider upgrading plan
-
-## Best Practices
-
-### Security
-- Store API keys in environment variables
-- Never commit API keys to version control
-- Use HTTPS for cloud deployments
-- Rotate API keys regularly
-
-### Performance
-- Use appropriate models for task complexity
-- Implement caching for repeated queries
-- Use streaming for long responses
-- Batch requests when possible
-
-### Error Handling
-- Always implement try-catch blocks
-- Add retry logic with exponential backoff
-- Log errors for debugging
-- Provide fallback mechanisms
-
-### Cost Optimization
-- Choose cost-effective models for simple tasks
-- Cache responses when appropriate
-- Monitor usage in dashboard
-- Set request limits in code
-
-## Next Steps
-
-- [Configure Cursor](cursor.md) for IDE integration
-- [Set up Continue](continue.md) for VSCode
-- [Explore CLI usage](../cli/basic-usage.md)
-- [Learn about model selection](../models/overview.md)
-- [API Reference](../api/reference.md)
+Framework APIs change frequently. For LangChain, LlamaIndex, and other
+frameworks, start from their current OpenAI-compatible provider documentation
+and apply the three connection values shown at the top of this page.

@@ -10,14 +10,26 @@ Run Potluck in a container. Published image: [`ezero23/potluck`](https://hub.doc
 
 ```bash
 docker run -d \
-  -p 20129:20129 \
+  -p 21023:21023 \
   -v "$HOME/.potluck:/app/data" \
   -e DATA_DIR=/app/data \
   --name potluck \
   ezero23/potluck:latest
 ```
 
-App listens on port `20129`. Open: http://localhost:20129
+Potluck uses one application port, `21023`, for both the dashboard and API.
+Open: http://localhost:21023
+
+To use another port, set the same value inside and outside the container:
+
+```bash
+docker run -d --name potluck \
+  -p 8080:8080 \
+  -e PORT=8080 \
+  -v "$HOME/.potluck:/app/data" \
+  -e DATA_DIR=/app/data \
+  ezero23/potluck:latest
+```
 
 ## Manage container
 
@@ -54,10 +66,10 @@ Container path: `/app/data/db/data.sqlite`
 
 ```bash
 docker run -d \
-  -p 20129:20129 \
+  -p 21023:21023 \
   -v "$HOME/.potluck:/app/data" \
   -e DATA_DIR=/app/data \
-  -e PORT=20129 \
+  -e PORT=21023 \
   -e HOSTNAME=0.0.0.0 \
   -e DEBUG=true \
   --name potluck \
@@ -73,7 +85,7 @@ services:
   potluck:
     image: ezero23/potluck:latest
     ports:
-      - "20129:20129"
+      - "21023:21023"
     volumes:
       - "$HOME/.potluck:/app/data"
     environment:
@@ -109,7 +121,7 @@ docker rm -f potluck
 ```bash
 docker build -t potluck .
 
-docker run --rm -p 20129:20129 \
+docker run --rm -p 21023:21023 \
   -v "$HOME/.potluck:/app/data" \
   -e DATA_DIR=/app/data \
   potluck
@@ -137,4 +149,4 @@ node scripts/release.js "Release title" "Notes"
 git tag v0.4.x && git push origin v0.4.x
 ```
 
-Workflow: `app/.github/workflows/docker-publish.yml`
+Workflow: `.github/workflows/docker-publish.yml`

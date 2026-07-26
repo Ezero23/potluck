@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { Inter, Orbitron } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "material-symbols/outlined.css";
 import "./globals.css";
@@ -14,6 +14,12 @@ initConsoleLogCapture();
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -38,7 +44,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${orbitron.variable} font-sans antialiased`}>
         <ThemeProvider>
           <RuntimeI18nProvider>
             {children}

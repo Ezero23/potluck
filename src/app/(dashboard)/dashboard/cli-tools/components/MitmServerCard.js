@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, Button, Badge, Input } from "@/shared/components";
 
-const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
-
 /**
  * Shared MITM infrastructure card — manages SSL cert + server start/stop.
  * DNS per-tool is handled separately in MitmToolCard.
@@ -18,7 +16,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
   const [pendingAction, setPendingAction] = useState(null);
   const [modalError, setModalError] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [mitmRouterBaseUrl, setMitmRouterBaseUrl] = useState(DEFAULT_MITM_ROUTER_BASE);
+  const [mitmRouterBaseUrl, setMitmRouterBaseUrl] = useState("");
   const [port443Conflict, setPort443Conflict] = useState(null);
 
   const serverIsWindows = status?.isWin === true;
@@ -83,7 +81,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
           body: JSON.stringify({
             apiKey: keyToUse,
             sudoPassword: password,
-            mitmRouterBaseUrl: mitmRouterBaseUrl.trim() || DEFAULT_MITM_ROUTER_BASE,
+            mitmRouterBaseUrl: mitmRouterBaseUrl.trim(),
             forceKillPort443,
           }),
         });
@@ -181,7 +179,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 type="text"
                 value={mitmRouterBaseUrl}
                 onChange={(e) => setMitmRouterBaseUrl(e.target.value)}
-                placeholder={DEFAULT_MITM_ROUTER_BASE}
+                placeholder="Current Potluck endpoint"
                 disabled={isRunning}
                 className="flex-1 min-w-0 px-2 py-1.5 bg-surface rounded border border-border text-xs text-text-main focus:outline-none focus:ring-1 focus:ring-primary/50 disabled:opacity-50"
               />

@@ -1,4 +1,4 @@
-import { ensureDirs, DATA_FILE } from "./paths.js";
+import { ensureDirs, secureDatabaseFiles, DATA_FILE } from "./paths.js";
 
 // Use global to survive Next.js dev hot-reload (module state resets on reload)
 if (!global._dbAdapter) global._dbAdapter = { instance: null, initPromise: null, logged: false };
@@ -70,6 +70,7 @@ async function initAdapter() {
 
   const { runMigrationOnce } = await import("./migrate.js");
   await runMigrationOnce(adapter);
+  secureDatabaseFiles();
   return adapter;
 }
 

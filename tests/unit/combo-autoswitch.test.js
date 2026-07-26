@@ -42,6 +42,30 @@ describe("detectRequiredCapabilities", () => {
     expect(r.has("search")).toBe(true);
   });
 
+  it("recognizes Responses and Anthropic built-in search tools", () => {
+    const preview = detectRequiredCapabilities({
+      tools: [{ type: "web_search_preview" }],
+    });
+    const anthropic = detectRequiredCapabilities({
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+    });
+
+    expect(preview.has("search")).toBe(true);
+    expect(anthropic.has("search")).toBe(true);
+  });
+
+  it("recognizes Gemini and nested Antigravity search tools", () => {
+    const gemini = detectRequiredCapabilities({
+      tools: [{ google_search: {} }],
+    });
+    const antigravity = detectRequiredCapabilities({
+      request: { tools: [{ googleSearch: {} }] },
+    });
+
+    expect(gemini.has("search")).toBe(true);
+    expect(antigravity.has("search")).toBe(true);
+  });
+
   it("responses input_image -> vision", () => {
     const r = detectRequiredCapabilities({ input: [{ role: "user", content: [
       { type: "input_image", image_url: "x" },

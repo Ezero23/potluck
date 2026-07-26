@@ -13,6 +13,7 @@ const MACHINE_ID_KEYS = [
   "storage.machineId",
   "telemetry.machineId",
 ];
+const SUPPORTED_PLATFORMS = new Set(["darwin", "win32", "linux"]);
 
 /** Get candidate db paths by platform */
 function getCandidatePaths(platform) {
@@ -56,13 +57,17 @@ function getCandidatePaths(platform) {
     ];
   }
 
-  return [
-    join(home, ".config/Cursor/User/globalStorage/state.vscdb"),
-    join(home, ".config/cursor/User/globalStorage/state.vscdb"),
-  ];
+  if (platform === "linux") {
+    return [
+      join(home, ".config/Cursor/User/globalStorage/state.vscdb"),
+      join(home, ".config/cursor/User/globalStorage/state.vscdb"),
+    ];
+  }
+
+  return [];
 }
 
-const normalize = (value) => {
+function normalizeStoredValue(value) {
   if (typeof value !== "string") return value;
   try {
     const parsed = JSON.parse(value);
@@ -70,47 +75,58 @@ const normalize = (value) => {
   } catch {
     return value;
   }
-};
+}
+
+function findTokenValues(rows) {
+  const values = new Map(
+    rows.map((row) => [String(row.key || "").toLowerCase(), normalizeStoredValue(row.value)]),
+  );
+  const findExact = (keys) => {
+    for (const key of keys) {
+      const value = values.get(key.toLowerCase());
+      if (value) return value;
+    }
+    return null;
+  };
+
+  return {
+    accessToken:
+      findExact(ACCESS_TOKEN_KEYS) ||
+      [...values].find(([key, value]) => value && key.includes("access") && key.includes("token"))?.[1] ||
+      null,
+    machineId:
+      findExact(MACHINE_ID_KEYS) ||
+      [...values].find(([key, value]) => value && key.includes("machine") && key.includes("id"))?.[1] ||
+      null,
+  };
+}
 
 /**
  * Extract tokens via better-sqlite3 (bundled dependency).
  * This is the preferred strategy — no external CLI required.
  */
-function extractTokensViaBetterSqlite(dbPath) {
-  // Dynamic require so the route stays importable even if native bindings fail
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Database = require("better-sqlite3");
+async function extractTokensViaBetterSqlite(dbPath) {
+  const { default: Database } = await import("better-sqlite3");
   const db = new Database(dbPath, { readonly: true, fileMustExist: true });
 
-  const query = (key) => {
-    const row = db.prepare("SELECT value FROM itemTable WHERE key=? LIMIT 1").get(key);
-    return row?.value || null;
-  };
+  try {
+    const keys = [...ACCESS_TOKEN_KEYS, ...MACHINE_ID_KEYS];
+    const placeholders = keys.map(() => "?").join(",");
+    const exactRows = db
+      .prepare(`SELECT key, value FROM itemTable WHERE key IN (${placeholders})`)
+      .all(...keys);
+    const exact = findTokenValues(exactRows);
+    if (exact.accessToken && exact.machineId) return exact;
 
-  const normalize = (value) => {
-    if (typeof value !== "string") return value;
-    try {
-      const parsed = JSON.parse(value);
-      return typeof parsed === "string" ? parsed : value;
-    } catch {
-      return value;
-    }
-  };
-
-  let accessToken = null;
-  for (const key of ACCESS_TOKEN_KEYS) {
-    const raw = query(key);
-    if (raw) { accessToken = normalize(raw); break; }
+    const fuzzyRows = db
+      .prepare(
+        "SELECT key, value FROM itemTable WHERE lower(key) LIKE '%token%' OR lower(key) LIKE '%machine%id%'",
+      )
+      .all();
+    return findTokenValues([...exactRows, ...fuzzyRows]);
+  } finally {
+    db.close();
   }
-
-  let machineId = null;
-  for (const key of MACHINE_ID_KEYS) {
-    const raw = query(key);
-    if (raw) { machineId = normalize(raw); break; }
-  }
-
-  db.close();
-  return { accessToken, machineId };
 }
 
 /**
@@ -120,12 +136,7 @@ function extractTokensViaBetterSqlite(dbPath) {
 async function extractTokensViaCLI(dbPath) {
   const normalize = (raw) => {
     const value = raw.trim();
-    try {
-      const parsed = JSON.parse(value);
-      return typeof parsed === "string" ? parsed : value;
-    } catch {
-      return value;
-    }
+    return normalizeStoredValue(value);
   };
 
   const query = async (sql) => {
@@ -135,6 +146,9 @@ async function extractTokensViaCLI(dbPath) {
     return stdout.trim();
   };
 
+  let successfulQueries = 0;
+  let lastError = null;
+
   // Try each key in priority order
   let accessToken = null;
   for (const key of ACCESS_TOKEN_KEYS) {
@@ -142,12 +156,13 @@ async function extractTokensViaCLI(dbPath) {
       const raw = await query(
         `SELECT value FROM itemTable WHERE key='${key}' LIMIT 1`,
       );
+      successfulQueries += 1;
       if (raw) {
         accessToken = normalize(raw);
         break;
       }
-    } catch {
-      /* try next */
+    } catch (error) {
+      lastError = error;
     }
   }
 
@@ -157,15 +172,17 @@ async function extractTokensViaCLI(dbPath) {
       const raw = await query(
         `SELECT value FROM itemTable WHERE key='${key}' LIMIT 1`,
       );
+      successfulQueries += 1;
       if (raw) {
         machineId = normalize(raw);
         break;
       }
-    } catch {
-      /* try next */
+    } catch (error) {
+      lastError = error;
     }
   }
 
+  if (successfulQueries === 0 && lastError) throw lastError;
   return { accessToken, machineId };
 }
 
@@ -177,6 +194,13 @@ async function extractTokensViaCLI(dbPath) {
 export async function GET() {
   try {
     const platform = process.platform;
+    if (!SUPPORTED_PLATFORMS.has(platform)) {
+      return NextResponse.json(
+        { found: false, error: "Unsupported platform" },
+        { status: 400 },
+      );
+    }
+
     const candidates = getCandidatePaths(platform);
 
     let dbPath = null;
@@ -219,8 +243,9 @@ export async function GET() {
     }
 
     // Strategy 1: better-sqlite3 (bundled — no external tools required)
+    let betterSqliteError = null;
     try {
-      const tokens = extractTokensViaBetterSqlite(dbPath);
+      const tokens = await extractTokensViaBetterSqlite(dbPath);
       if (tokens.accessToken && tokens.machineId) {
         return NextResponse.json({
           found: true,
@@ -228,11 +253,18 @@ export async function GET() {
           machineId: tokens.machineId,
         });
       }
-    } catch {
+      return NextResponse.json({
+        found: false,
+        error: "Cursor credentials were not found. Please login to Cursor IDE first, then retry.",
+        dbPath,
+      });
+    } catch (error) {
+      betterSqliteError = error;
       // Native bindings unavailable — try CLI fallback
     }
 
     // Strategy 2: sqlite3 CLI
+    let cliError = null;
     try {
       const tokens = await extractTokensViaCLI(dbPath);
       if (tokens.accessToken && tokens.machineId) {
@@ -242,12 +274,27 @@ export async function GET() {
           machineId: tokens.machineId,
         });
       }
-    } catch {
+      return NextResponse.json({
+        found: false,
+        error: "Cursor credentials were not found. Please login to Cursor IDE first, then retry.",
+        dbPath,
+      });
+    } catch (error) {
+      cliError = error;
       // sqlite3 CLI not available either
     }
 
     // Strategy 3: ask user to paste manually
-    return NextResponse.json({ found: false, windowsManual: true, dbPath });
+    const details = [betterSqliteError?.message, cliError?.message]
+      .filter(Boolean)
+      .join("; ");
+    return NextResponse.json({
+      found: false,
+      manualImport: true,
+      windowsManual: platform === "win32",
+      dbPath,
+      error: `Cursor database was found, but Potluck could not open it automatically${details ? `: ${details}` : "."}`,
+    });
   } catch (error) {
     console.log("Cursor auto-import error:", error);
     return NextResponse.json(

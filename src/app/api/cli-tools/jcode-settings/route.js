@@ -7,6 +7,7 @@ import os from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { parseTOML, stringifyTOML } from "confbox";
+import { hasPotluckProvider } from "./jcodeConfig";
 
 const execAsync = promisify(exec);
 
@@ -42,22 +43,6 @@ const readConfig = async () => {
   } catch (error) {
     return { providers: {} };
   }
-};
-
-const hasPotluckConfig = (config) => {
-  if (!config || !config.providers) return false;
-
-  const providers = config.providers;
-
-  if (providers["potluck"]) return true;
-
-  for (const [name, provider] of Object.entries(providers)) {
-    if (provider.base_url && provider.base_url.includes("localhost:20128")) {
-      return true;
-    }
-  }
-
-  return false;
 };
 
 const writeConfig = async (config) => {
@@ -118,7 +103,7 @@ export async function GET() {
   }
 
   const config = await readConfig();
-  const hasPotluck = hasPotluckConfig(config);
+  const hasPotluck = hasPotluckProvider(config);
 
   return NextResponse.json({
     installed: true,

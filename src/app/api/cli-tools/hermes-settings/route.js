@@ -19,8 +19,8 @@ const getHermesEnvPath = () => path.join(getHermesDir(), ".env");
 // Match top-level "model:" block (until next non-indented, non-empty line)
 const MODEL_BLOCK_RE = /^model:[ \t]*\r?\n((?:[ \t]+.*\r?\n?|[ \t]*\r?\n)*)/m;
 
-const buildModelBlock = (model, baseUrl) =>
-  `model:\n  default: "${model}"\n  provider: "custom"\n  base_url: "${baseUrl}"\n`;
+const buildModelBlock = (model, baseUrl, apiKey) =>
+  `model:\n  default: "${model}"\n  provider: "custom"\n  base_url: "${baseUrl}"\n${apiKey ? `  api_key: "${apiKey}"\n` : ""}`;
 
 // Parse current model block back to fields (best-effort, simple key:value)
 const parseModelBlock = (yaml) => {
@@ -132,7 +132,7 @@ export async function POST(request) {
 
     // Update config.yaml — replace/insert model: block, keep everything else
     const existingYaml = await readConfigYaml();
-    const newYaml = upsertModelBlock(existingYaml, buildModelBlock(model, normalizedBaseUrl));
+    const newYaml = upsertModelBlock(existingYaml, buildModelBlock(model, normalizedBaseUrl, apiKey));
     await fs.writeFile(getHermesConfigPath(), newYaml);
 
     // Update .env — upsert OPENAI_API_KEY only when caller provides one

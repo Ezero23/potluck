@@ -1,351 +1,206 @@
 # Troubleshooting
 
-Common issues and solutions when using Potluck.
+Start with the original response, process output, and sanitized logs. Avoid changing
+several settings at once: first prove whether the failure is in Potluck, authentication,
+routing, or the selected provider.
 
----
+## Collect the basics
 
-## "Language model did not provide messages"
+Record:
 
-**Problem:** Request fails with empty response or error message.
+- the Potluck version and installation method;
+- the exact endpoint path and HTTP status;
+- the selected model identifier;
+- whether the same model passes its Dashboard connection test;
+- the relevant server log lines with credentials and prompt content removed.
 
-**Causes:**
-- Provider quota exhausted
-- API key invalid or expired
-- Model not available
+Verify the local service first:
 
-**Solutions:**
+```bash
+curl --fail --show-error http://localhost:21023/api/health
+```
 
-1. **Check quota status:**
-   ```
-   Dashboard → Providers → View quota tracker
-   ```
-   If quota is exhausted, wait for reset or switch provider.
+Expected response:
 
-2. **Use combo fallback:**
-   ```
-   Dashboard → Combos → Create fallback chain
-   Example: cc/claude-opus → glm/glm-4.7 → if/kimi-k2
-   ```
+```json
+{"ok":true}
+```
 
-3. **Verify provider connection:**
-   ```
-   Dashboard → Providers → Reconnect if needed
-   ```
+For Docker:
 
----
+```bash
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+```
 
-## Rate Limiting
+For a source checkout, inspect the terminal running `npm run dev` or `npm start`.
 
-**Problem:** "Rate limit exceeded" or "Too many requests" errors.
+## Connection refused
 
-**Causes:**
-- Subscription quota depleted (5-hour/daily/weekly limits)
-- API rate limits hit
-- Too many concurrent requests
+`ECONNREFUSED` means no process accepted the connection at that host and port. It is
+not a provider or API-key error.
 
-**Solutions:**
+1. Start Potluck:
 
-1. **Check reset time:**
-   ```
-   Dashboard → Quota Tracking → View reset countdown
-   ```
-
-2. **Switch to cheap tier:**
-   ```
-   Use: glm/glm-4.7 ($0.6/1M tokens)
-        minimax/MiniMax-M2.1 ($0.20/1M tokens)
-   ```
-
-3. **Add fallback combo:**
-   ```
-   Dashboard → Combos → Add backup models
-   Primary: cc/claude-opus (subscription)
-   Backup: glm/glm-4.7 (cheap)
-   Emergency: if/kimi-k2 (free)
-   ```
-
----
-
-## OAuth Token Expired
-
-**Problem:** "Unauthorized" or "Token expired" errors.
-
-**Causes:**
-- OAuth token expired (auto-refresh failed)
-- Provider session invalidated
-- Network issues during refresh
-
-**Solutions:**
-
-1. **Auto-refresh (default):**
-   Potluck automatically refreshes tokens. Wait 30 seconds and retry.
-
-2. **Manual reconnect:**
-   ```
-   Dashboard → Providers → [Provider Name] → Reconnect
-   → Complete OAuth flow again
-   ```
-
-3. **Check provider status:**
-   Verify provider service is online (Claude Code, Codex, etc.)
-
----
-
-## High Costs
-
-**Problem:** Unexpected high usage or costs.
-
-**Causes:**
-- Using expensive models unnecessarily
-- No fallback to cheaper tiers
-- Large context windows
-
-**Solutions:**
-
-1. **Check usage stats:**
-   ```
-   Dashboard → Usage Stats → View token consumption
-   → Identify high-cost models
-   ```
-
-2. **Switch to cheaper models:**
-   ```
-   Replace: cc/claude-opus ($20-100/month subscription)
-   With: glm/glm-4.7 ($0.6/1M tokens)
-         minimax/MiniMax-M2.1 ($0.20/1M tokens)
-   ```
-
-3. **Use free tier:**
-   ```
-   if/kimi-k2-thinking (FREE)
-   qw/qwen3-coder-plus (FREE)
-   kr/claude-sonnet-4.5 (FREE)
-   gc/gemini-3-flash-preview (FREE 180K/month)
-   ```
-
-4. **Optimize prompts:**
-   - Reduce context size
-   - Use streaming for long responses
-   - Cache common prompts
-
----
-
-## Connection Refused
-
-**Problem:** "ECONNREFUSED" or "Cannot connect to localhost:20129".
-
-**Causes:**
-- Potluck not running
-- Port 20129 blocked
-- Firewall blocking connection
-
-**Solutions:**
-
-1. **Start Potluck:**
    ```bash
    npm run dev
    ```
-   Dashboard should open at http://localhost:3000
 
-2. **Verify port 20129:**
+2. Confirm the default port is listening:
+
    ```bash
-   # Check if port is listening
-   lsof -i :20129
-   
-   # Or on Windows
-   netstat -ano | findstr :20129
+   lsof -nP -iTCP:21023 -sTCP:LISTEN
    ```
 
-3. **Check firewall:**
-   - macOS: System Settings → Network → Firewall
-   - Windows: Windows Defender Firewall → Allow app
-   - Linux: `sudo ufw allow 20129`
+   On Windows:
 
-4. **Use cloud endpoint:**
-   If localhost doesn't work (e.g., Cursor IDE):
-   ```
-   Endpoint: https://your-potluck-cloud.example.com/v1
+   ```powershell
+   netstat -ano | findstr :21023
    ```
 
----
+3. Use the same configured port everywhere:
 
-## Dashboard Not Opening
-
-**Problem:** Dashboard doesn't load at http://localhost:3000.
-
-**Causes:**
-- Port 3000 already in use
-- Potluck crashed
-- Browser cache issues
-
-**Solutions:**
-
-1. **Check if Potluck is running:**
-   ```bash
-   # Check process
-   ps aux | grep potluck
-   
-   # Check port 3000
-   lsof -i :3000
+   ```text
+   Dashboard: http://localhost:21023/dashboard
+   API base:  http://localhost:21023/v1
    ```
 
-2. **Kill conflicting process:**
-   ```bash
-   # macOS/Linux
-   lsof -ti:3000 | xargs kill -9
-   
-   # Windows
-   netstat -ano | findstr :3000
-   taskkill /PID <PID> /F
-   ```
+4. If the client runs in a container, VM, remote workspace, or vendor-hosted service,
+   its `localhost` is not necessarily the Potluck machine. Use an address reachable
+   from that runtime and protect it with HTTPS, login, and endpoint API-key enforcement.
 
-3. **Restart Potluck:**
-   ```bash
-   # Stop
-   pkill -f potluck
-   
-   # Start
-   npm run dev
-   ```
+Do not expose the Potluck application port publicly just to work around a connection
+problem. Prefer a trusted HTTPS reverse proxy or a configured tunnel.
 
-4. **Clear browser cache:**
-   - Chrome: Ctrl+Shift+Delete → Clear cache
-   - Try incognito mode
+## Dashboard does not open
 
-5. **Check firewall settings:**
-   Ensure port 3000 is not blocked.
+Request `/api/health` before clearing browser data. If health fails, inspect the server
+logs. If health succeeds but the dashboard does not:
 
----
+- open `http://localhost:21023/dashboard` directly;
+- confirm the browser is not forcing an unrelated proxy or HTTPS upgrade;
+- try a private window to rule out stale cookies;
+- confirm the dashboard password is correct.
 
-## Model Not Found
+When no password hash or `INITIAL_PASSWORD` exists, the first local password is
+`123456`. Change it before allowing access from another machine.
 
-**Problem:** "Model not found" or "Invalid model" errors.
+## HTTP 401 or 403
 
-**Causes:**
-- Provider not connected
-- Model ID typo
-- Provider inactive
+Potluck has two different credential boundaries:
 
-**Solutions:**
+- the dashboard login protects administration pages and local APIs;
+- a Potluck endpoint key protects compatible `/v1` client requests when enforcement is
+  enabled in **Dashboard → Endpoint**.
 
-1. **Verify provider connection:**
-   ```
-   Dashboard → Providers → Check status (green = active)
-   ```
+Do not send an upstream provider credential as the Potluck endpoint key. Configure the
+client with an active key created by this Potluck instance:
 
-2. **Check model ID format:**
-   ```
-   Correct: cc/claude-opus-4-5-20251101
-   Wrong: claude-opus-4-5-20251101
-   
-   Format: [provider-prefix]/[model-name]
-   ```
+```http
+Authorization: Bearer YOUR_POTLUCK_KEY
+```
 
-3. **List available models:**
-   ```bash
-   curl http://localhost:20129/v1/models \
-     -H "Authorization: Bearer your-api-key"
-   ```
+If the provider itself returns 401 or 403, reconnect that provider or replace its
+credential, then run its Dashboard connection test.
 
-4. **Reconnect provider:**
-   ```
-   Dashboard → Providers → [Provider] → Reconnect
-   ```
+## Model not found
 
----
+Do not copy model identifiers from screenshots or old documentation. Query the running
+instance:
 
-## Slow Response
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_KEY"
+```
 
-**Problem:** Requests take too long or timeout.
+Use an identifier returned by the response. A routing profile such as
+`profile:PROFILE_NAME` works only after that profile has been configured. If a listed
+model still fails, verify its provider connection, account region, quota, and supported
+request type.
 
-**Causes:**
-- Provider latency
-- Network issues
-- Large context/response
-- Provider rate limiting
+## OAuth expired or provider authentication failed
 
-**Solutions:**
+Token refresh support varies by provider and can fail after a session is revoked.
 
-1. **Check provider status:**
-   ```
-   Dashboard → Providers → View latency stats
-   ```
+1. Open **Dashboard → Providers**.
+2. Run the connection test and preserve its original error.
+3. Reconnect the provider if the credential or session has expired.
+4. Confirm the account and region match the selected provider entry.
+5. Check outbound proxy settings and the provider's current service status.
 
-2. **Switch to faster model:**
-   ```
-   Fast: cc/claude-haiku-4-5 (Haiku is faster than Opus)
-         gc/gemini-3-flash-preview
-         qw/qwen3-coder-flash
-   ```
+Never post refresh tokens, cookies, API keys, authorization URLs containing secrets, or
+the Potluck data directory in an issue.
 
-3. **Use streaming:**
-   ```json
-   {
-     "model": "cc/claude-opus-4-5",
-     "messages": [...],
-     "stream": true
-   }
-   ```
+## Rate limits or quota exhaustion
 
-4. **Check network:**
-   ```bash
-   # Test latency
-   ping api.anthropic.com
-   ping api.openai.com
-   ```
+Quota fields are available only for integrations that implement a provider usage
+lookup. A Dashboard quota value can also lag behind the provider.
 
-5. **Reduce context size:**
-   - Trim message history
-   - Use smaller prompts
-   - Enable context pruning in CLI tool
+- check the provider's own billing and quota page;
+- reduce concurrency;
+- wait for the provider's reset;
+- test another connection independently;
+- configure a combo or routing profile only after every member works on its own.
 
----
+Fallback is best effort. It does not create quota and cannot recover when every
+candidate is unavailable or the error is not configured as retryable.
 
-## API Key Invalid
+## Slow or delayed streaming
 
-**Problem:** "Invalid API key" or "Authentication failed" errors.
+First compare one direct provider/model request with the combo or profile request.
+Then check:
 
-**Causes:**
-- Wrong API key copied
-- API key expired
-- API key not generated
+- provider latency and status;
+- outbound proxy latency;
+- prompt and response size;
+- client timeout settings;
+- whether the reverse proxy buffers streaming responses.
 
-**Solutions:**
+For Nginx, the active location should include:
 
-1. **Regenerate API key:**
-   ```
-   Dashboard → Settings → API Keys → Generate New Key
-   → Copy and use new key
-   ```
+```nginx
+proxy_buffering off;
+proxy_read_timeout 86400;
+```
 
-2. **Verify key format:**
-   ```
-   Correct: 9r_xxxxxxxxxxxxxxxxxxxxxxxx
-   Wrong: Missing 9r_ prefix
-   ```
+Use the provider's hostname and an HTTP request for network diagnostics; ICMP `ping`
+may be blocked even when HTTPS works.
 
-3. **Check key in CLI config:**
-   ```bash
-   # Cursor
-   Settings → Models → OpenAI API Key
-   
-   # Cline
-   Settings → API Key
-   
-   # Environment variable
-   export OPENAI_API_KEY="9r_your_key"
-   ```
+## Unexpected usage or cost
 
-4. **Test API key:**
-   ```bash
-   curl http://localhost:20129/v1/models \
-     -H "Authorization: Bearer 9r_your_key"
-   ```
+Dashboard cost is an estimate, not a provider invoice. Compare it with the provider's
+current billing page and pricing. Model prices, subscriptions, promotions, and free
+allowances change over time.
 
----
+- review Usage and request details;
+- confirm which source a combo or profile selected;
+- disable request-body logging unless it is needed;
+- configure spending limits and alerts with the provider;
+- rotate any credential that may have been exposed.
 
-## Need More Help?
+Potluck does not provide universal budget enforcement.
 
-- **GitHub Issues:** [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)
-- **Documentation:** [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
-- **FAQ:** [faq.md](faq.md)
+## Docker, Nginx, or data-directory failures
+
+For an Nginx 502:
+
+```bash
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+curl http://127.0.0.1:21023/api/health
+sudo nginx -t
+```
+
+For data errors, verify the configured `DATA_DIR` exists, is writable by the Potluck
+process, and is not world-readable. Do not delete or replace `data.sqlite` while the
+service is running. Back up the complete data directory before upgrades or migrations.
+
+## Need more help?
+
+- [FAQ](./faq.md)
+- [Installation](./getting-started/installation.md)
+- [GitHub Issues](https://github.com/Ezero23/potluck/issues)
+
+Include the version, installation method, endpoint, status code, reproduction steps,
+and sanitized logs. Remove credentials, tokens, cookies, prompts, responses, and
+personal data before posting.

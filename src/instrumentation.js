@@ -10,8 +10,7 @@
 // The bootstrap module keeps its own guards (build-phase + global singleton), so
 // importing it here is safe even if app/layout.js also imports it later.
 export async function register() {
-  // initializeApp uses Node-only APIs (fs, child_process, better-sqlite3).
-  // Skip the edge runtime entirely.
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  await import("./shared/services/bootstrap.js");
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./instrumentation.node.js");
+  }
 }

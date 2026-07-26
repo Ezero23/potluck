@@ -6,13 +6,11 @@ import path from "path";
 import os from "os";
 import crypto from "crypto";
 import { DEFAULT_PLUGINS, LOCAL_STDIO_PLUGINS, buildManagedMcpServers } from "@/shared/constants/coworkPlugins";
-import { UPDATER_CONFIG } from "@/shared/constants/config";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
+import { getRequestOrigin } from "@/shared/utils/requestOrigin";
 
-const APP_PORT = UPDATER_CONFIG.appPort;
 const CLI_TOKEN_HEADER = "x-9r-cli-token";
 const CLI_TOKEN_SALT = "9r-cli-auth";
-const LOCAL_MCP_PREFIX = `http://localhost:${APP_PORT}/api/mcp/`;
 
 let cachedCliToken = null;
 const getCliToken = async () => {
@@ -21,10 +19,11 @@ const getCliToken = async () => {
 };
 
 // Inject CLI token header into entries pointing at our local /api/mcp/ bridge.
-const injectAuthHeaders = async (entries) => {
+const injectAuthHeaders = async (entries, localBaseUrl) => {
   const token = await getCliToken();
+  const localMcpPrefix = `${localBaseUrl}/api/mcp/`;
   for (const e of entries) {
-    if (typeof e?.url === "string" && e.url.startsWith(LOCAL_MCP_PREFIX)) {
+    if (typeof e?.url === "string" && e.url.startsWith(localMcpPrefix)) {
       e.headers = { ...(e.headers || {}), [CLI_TOKEN_HEADER]: token };
     }
   }
@@ -153,7 +152,7 @@ const cleanup1pLegacy = async () => {
 };
 
 // Build SSE bridge entries pointing at this app's inline /api/mcp/{name} endpoint.
-const buildLocalBridgeEntries = (localPluginNames) => {
+const buildLocalBridgeEntries = (localPluginNames, localBaseUrl) => {
   const names = Array.isArray(localPluginNames) ? localPluginNames : [];
   const out = [];
   for (const n of names) {
@@ -161,7 +160,7 @@ const buildLocalBridgeEntries = (localPluginNames) => {
     if (!def) continue;
     const entry = {
       name: def.name,
-      url: `http://localhost:${APP_PORT}/api/mcp/${def.name}/sse`,
+      url: `${localBaseUrl}/api/mcp/${def.name}/sse`,
       transport: "sse",
     };
     if (Array.isArray(def.toolNames) && def.toolNames.length > 0) {
@@ -310,6 +309,10 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const localBaseUrl = getRequestOrigin(request);
+    if (!localBaseUrl) {
+      return NextResponse.json({ error: "Unable to determine Potluck base URL" }, { status: 400 });
+    }
     const { baseUrl, apiKey, models, plugins, localPlugins, customPlugins } = await request.json();
 
     if (!baseUrl || !apiKey) {
@@ -326,8 +329,14 @@ export async function POST(request) {
     // Only URL-based custom plugins allowed (no stdio command spawning).
     const customPluginsArray = (Array.isArray(customPlugins) ? customPlugins : []).filter((p) => p?.url);
 
-    const bridgeEntries = await injectAuthHeaders(buildLocalBridgeEntries(localPluginNames));
-    const customEntries = await injectAuthHeaders(buildCustomEntries(customPluginsArray));
+    const bridgeEntries = await injectAuthHeaders(
+      buildLocalBridgeEntries(localPluginNames, localBaseUrl),
+      localBaseUrl
+    );
+    const customEntries = await injectAuthHeaders(
+      buildCustomEntries(customPluginsArray),
+      localBaseUrl
+    );
     const managedMcpServers = [...buildManagedMcpServers(pluginsArray), ...bridgeEntries, ...customEntries];
 
     const bootstrapped = await bootstrapDeploymentMode();

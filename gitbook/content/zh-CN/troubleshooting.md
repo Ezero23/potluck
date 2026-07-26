@@ -1,352 +1,191 @@
 # 故障排除
 
-使用 百家饭 时常见的问题与解决方案。
+排查时应从原始响应、进程输出和脱敏日志开始。不要一次修改多个设置；先确认问题发生在 Potluck
+服务、认证、路由，还是实际选择的第三方提供商。
 
----
+## 先收集基本信息
 
-## "Language model did not provide messages"
+记录：
 
-**问题:** 请求失败,响应为空或返回错误。
+- Potluck 版本和安装方式；
+- 发生错误的准确接口路径和 HTTP 状态码；
+- 使用的模型标识；
+- 同一模型能否通过仪表盘连接测试；
+- 与错误相关且已删除凭据、提示词内容的服务器日志。
 
-**原因:**
-- 提供商配额耗尽
-- API key 无效或过期
-- 模型不可用
+先验证本地服务：
 
-**解决方案:**
+```bash
+curl --fail --show-error http://localhost:21023/api/health
+```
 
-1. **查看配额状态:**
-   ```
-   仪表盘 → 提供商 → 查看配额跟踪
-   ```
-   若配额耗尽,等待重置或切换提供商。
+预期响应：
 
-2. **使用组合回退:**
-   ```
-   仪表盘 → 组合 → 创建回退链
-   示例: cc/claude-opus → glm/glm-4.7 → if/kimi-k2
-   ```
+```json
+{"ok":true}
+```
 
-3. **验证提供商连接:**
-   ```
-   仪表盘 → 提供商 → 必要时重新连接
-   ```
+Docker 部署查看：
 
----
+```bash
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+```
 
-## 速率限制
-
-**问题:** 出现 "Rate limit exceeded" 或 "Too many requests" 错误。
-
-**原因:**
-- 订阅配额用完(5 小时/每日/每周限制)
-- 触发了 API 速率限制
-- 并发请求过多
-
-**解决方案:**
-
-1. **查看重置时间:**
-   ```
-   仪表盘 → 配额跟踪 → 查看重置倒计时
-   ```
-
-2. **切换到低价层:**
-   ```
-   使用: glm/glm-4.7 (每 1M tokens $0.6)
-        minimax/MiniMax-M2.1 (每 1M tokens $0.20)
-   ```
-
-3. **添加回退组合:**
-   ```
-   仪表盘 → 组合 → 添加备用模型
-   主力: cc/claude-opus (订阅)
-   备用: glm/glm-4.7 (低价)
-   应急: if/kimi-k2 (免费)
-   ```
-
----
-
-## OAuth Token 过期
-
-**问题:** 出现 "Unauthorized" 或 "Token expired" 错误。
-
-**原因:**
-- OAuth token 过期(自动刷新失败)
-- 提供商会话失效
-- 刷新过程中出现网络问题
-
-**解决方案:**
-
-1. **自动刷新(默认):**
-   百家饭 会自动刷新 token。等待 30 秒后重试。
-
-2. **手动重连:**
-   ```
-   仪表盘 → 提供商 → [提供商名称] → 重新连接
-   → 再次完成 OAuth 流程
-   ```
-
-3. **检查提供商状态:**
-   确认提供商服务在线(Claude Code、Codex 等)。
-
----
-
-## 成本过高
-
-**问题:** 出现意外的高用量或高成本。
-
-**原因:**
-- 不必要地使用了昂贵模型
-- 没有回退到便宜层级
-- 上下文窗口过大
-
-**解决方案:**
-
-1. **查看使用统计:**
-   ```
-   仪表盘 → 使用统计 → 查看 token 消耗
-   → 找出高成本模型
-   ```
-
-2. **切换到更便宜的模型:**
-   ```
-   替换: cc/claude-opus ($20-100/月 订阅)
-   为: glm/glm-4.7 (每 1M tokens $0.6)
-       minimax/MiniMax-M2.1 (每 1M tokens $0.20)
-   ```
-
-3. **使用免费层:**
-   ```
-   if/kimi-k2-thinking (免费)
-   qw/qwen3-coder-plus (免费)
-   kr/claude-sonnet-4.5 (免费)
-   gc/gemini-3-flash-preview (每月免费 180K)
-   ```
-
-4. **优化 prompt:**
-   - 减少上下文大小
-   - 长响应使用流式输出
-   - 缓存常用 prompt
-
----
+源码安装则查看正在运行 `npm run dev` 或 `npm start` 的终端。
 
 ## 连接被拒绝
 
-**问题:** 出现 "ECONNREFUSED" 或 "Cannot connect to localhost:20129"。
+`ECONNREFUSED` 表示指定主机和端口上没有进程接受连接，不是提供商或 API Key 错误。
 
-**原因:**
-- 百家饭 未运行
-- 端口 20129 被阻止
-- 防火墙拦截连接
+1. 启动 Potluck：
 
-**解决方案:**
-
-1. **启动 百家饭:**
    ```bash
-   cd potluck
-   npm run dev
-   ```
-   仪表盘应该在 http://localhost:3000 打开。
-
-2. **检查端口 20129:**
-   ```bash
-   # 检查端口是否监听
-   lsof -i :20129
-   
-   # Windows
-   netstat -ano | findstr :20129
-   ```
-
-3. **检查防火墙:**
-   - macOS: 系统设置 → 网络 → 防火墙
-   - Windows: Windows Defender 防火墙 → 允许应用
-   - Linux: `sudo ufw allow 20129`
-
-4. **使用云端 endpoint:**
-   如果 localhost 不行(例如 Cursor IDE):
-   ```
-   Endpoint: https://your-potluck-cloud.example.com/v1
-   ```
-
----
-
-## 仪表盘无法打开
-
-**问题:** 仪表盘无法在 http://localhost:3000 加载。
-
-**原因:**
-- 端口 3000 被占用
-- 百家饭 崩溃
-- 浏览器缓存问题
-
-**解决方案:**
-
-1. **确认 百家饭 是否运行:**
-   ```bash
-   # 检查进程
-   ps aux | grep potluck
-   
-   # 检查端口 3000
-   lsof -i :3000
-   ```
-
-2. **杀掉冲突进程:**
-   ```bash
-   # macOS/Linux
-   lsof -ti:3000 | xargs kill -9
-   
-   # Windows
-   netstat -ano | findstr :3000
-   taskkill /PID <PID> /F
-   ```
-
-3. **重启 百家饭:**
-   ```bash
-   # 停止
-   pkill -f "next"
-   
-   # 启动
    npm run dev
    ```
 
-4. **清除浏览器缓存:**
-   - Chrome: Ctrl+Shift+Delete → 清除缓存
-   - 尝试无痕模式
+2. 确认默认端口正在监听：
 
-5. **检查防火墙设置:**
-   确认端口 3000 未被阻止。
-
----
-
-## 模型未找到
-
-**问题:** 出现 "Model not found" 或 "Invalid model" 错误。
-
-**原因:**
-- 提供商未连接
-- 模型 ID 拼写错误
-- 提供商未激活
-
-**解决方案:**
-
-1. **验证提供商连接:**
-   ```
-   仪表盘 → 提供商 → 检查状态(绿色 = 已激活)
-   ```
-
-2. **检查模型 ID 格式:**
-   ```
-   正确: cc/claude-opus-4-5-20251101
-   错误: claude-opus-4-5-20251101
-   
-   格式: [provider-prefix]/[model-name]
-   ```
-
-3. **列出可用模型:**
    ```bash
-   curl http://localhost:20129/v1/models \
-     -H "Authorization: Bearer your-api-key"
+   lsof -nP -iTCP:21023 -sTCP:LISTEN
    ```
 
-4. **重新连接提供商:**
-   ```
-   仪表盘 → 提供商 → [提供商] → 重新连接
-   ```
+   Windows：
 
----
-
-## 响应缓慢
-
-**问题:** 请求耗时过长或超时。
-
-**原因:**
-- 提供商延迟
-- 网络问题
-- 上下文/响应过大
-- 提供商速率限制
-
-**解决方案:**
-
-1. **查看提供商状态:**
-   ```
-   仪表盘 → 提供商 → 查看延迟统计
+   ```powershell
+   netstat -ano | findstr :21023
    ```
 
-2. **切换到更快的模型:**
-   ```
-   快速: cc/claude-haiku-4-5 (Haiku 比 Opus 快)
-         gc/gemini-3-flash-preview
-         qw/qwen3-coder-flash
-   ```
+3. 所有位置使用同一个实际端口：
 
-3. **使用流式响应:**
-   ```json
-   {
-     "model": "cc/claude-opus-4-5",
-     "messages": [...],
-     "stream": true
-   }
+   ```text
+   仪表盘：http://localhost:21023/dashboard
+   API Base：http://localhost:21023/v1
    ```
 
-4. **检查网络:**
-   ```bash
-   # 测试延迟
-   ping api.anthropic.com
-   ping api.openai.com
-   ```
+4. 如果客户端运行在容器、虚拟机、远程工作区或厂商服务器中，它的 `localhost` 不一定是
+   Potluck 所在机器。应使用该运行环境能够访问的地址，并用 HTTPS、仪表盘登录和端点 API Key
+   验证进行保护。
 
-5. **减小上下文:**
-   - 精简消息历史
-   - 使用更短的 prompt
-   - 在 CLI 工具中启用上下文裁剪
+不要为了绕过连接问题而直接向公网开放 Potluck 应用端口。优先使用可信 HTTPS 反向代理或已配置
+的隧道。
 
----
+## 仪表盘打不开
 
-## API Key 无效
+清理浏览器数据前，先请求 `/api/health`。健康检查失败时查看服务日志；健康检查成功但页面
+打不开时：
 
-**问题:** 出现 "Invalid API key" 或 "Authentication failed" 错误。
+- 直接打开 `http://localhost:21023/dashboard`；
+- 确认浏览器没有强制使用无关代理或升级到 HTTPS；
+- 使用无痕窗口排除旧 Cookie；
+- 确认仪表盘密码正确。
 
-**原因:**
-- 复制了错误的 API key
-- API key 已过期
-- 未生成 API key
+没有密码哈希且未设置 `INITIAL_PASSWORD` 时，首次本地密码为 `123456`。允许其他设备访问前
+必须修改。
 
-**解决方案:**
+## HTTP 401 或 403
 
-1. **重新生成 API key:**
-   ```
-   仪表盘 → 设置 → API Keys → 生成新 Key
-   → 复制并使用新 key
-   ```
+Potluck 有两个不同的凭据边界：
 
-2. **检查 key 格式:**
-   ```
-   正确: 9r_xxxxxxxxxxxxxxxxxxxxxxxx
-   错误: 缺少 9r_ 前缀
-   ```
+- 仪表盘登录保护管理页面和本地管理 API；
+- 在 **仪表盘 → Endpoint** 中启用验证后，Potluck 端点 Key 保护兼容 `/v1` 客户端请求。
 
-3. **检查 CLI 配置中的 key:**
-   ```bash
-   # Cursor
-   Settings → Models → OpenAI API Key
-   
-   # Cline
-   Settings → API Key
-   
-   # 环境变量
-   export OPENAI_API_KEY="9r_your_key"
-   ```
+不要把上游提供商凭据当作 Potluck 端点 Key。客户端应使用当前 Potluck 实例创建的有效 Key：
 
-4. **测试 API key:**
-   ```bash
-   curl http://localhost:20129/v1/models \
-     -H "Authorization: Bearer 9r_your_key"
-   ```
+```http
+Authorization: Bearer YOUR_POTLUCK_KEY
+```
 
----
+如果 401 或 403 实际来自第三方提供商，应重新连接该提供商或替换凭据，再运行仪表盘连接测试。
 
-## 需要更多帮助?
+## 找不到模型
 
-- **GitHub Issues:** [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)
-- **文档:** [github.com/Ezero23/potluck](https://your-potluck-cloud.example.com/docs)
-- **常见问题:** [faq.md](faq.md)
+不要从截图或旧文档复制模型标识，应查询正在运行的实例：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_KEY"
+```
+
+使用响应中返回的标识。只有实际配置了对应路由 profile 后，
+`profile:PROFILE_NAME` 才能使用。如果列表中的模型仍然失败，应检查对应提供商连接、账户地区、
+配额和请求类型支持情况。
+
+## OAuth 过期或提供商认证失败
+
+Token 刷新能力取决于具体提供商，会话被撤销后自动刷新也可能失败。
+
+1. 打开 **仪表盘 → 提供商**。
+2. 运行连接测试并保留原始错误。
+3. 凭据或会话过期时重新连接。
+4. 确认账户和地区与所选提供商条目一致。
+5. 检查出站代理设置和提供商当前服务状态。
+
+不要在 Issue 中发布 refresh token、Cookie、API Key、包含秘密的授权 URL 或 Potluck 数据目录。
+
+## 速率限制或额度耗尽
+
+只有实现了第三方用量查询的集成才能显示额度字段，而且仪表盘数值可能晚于提供商。
+
+- 查看提供商自己的账单和额度页面；
+- 减少并发请求；
+- 等待提供商额度重置；
+- 独立测试另一个连接；
+- 确认每个成员可以单独工作后，再配置组合或路由 profile。
+
+故障切换是尽力而为。它不会创造额度，也无法在所有候选都不可用或错误没有配置为可重试时恢复。
+
+## 响应缓慢或流式输出延迟
+
+先比较一次直接 `provider/model` 请求和组合或 profile 请求，再检查：
+
+- 提供商延迟和服务状态；
+- 出站代理延迟；
+- 提示词和响应大小；
+- 客户端超时设置；
+- 反向代理是否缓冲流式响应。
+
+Nginx 生效的 `location` 应包含：
+
+```nginx
+proxy_buffering off;
+proxy_read_timeout 86400;
+```
+
+网络诊断应使用提供商主机名和 HTTP 请求；即使 HTTPS 正常，ICMP `ping` 也可能被屏蔽。
+
+## 用量或费用异常
+
+仪表盘成本是估算值，不是第三方账单。应与提供商当前账单页面和价格对比。模型价格、订阅、
+促销和免费额度都可能随时变化。
+
+- 检查 Usage 和请求详情；
+- 确认组合或 profile 实际选择了哪个来源；
+- 除非确实需要，否则关闭请求正文日志；
+- 在提供商侧设置消费上限和告警；
+- 可能泄露的凭据应立即轮换。
+
+Potluck 当前不提供通用预算强制执行。
+
+## Docker、Nginx 或数据目录问题
+
+Nginx 返回 502 时：
+
+```bash
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+curl http://127.0.0.1:21023/api/health
+sudo nginx -t
+```
+
+数据错误应检查 `DATA_DIR` 是否存在、Potluck 进程是否可写，并确认目录没有对所有用户开放读取。
+服务运行期间不要删除或替换 `data.sqlite`。升级和迁移前应备份完整数据目录。
+
+## 仍然需要帮助
+
+- [常见问题](./faq.md)
+- [安装指南](./getting-started/installation.md)
+- [GitHub Issues](https://github.com/Ezero23/potluck/issues)
+
+提交问题时请附上版本、安装方式、接口、状态码、复现步骤和脱敏日志。发布前删除凭据、Token、
+Cookie、提示词、响应内容和个人数据。

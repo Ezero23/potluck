@@ -7,6 +7,40 @@ const LOGGING_ENABLED = typeof process !== "undefined" && process.env?.ENABLE_RE
 let fs = null;
 let path = null;
 let LOGS_DIR = null;
+const SENSITIVE_KEY_PARTS = [
+  "authorization",
+  "proxy-authorization",
+  "api-key",
+  "apikey",
+  "cookie",
+  "password",
+  "secret",
+  "token",
+];
+
+function isSensitiveKey(key) {
+  const normalized = String(key).toLowerCase().replace(/_/g, "-");
+  return SENSITIVE_KEY_PARTS.some((part) => normalized.includes(part));
+}
+
+function redactSensitiveData(value, seen = new WeakSet()) {
+  if (value === null || typeof value !== "object") return value;
+  if (seen.has(value)) return "[Circular]";
+  seen.add(value);
+
+  if (typeof value.entries === "function") {
+    return redactSensitiveData(Object.fromEntries(value.entries()), seen);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSensitiveData(item, seen));
+  }
+
+  const redacted = {};
+  for (const [key, item] of Object.entries(value)) {
+    redacted[key] = isSensitiveKey(key) ? "[REDACTED]" : redactSensitiveData(item, seen);
+  }
+  return redacted;
+}
 
 // Lazy load Node.js modules (avoid top-level await)
 async function ensureNodeModules() {
@@ -40,15 +74,17 @@ async function createLogSession(sourceFormat, targetFormat, model) {
   
   try {
     if (!fs.existsSync(LOGS_DIR)) {
-      fs.mkdirSync(LOGS_DIR, { recursive: true });
+      fs.mkdirSync(LOGS_DIR, { recursive: true, mode: 0o700 });
     }
+    fs.chmodSync(LOGS_DIR, 0o700);
     
     const timestamp = formatTimestamp();
     const safeModel = (model || "unknown").replace(/[/:]/g, "-");
     const folderName = `${sourceFormat}_${targetFormat}_${safeModel}_${timestamp}`;
     const sessionPath = path.join(LOGS_DIR, folderName);
     
-    fs.mkdirSync(sessionPath, { recursive: true });
+    fs.mkdirSync(sessionPath, { recursive: true, mode: 0o700 });
+    fs.chmodSync(sessionPath, 0o700);
     
     return sessionPath;
   } catch (err) {
@@ -63,31 +99,15 @@ function writeJsonFile(sessionPath, filename, data) {
   
   try {
     const filePath = path.join(sessionPath, filename);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    fs.writeFileSync(filePath, JSON.stringify(redactSensitiveData(data), null, 2), { mode: 0o600 });
+    fs.chmodSync(filePath, 0o600);
   } catch (err) {
     console.log(`[LOG] Failed to write ${filename}:`, err.message);
   }
 }
 
-// Mask sensitive data in headers (DISABLED - keep full token for testing)
 function maskSensitiveHeaders(headers) {
-  if (!headers) return {};
-  return { ...headers };
-  
-  // Old masking code (disabled):
-  // const masked = { ...headers };
-  // const sensitiveKeys = ["authorization", "x-api-key", "cookie", "token"];
-  // 
-  // for (const key of Object.keys(masked)) {
-  //   const lowerKey = key.toLowerCase();
-  //   if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
-  //     const value = masked[key];
-  //     if (value && value.length > 20) {
-  //       masked[key] = value.slice(0, 10) + "..." + value.slice(-5);
-  //     }
-  //   }
-  // }
-  // return masked;
+  return redactSensitiveData(headers || {});
 }
 
 // No-op logger when logging is disabled
@@ -170,7 +190,7 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
         timestamp: new Date().toISOString(),
         status,
         statusText,
-        headers: headers ? (typeof headers.entries === "function" ? Object.fromEntries(headers.entries()) : headers) : {},
+        headers: maskSensitiveHeaders(headers),
         body
       });
     },
@@ -180,7 +200,8 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
       if (!fs || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "5_res_provider.txt");
-        fs.appendFileSync(filePath, chunk);
+        fs.appendFileSync(filePath, chunk, { mode: 0o600 });
+        fs.chmodSync(filePath, 0o600);
       } catch (err) {
         // Ignore append errors
       }
@@ -191,7 +212,8 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
       if (!fs || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "6_res_openai.txt");
-        fs.appendFileSync(filePath, chunk);
+        fs.appendFileSync(filePath, chunk, { mode: 0o600 });
+        fs.chmodSync(filePath, 0o600);
       } catch (err) {
         // Ignore append errors
       }
@@ -210,7 +232,8 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
       if (!fs || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "7_res_client.txt");
-        fs.appendFileSync(filePath, chunk);
+        fs.appendFileSync(filePath, chunk, { mode: 0o600 });
+        fs.chmodSync(filePath, 0o600);
       } catch (err) {
         // Ignore append errors
       }
@@ -236,8 +259,9 @@ export function logError(provider, { error, url, model, requestBody }) {
   
   try {
     if (!fs.existsSync(LOGS_DIR)) {
-      fs.mkdirSync(LOGS_DIR, { recursive: true });
+      fs.mkdirSync(LOGS_DIR, { recursive: true, mode: 0o700 });
     }
+    fs.chmodSync(LOGS_DIR, 0o700);
     
     const date = new Date().toISOString().split("T")[0];
     const logPath = path.join(LOGS_DIR, `${provider}-${date}.log`);
@@ -253,7 +277,8 @@ export function logError(provider, { error, url, model, requestBody }) {
       requestBody
     };
     
-    fs.appendFileSync(logPath, JSON.stringify(logEntry) + "\n");
+    fs.appendFileSync(logPath, JSON.stringify(redactSensitiveData(logEntry)) + "\n", { mode: 0o600 });
+    fs.chmodSync(logPath, 0o600);
   } catch (err) {
     console.log("[LOG] Failed to write error log:", err.message);
   }

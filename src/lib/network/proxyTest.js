@@ -1,4 +1,4 @@
-import { ProxyAgent, fetch as undiciFetch } from "undici";
+import { proxyAwareFetch } from "open-sse/utils/proxyFetch.js";
 
 const DEFAULT_TEST_URL = "https://google.com/";
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -25,6 +25,18 @@ function normalizeString(value) {
   return String(value).trim();
 }
 
+function parseProxyUrl(value) {
+  try {
+    return new URL(value).toString();
+  } catch {
+    try {
+      return new URL(`http://${value}`).toString();
+    } catch {
+      return null;
+    }
+  }
+}
+
 export async function testProxyUrl({ proxyUrl, testUrl, timeoutMs } = {}) {
   const normalizedProxyUrl = normalizeString(proxyUrl);
   if (!normalizedProxyUrl) {
@@ -38,54 +50,50 @@ export async function testProxyUrl({ proxyUrl, testUrl, timeoutMs } = {}) {
       ? Math.min(timeoutMsRaw, 30000)
       : DEFAULT_TIMEOUT_MS;
 
-  let dispatcher;
+  const parsedProxyUrl = parseProxyUrl(normalizedProxyUrl);
+  if (!parsedProxyUrl) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Invalid proxy URL",
+    };
+  }
+
+  const controller = new AbortController();
+  const startedAt = Date.now();
+  const timer = setTimeout(() => controller.abort(), normalizedTimeoutMs);
 
   try {
-    try {
-      dispatcher = new ProxyAgent({ uri: normalizedProxyUrl });
-    } catch (err) {
-      return {
-        ok: false,
-        status: 400,
-        error: `Invalid proxy URL: ${err?.message || String(err)}`,
-      };
-    }
-
-    const controller = new AbortController();
-    const startedAt = Date.now();
-    const timer = setTimeout(() => controller.abort(), normalizedTimeoutMs);
-
-    try {
-      const res = await undiciFetch(normalizedTestUrl, {
+    const res = await proxyAwareFetch(
+      normalizedTestUrl,
+      {
         method: "HEAD",
-        dispatcher,
         signal: controller.signal,
         headers: {
           "User-Agent": "Potluck",
         },
-      });
+      },
+      {
+        enabled: true,
+        url: parsedProxyUrl,
+        strictProxy: true,
+      }
+    );
 
-      return {
-        ok: res.ok,
-        status: res.status,
-        statusText: res.statusText,
-        url: normalizedTestUrl,
-        elapsedMs: Date.now() - startedAt,
-      };
-    } catch (err) {
-      const message =
-        err?.name === "AbortError"
-          ? "Proxy test timed out"
-          : getErrorMessage(err);
-      return { ok: false, status: 500, error: message };
-    } finally {
-      clearTimeout(timer);
-    }
+    return {
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+      url: normalizedTestUrl,
+      elapsedMs: Date.now() - startedAt,
+    };
+  } catch (err) {
+    const message =
+      err?.name === "AbortError"
+        ? "Proxy test timed out"
+        : getErrorMessage(err);
+    return { ok: false, status: 500, error: message };
   } finally {
-    try {
-      await dispatcher?.close?.();
-    } catch {
-      // ignore
-    }
+    clearTimeout(timer);
   }
 }

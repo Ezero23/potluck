@@ -87,7 +87,19 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function isLoopbackHostname(h) {
   if (!h) return false;
-  const name = h.split(":")[0].replace(/^\[|\]$/g, "").toLowerCase();
+  let name = String(h).trim().toLowerCase();
+  if (name.startsWith("[")) {
+    const closingBracket = name.indexOf("]");
+    if (closingBracket === -1) return false;
+    name = name.slice(1, closingBracket);
+  } else if (name.startsWith("::ffff:")) {
+    name = name.slice("::ffff:".length);
+  } else if (name !== "::1") {
+    const portSeparator = name.lastIndexOf(":");
+    if (portSeparator > -1 && name.indexOf(":") === portSeparator) {
+      name = name.slice(0, portSeparator);
+    }
+  }
   return LOOPBACK_HOSTS.has(name);
 }
 
@@ -97,12 +109,9 @@ export function isLocalRequest(request) {
   if (request.headers.get("x-9r-via-proxy")) return false;
   // Trusted peer IP from TCP socket (custom-server.js); unspoofable. Primary anchor for "local".
   const realIp = request.headers.get("x-9r-real-ip");
-  if (realIp) {
-    if (!isLoopbackHostname(realIp)) return false;
-  } else if (!isLoopbackHostname(request.headers.get("host"))) {
-    // Fallback for bare server.js (dev) without custom-server: legacy Host-based check.
-    return false;
-  }
+  // Fail closed when the request did not pass through custom-server.js. Host and
+  // Origin are client-controlled and cannot prove that the TCP peer is local.
+  if (!realIp || !isLoopbackHostname(realIp)) return false;
   const origin = request.headers.get("origin");
   if (origin) {
     try {

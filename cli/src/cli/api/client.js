@@ -9,7 +9,7 @@ const { machineIdSync } = require("node-machine-id");
 // Default configuration
 const DEFAULT_CONFIG = {
   host: "localhost",
-  port: 20128,
+  port: 21023,
   protocol: "http:",
 };
 
@@ -74,6 +74,16 @@ function getCliToken() {
  */
 function configure(options = {}) {
   config = { ...config, ...options };
+}
+
+function getBaseUrl() {
+  return `${config.protocol}//${config.host}:${config.port}`;
+}
+
+function getOAuthRedirectUri(provider) {
+  return provider === "codex"
+    ? "http://localhost:1455/auth/callback"
+    : `${getBaseUrl()}/callback`;
 }
 
 /**
@@ -223,10 +233,7 @@ async function getProviderModels(id) {
  * @returns {Promise<Object>} { success, data: { authUrl, codeVerifier, state, redirectUri } }
  */
 async function getOAuthAuthUrl(provider) {
-  // Codex requires fixed port 1455 and path /auth/callback
-  const redirectUri = provider === "codex" 
-    ? "http://localhost:1455/auth/callback"
-    : "http://localhost:20128/callback";
+  const redirectUri = getOAuthRedirectUri(provider);
   return makeRequest("GET", `/api/oauth/${provider}/authorize?redirect_uri=${encodeURIComponent(redirectUri)}`);
 }
 
@@ -496,6 +503,8 @@ async function disableTunnel() {
 
 module.exports = {
   configure,
+  getBaseUrl,
+  getOAuthRedirectUri,
   
   // Providers
   getProviders,

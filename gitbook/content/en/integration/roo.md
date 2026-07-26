@@ -1,127 +1,80 @@
-# Roo AI Assistant Integration
+# Roo Code
 
-Integrate Potluck with Roo AI Assistant to access multiple AI models through a unified interface.
+Roo Code can connect to Potluck through its **OpenAI Compatible** provider.
+Do not select Ollama unless you are actually connecting Roo to Ollama.
 
-## Prerequisites
+## Before you start
 
-- Roo AI Assistant installed
-- Potluck API key from [dashboard](http://localhost:20129/dashboard)
-- Potluck running (local or cloud)
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Add and test at least one provider.
+3. Open **Endpoint**, create an API key, and copy it.
+4. Install the Roo Code VS Code extension.
 
-## Configuration Steps
+## Find a suitable model
 
-### 1. Open Roo Settings
+List models available to your Potluck key:
 
-Launch Roo AI Assistant and open the settings panel.
-
-### 2. Configure API Provider
-
-1. Navigate to **API Provider** settings
-2. Select **Ollama** as the provider type
-3. Configure the following settings:
-
-**For Local Potluck:**
-```
-Base URL: http://localhost:20128/v1
-API Key: your-api-key-from-dashboard
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**For Cloud Potluck:**
-```
-Base URL: http://localhost:20129/v1
-API Key: your-api-key-from-dashboard
-```
+Roo Code uses native OpenAI-compatible tool calling. Choose a returned model
+that supports tools; a text-only model may answer chat messages but cannot
+operate Roo's coding tools correctly.
 
-### 3. Select Model
+## Configure Roo Code
 
-Choose from available Potluck models:
+1. Open Roo Code in VS Code.
+2. Select the settings icon.
+3. Set **API Provider** to **OpenAI Compatible**.
+4. Enter:
 
-**Claude Models:**
-- `cc/claude-opus-4-5-20251101` - Most capable
-- `cc/claude-sonnet-4-20250514` - Balanced
-- `cc/claude-haiku-4-20250514` - Fast
-
-**DeepSeek Models:**
-- `cx/deepseek-chat` - General purpose
-- `cx/deepseek-reasoner` - Complex reasoning
-
-**GLM Models:**
-- `glm/glm-4-plus` - Advanced
-- `glm/glm-4-flash` - Fast responses
-
-### 4. Test Connection
-
-Send a test message to verify the integration:
-
-```
-Hello! Can you confirm you're connected through Potluck?
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
 ```
 
-## Usage Examples
+5. Save the provider profile and start a new Roo task.
 
-### Basic Chat
-```
-Ask Roo: "Explain quantum computing in simple terms"
-Model: cc/claude-sonnet-4-20250514
-```
+Do not copy a fixed model name from a guide. Use an exact `data[].id` returned
+by your Potluck instance.
 
-### Code Generation
-```
-Ask Roo: "Write a Python function to calculate Fibonacci numbers"
-Model: cx/deepseek-chat
-```
+## Verify the connection
 
-### Complex Reasoning
-```
-Ask Roo: "Analyze the trade-offs between microservices and monolithic architecture"
-Model: cx/deepseek-reasoner
+Check Potluck independently:
+
+```bash
+curl http://localhost:21023/api/health
 ```
 
-## Model Selection Tips
+Then ask Roo to perform a small read-only task, such as listing the files in
+the current workspace. Confirm the request appears on Potluck's **Usage** page
+before allowing file modifications.
 
-- **Quick tasks**: Use `cc/claude-haiku-4-20250514` or `glm/glm-4-flash`
-- **Balanced performance**: Use `cc/claude-sonnet-4-20250514` or `cx/deepseek-chat`
-- **Complex reasoning**: Use `cc/claude-opus-4-5-20251101` or `cx/deepseek-reasoner`
-- **Cost optimization**: Use DeepSeek or GLM models
+## Remote deployment
+
+Use the HTTPS address of the remote instance:
+
+```text
+Base URL: https://potluck.example.com/v1
+```
+
+Enable endpoint API-key authentication under **Dashboard → Endpoint** before
+exposing Potluck publicly. `localhost` refers to the computer running VS Code.
 
 ## Troubleshooting
 
-### Connection Failed
-- Verify Potluck is running: `curl http://localhost:20128/health`
-- Check API key is correct
-- Ensure Base URL includes `/v1` suffix
+- **Connection refused:** confirm Potluck is running on `21023`.
+- **401 response:** use a Potluck API key, not an upstream provider key.
+- **404 response:** confirm the Base URL ends with `/v1`.
+- **Model not found:** copy an exact ID from `/v1/models`.
+- **Roo responds but cannot use tools:** select a model with native
+  OpenAI-compatible tool-calling support.
+- **Settings appear unchanged:** save the Roo provider profile, reload VS Code,
+  and start a new task.
 
-### Model Not Available
-- Check model name matches exactly (case-sensitive)
-- Verify model is enabled in your Potluck plan
-- Try a different model from the list
-
-### Slow Responses
-- Switch to faster models (haiku, flash)
-- Check network connection
-- Monitor Potluck logs for issues
-
-## Advanced Configuration
-
-### Custom Model Aliases
-
-You can create shortcuts for frequently used models in Roo settings:
-
-```
-Alias: "fast" → cc/claude-haiku-4-20250514
-Alias: "smart" → cc/claude-opus-4-5-20251101
-Alias: "code" → cx/deepseek-chat
-```
-
-### Multiple Profiles
-
-Set up different profiles for different use cases:
-- **Development**: DeepSeek models for code
-- **Writing**: Claude models for content
-- **Research**: Reasoner models for analysis
-
-## Next Steps
-
-- [Configure Cursor](cursor.md) for IDE integration
-- [Set up Continue](continue.md) for VSCode
-- [Explore CLI usage](../cli/basic-usage.md)
+See Roo Code's
+[OpenAI Compatible provider documentation](https://roocodeinc.github.io/Roo-Code/providers/openai-compatible/)
+for its current configuration fields and tool-calling requirements.

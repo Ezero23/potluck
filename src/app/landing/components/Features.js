@@ -18,11 +18,11 @@ const FEATURES = [
     title: "Easy Setup", 
     desc: "Get up and running in minutes with npx command.", 
     colors: {
-      border: "hover:border-orange-500/50",
-      bg: "hover:bg-orange-500/5",
-      iconBg: "bg-orange-500/10",
-      iconText: "text-orange-500",
-      titleHover: "group-hover:text-orange-400"
+      border: "hover:border-cyan-500/50",
+      bg: "hover:bg-cyan-500/5",
+      iconBg: "bg-cyan-500/10",
+      iconText: "text-cyan-500",
+      titleHover: "group-hover:text-cyan-400"
     }
   },
   { 
@@ -54,11 +54,11 @@ const FEATURES = [
     title: "OAuth & API Keys", 
     desc: "Securely manage credentials in one vault.", 
     colors: {
-      border: "hover:border-amber-500/50",
-      bg: "hover:bg-amber-500/5",
-      iconBg: "bg-amber-500/10",
-      iconText: "text-amber-500",
-      titleHover: "group-hover:text-amber-400"
+      border: "hover:border-cyan-300/50",
+      bg: "hover:bg-cyan-300/5",
+      iconBg: "bg-cyan-300/10",
+      iconText: "text-cyan-300",
+      titleHover: "group-hover:text-cyan-200"
     }
   },
   { 

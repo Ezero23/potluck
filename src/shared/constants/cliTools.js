@@ -10,7 +10,7 @@ export const MITM_TOOLS = {
     mitmDomain: "daily-cloudcode-pa.googleapis.com",
     modelAliases: ["gemini-3.5-flash-low", "gemini-3-flash-agent", "gemini-3.5-flash-extra-low", "gemini-3.1-pro-low", "gemini-pro-agent", "claude-sonnet-4-6", "claude-opus-4-6-thinking", "gpt-oss-120b-medium", "gemini-3-flash"],
     defaultModels: [
-      { id: "gemini-3.5-flash-low", name: "Gemini 3.5 Flash (Medium) / Default", alias: "gemini-3.5-flash-low" },
+      { id: "gemini-3.5-flash-low", name: "Gemini 3.5 Flash (Medium) / Default", alias: "gemini-3.5-flash-low", mandatory: true },
       { id: "gemini-3-flash-agent", name: "Gemini 3.5 Flash (High)", alias: "gemini-3-flash-agent" },
       { id: "gemini-3.5-flash-extra-low", name: "Gemini 3.5 Flash (Low)", alias: "gemini-3.5-flash-extra-low" },
       { id: "gemini-3.1-pro-low", name: "Gemini 3.1 Pro (Low)", alias: "gemini-3.1-pro-low" },
@@ -65,20 +65,6 @@ export const MITM_TOOLS = {
       { id: "simple-task", name: "Qwen3 Coder Next", alias: "simple-task" },
     ],
   },
-  // cursor: {
-  //   id: "cursor",
-  //   name: "Cursor",
-  //   image: "/providers/cursor.png",
-  //   color: "#000000",
-  //   description: "Cursor IDE with MITM",
-  //   configType: "mitm",
-  //   mitmDomain: "api2.cursor.sh",
-  //   defaultModels: [
-  //     { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5", alias: "claude-sonnet-4-5" },
-  //     { id: "claude-opus-4", name: "Claude Opus 4", alias: "claude-opus-4" },
-  //     { id: "gpt-4o", name: "GPT-4o", alias: "gpt-4o" },
-  //   ],
-  // },
 };
 
 // CLI Tools configuration
@@ -153,27 +139,6 @@ export const CLI_TOOLS = {
     description: "Factory Droid AI Assistant",
     configType: "custom",
   },
-  cursor: {
-    id: "cursor",
-    name: "Cursor",
-    image: "/providers/cursor.png",
-    color: "#000000",
-    description: "Cursor AI Code Editor",
-    configType: "guide",
-    requiresExternalUrl: true,
-    notes: [
-      { type: "warning", text: "Requires Cursor Pro account to use this feature." },
-      { type: "cloudCheck", text: "Cursor routes requests through its own server, so local endpoint is not supported. Please enable Tunnel or Cloud Endpoint in Settings." },
-    ],
-    guideSteps: [
-      { step: 1, title: "Open Settings", desc: "Go to Settings → Models" },
-      { step: 2, title: "Enable OpenAI API", desc: "Enable \"OpenAI API key\" option" },
-      { step: 3, title: "Base URL", value: "{{baseUrl}}", copyable: true },
-      { step: 4, title: "API Key", type: "apiKeySelector" },
-      { step: 5, title: "Add Custom Model", desc: "Click \"View All Model\" → \"Add Custom Model\"" },
-      { step: 6, title: "Select Model", type: "modelSelector" },
-    ],
-  },
   cline: {
     id: "cline",
     name: "Cline",
@@ -199,7 +164,7 @@ export const CLI_TOOLS = {
     configType: "guide",
     guideSteps: [
       { step: 1, title: "Open Settings", desc: "Go to Roo Settings panel" },
-      { step: 2, title: "Select Provider", desc: "Choose API Provider → Ollama" },
+      { step: 2, title: "Select Provider", desc: "Choose API Provider → OpenAI Compatible" },
       { step: 3, title: "Base URL", value: "{{baseUrl}}", copyable: true },
       { step: 4, title: "API Key", type: "apiKeySelector" },
       { step: 5, title: "Select Model", type: "modelSelector" },
@@ -213,20 +178,28 @@ export const CLI_TOOLS = {
     description: "Continue AI Assistant",
     configType: "guide",
     guideSteps: [
-      { step: 1, title: "Open Config", desc: "Open Continue configuration file" },
+      { step: 1, title: "Open Config", desc: "Open ~/.continue/config.yaml" },
       { step: 2, title: "API Key", type: "apiKeySelector" },
-      { step: 3, title: "Select Model", type: "modelSelector" },
-      { step: 4, title: "Add Model Config", desc: "Add the following configuration to your models array:" },
+      { step: 3, title: "Store the API Key", desc: "Save it as POTLUCK_API_KEY in ~/.continue/.env" },
+      { step: 4, title: "Select Model", type: "modelSelector" },
+      { step: 5, title: "Add Model Config", desc: "Merge this entry into the existing models list, then reload the IDE:" },
     ],
     codeBlock: {
-      language: "json",
-      code: `{
-  "apiBase": "{{baseUrl}}",
-  "title": "{{model}}",
-  "model": "{{model}}",
-  "provider": "openai",
-  "apiKey": "{{apiKey}}"
-}`,
+      language: "yaml",
+      code: `name: Potluck
+version: 1.0.0
+schema: v1
+
+models:
+  - name: "{{model}}"
+    provider: openai
+    model: "{{model}}"
+    apiBase: "{{baseUrl}}"
+    apiKey: \${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply`,
     },
   },
   amp: {

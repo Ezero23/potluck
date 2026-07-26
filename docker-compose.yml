@@ -1,28 +1,36 @@
 services:
   potluck:
-    build: .
+    build:
+      context: .
+      args:
+        USE_CN_MIRROR: "${USE_CN_MIRROR:-false}"
     image: potluck:latest
     container_name: potluck
-    restart: always
+    restart: unless-stopped
     ports:
-      - "20129:20129"
+      - "${PORT:-21023}:21023"
     volumes:
       - potluck-data:/app/data
-    env_file:
-      - .env
     environment:
       DATA_DIR: /app/data
-      PORT: "20129"
+      PORT: "21023"
       HOSTNAME: "0.0.0.0"
       NODE_ENV: production
       HEADROOM_URL: http://headroom:8787
-    depends_on:
-      - headroom
+      INITIAL_PASSWORD: "${INITIAL_PASSWORD:-}"
+      JWT_SECRET: "${JWT_SECRET:-}"
+      API_KEY_SECRET: "${API_KEY_SECRET:-}"
+      MACHINE_ID_SALT: "${MACHINE_ID_SALT:-}"
+      ENABLE_REQUEST_LOGS: "${ENABLE_REQUEST_LOGS:-false}"
+      OBSERVABILITY_ENABLED: "${OBSERVABILITY_ENABLED:-true}"
+      AUTH_COOKIE_SECURE: "${AUTH_COOKIE_SECURE:-false}"
 
   headroom:
     image: ghcr.io/chopratejas/headroom:latest
     container_name: headroom
-    restart: always
+    restart: unless-stopped
+    profiles:
+      - headroom
     ports:
       - "8787:8787"
 

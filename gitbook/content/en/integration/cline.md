@@ -1,201 +1,96 @@
-# Cline Integration
+# Cline
 
-Integrate Potluck with Cline VSCode extension to route your AI requests through Potluck's intelligent routing system.
+Cline can connect to Potluck through Potluck's OpenAI-compatible API. Use
+Cline's **OpenAI Compatible** provider for manual setup; the old Ollama-based
+instructions do not describe the current Cline interface.
 
-## Prerequisites
+## Before you start
 
-- Visual Studio Code installed
-- Cline extension installed from VSCode marketplace
-- Potluck running locally or cloud endpoint configured
-- API key from Potluck dashboard
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Add and test at least one provider.
+3. Open **Endpoint**, create an API key, and copy it.
+4. Install Cline from its
+   [official installation page](https://docs.cline.bot/getting-started/installing-cline).
 
-## Setup
+Your model ID must come from your own Potluck instance. Potluck does not promise
+that any particular upstream model is present.
 
-### 1. Open Cline Settings
+## Automatic setup
 
-1. Open Visual Studio Code
-2. Open the Cline extension panel (click the Cline icon in the sidebar)
-3. Click the **Settings** icon (gear icon) in the Cline panel
+When Cline and Potluck run under the same desktop user:
 
-### 2. Select API Provider
+1. Open `http://localhost:21023/dashboard/cli-tools`.
+2. Expand **Cline**.
+3. Select the local endpoint, API key, and a model.
+4. Select **Apply**.
+5. Reload the VS Code window if Cline was already open.
 
-1. In the Cline settings, find **API Provider** dropdown
-2. Select **Ollama** from the list
-   - Note: We use Ollama provider type because it's compatible with OpenAI-style APIs
+Potluck updates only its Cline provider fields. You can use **Reset** on the
+same card to remove the Potluck connection.
 
-### 3. Configure Base URL
+## Manual setup
 
-Set the base URL to your Potluck endpoint:
+Use this method when Cline is on another machine or the automatic setup cannot
+detect it.
 
-**For Local Potluck:**
-```
-http://localhost:20128/v1
-```
+1. Open Cline in VS Code and select the settings icon.
+2. Set **API Provider** to **OpenAI Compatible**.
+3. Enter these values:
 
-**For Cloud Potluck:**
-```
-http://localhost:20129
-```
-
-**Steps:**
-1. In the **Base URL** field, enter your Potluck endpoint
-2. Make sure to include `/v1` at the end
-
-### 4. Add API Key
-
-1. In the **API Key** field, enter your Potluck API key
-2. You can find your API key in the Potluck dashboard under **Settings → API Keys**
-3. The key should start with `sk-potluck-`
-
-### 5. Select Model
-
-1. In the **Model** dropdown, you can either:
-   - Select from available models (if Cline auto-detects them)
-   - Manually enter the model name from your Potluck configuration
-
-2. Common model names:
-   - `gpt-4`
-   - `gpt-4o`
-   - `claude-opus-4-5`
-   - `claude-sonnet-4-5`
-   - `gemini-2.0-flash`
-
-### 6. Save Configuration
-
-Click **Save** or close the settings panel. Cline will automatically save your configuration.
-
-## Configuration Example
-
-Your Cline settings should look like this:
-
-```
-API Provider: Ollama
-Base URL: http://localhost:20128/v1
-API Key: sk-potluck-xxxxxxxxxxxxx
-Model: gpt-4
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
 ```
 
-## Available Models
+Keep `/v1` at the end of the Base URL. Do not select Ollama merely to reach
+Potluck; Cline has a dedicated OpenAI-compatible provider.
 
-You can use any model configured in your Potluck dashboard. Common examples:
+## Find a valid model ID
 
-| Model Name | Provider | Description |
-|------------|----------|-------------|
-| `gpt-4` | OpenAI | GPT-4 Turbo |
-| `gpt-4o` | OpenAI | GPT-4 Optimized |
-| `claude-opus-4-5` | Anthropic | Claude Opus 4.5 |
-| `claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `gemini-2.0-flash` | Google | Gemini 2.0 Flash |
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
 
-## Usage
+Copy an exact `data[].id` value from the response into Cline's **Model ID**
+field. Do not infer a model ID from a provider's marketing name.
 
-### Chat with AI
+## Verify the connection
 
-1. Open the Cline panel in VSCode
-2. Type your message in the chat input
-3. Press Enter to send
-4. Cline will use Potluck to process your request
+Check Potluck independently of Cline:
 
-### Code Generation
+```bash
+curl http://localhost:21023/api/health
+```
 
-1. Ask Cline to generate code: "Create a React component for a login form"
-2. Cline will generate code using Potluck
-3. Review and accept the generated code
+Then use Cline's provider verification control, or send a short message in a
+new Cline task. Review Potluck's **Usage** page to confirm the request arrived.
 
-### Code Explanation
+## Remote deployment
 
-1. Select code in your editor
-2. Ask Cline: "Explain this code"
-3. Get AI-powered explanations through Potluck
+For a remote Potluck instance, use its HTTPS address:
 
-### File Operations
+```text
+Base URL: https://potluck.example.com/v1
+```
 
-1. Ask Cline to create, modify, or delete files
-2. Cline will use Potluck to understand context and make changes
-3. Review changes before accepting
+`localhost` refers to the machine running VS Code. It cannot reach Potluck on a
+different computer. Enable endpoint API-key authentication under
+**Dashboard → Endpoint** before exposing Potluck publicly.
 
 ## Troubleshooting
 
-### "Connection Failed" Error
+- **Connection refused:** confirm Potluck is running on `21023` and that Cline
+  can reach that machine.
+- **401 response:** select or recreate a Potluck API key. Do not enter an
+  upstream provider key in Cline.
+- **Model not found:** query `/v1/models` and copy the exact returned ID.
+- **404 response:** confirm the manual Base URL ends in `/v1`.
+- **Settings do not take effect:** reload the VS Code window and open a new
+  Cline task.
+- **Tool calls behave incorrectly:** try another model known to support tool
+  use; an available text model is not automatically suitable for agent tasks.
 
-1. Verify Potluck is running: `curl http://localhost:20128/health`
-2. Check that the base URL is correct and includes `/v1`
-3. Ensure no firewall is blocking port 20128
-4. Try restarting VSCode
-
-### "Invalid API Key" Error
-
-1. Verify your API key in Potluck dashboard
-2. Make sure you copied the entire key including the `sk-potluck-` prefix
-3. Check that the API key has not expired
-4. Try regenerating a new API key
-
-### "Model Not Found" Error
-
-1. Verify the model name matches exactly with your Potluck configuration
-2. Check that the provider connection is active in Potluck dashboard
-3. Ensure the model is available in your connected providers
-4. Try using the full model name (e.g., `openai/gpt-4` instead of `gpt-4`)
-
-### Cline Not Responding
-
-1. Check the Cline output panel for error messages
-2. Verify your Potluck instance is running and healthy
-3. Try reloading VSCode window (Cmd/Ctrl + Shift + P → "Reload Window")
-4. Check Potluck logs for any errors
-
-## Advanced Configuration
-
-### Using Cloud Endpoint
-
-To use Potluck cloud endpoint instead of localhost:
-
-1. In Cline settings, set Base URL to: `http://localhost:20129`
-2. Make sure you have configured your API key in the Potluck cloud dashboard
-3. Ensure your cloud endpoint is active and accessible
-
-### Multiple Models
-
-You can quickly switch between models:
-
-1. Open Cline settings
-2. Change the **Model** field to a different model
-3. Save and continue chatting with the new model
-
-### Custom Timeout
-
-If you experience timeout issues with large requests:
-
-1. Open VSCode settings (Cmd/Ctrl + ,)
-2. Search for "Cline timeout"
-3. Increase the timeout value (default is usually 30 seconds)
-
-## Best Practices
-
-1. **Use Appropriate Models**: Choose faster models (like Haiku or Flash) for simple tasks, and more powerful models (like Opus or GPT-4) for complex tasks
-2. **Monitor Usage**: Check Potluck dashboard for usage statistics and costs
-3. **Context Management**: Keep your conversations focused to reduce token usage
-4. **Model Switching**: Switch models based on task complexity to optimize cost and performance
-5. **API Key Security**: Never commit your API key to version control
-
-## Integration with Potluck Features
-
-### Model Routing
-
-Potluck automatically routes your requests to the best available provider based on:
-- Model availability
-- Provider health status
-- Cost optimization
-- Load balancing
-
-### Fallback Support
-
-If a provider fails, Potluck automatically falls back to alternative providers configured in your dashboard.
-
-### Usage Tracking
-
-Monitor your Cline usage through Potluck dashboard:
-- Total requests
-- Token usage
-- Cost per model
-- Provider distribution
+For Cline's current field names and behavior, see its
+[OpenAI Compatible provider documentation](https://docs.cline.bot/provider-config/openai-compatible).

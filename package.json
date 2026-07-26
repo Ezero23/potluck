@@ -3,12 +3,20 @@
   "version": "0.5.18",
   "description": "Potluck - AI Gateway",
   "private": true,
+  "engines": {
+    "node": ">=22 <25",
+    "npm": ">=10"
+  },
   "scripts": {
-    "dev": "next dev --webpack --port 20127",
+    "dev": "next dev --webpack --port 21023",
     "build": "next build --webpack && npm run copy:standalone-assets",
     "copy:standalone-assets": "rm -rf .next/standalone/.next/static .next/standalone/public && cp -R .next/static .next/standalone/.next/static && cp -R public .next/standalone/public && cp custom-server.js .next/standalone/custom-server.js",
-    "start": "next start",
-    "dev:bun": "bun --bun next dev --webpack --port 20127",
+    "start": "node .next/standalone/custom-server.js",
+    "lint": "eslint src open-sse scripts custom-server.js next.config.mjs",
+    "test": "npm --prefix tests test",
+    "test:all": "npm --prefix tests run test:all",
+    "ci": "npm run lint && npm test && npm run build",
+    "dev:bun": "bun --bun next dev --webpack --port 21023",
     "build:bun": "bun --bun next build --webpack",
     "start:bun": "bun ./.next/standalone/server.js",
     "cli:pack": "npm --prefix cli run pack:cli",
@@ -53,6 +61,7 @@
   "comment_better_sqlite3": "kept in optionalDependencies so npm install doesn't fail on systems without build tools — sql.js is used as fallback at runtime",
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
+    "esbuild": "^0.25.12",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "postcss": "^8.5.6",

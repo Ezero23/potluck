@@ -16,8 +16,7 @@ const { isCertExpired } = require("./cert/rootCA");
 const { DATA_DIR, MITM_DIR } = require("./paths");
 const { log, err } = require("./logger");
 const { LSOF_BIN } = require("./config");
-
-const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
+const { normalizeMitmRouterBase } = require("./routerBase");
 
 function shellQuoteSingle(str) {
   if (str == null || str === "") return "''";
@@ -25,17 +24,17 @@ function shellQuoteSingle(str) {
 }
 
 async function resolveMitmRouterBaseUrl() {
-  if (!_getSettings) return DEFAULT_MITM_ROUTER_BASE;
-  try {
+  let configuredBaseUrl = "";
+  if (_getSettings) {
     const s = await _getSettings();
-    const raw = s && s.mitmRouterBaseUrl != null ? String(s.mitmRouterBaseUrl).trim() : "";
-    if (!raw) return DEFAULT_MITM_ROUTER_BASE;
-    const u = new URL(raw);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return DEFAULT_MITM_ROUTER_BASE;
-    return raw.replace(/\/+$/, "");
-  } catch {
-    return DEFAULT_MITM_ROUTER_BASE;
+    configuredBaseUrl =
+      s?.mitmRouterBaseUrl == null
+        ? ""
+        : String(s.mitmRouterBaseUrl).trim();
   }
+  return normalizeMitmRouterBase(
+    process.env.MITM_ROUTER_BASE || configuredBaseUrl
+  );
 }
 
 const MITM_PORT = 443;
@@ -874,4 +873,7 @@ module.exports = {
   restoreToolDNS,
   hasDnsPrivilege,
   removeAllDNSEntriesSync,
+  __test__: {
+    resolveMitmRouterBaseUrl,
+  },
 };

@@ -71,7 +71,8 @@ describe("GET /api/oauth/cursor/auto-import", () => {
     const response = await GET();
 
     expect(response.body.found).toBe(false);
-    expect(response.body.error).toContain("Cursor database not found in known macOS locations");
+    expect(response.body.error).toContain("Cursor database not found");
+    expect(response.body.error).toContain("Cursor - Insiders");
   });
 
   it("returns descriptive error if macOS db file exists but cannot be opened", async () => {
@@ -156,21 +157,18 @@ describe("GET /api/oauth/cursor/auto-import", () => {
     expect(response.body.error).toContain("Please login to Cursor IDE first");
   });
 
-  // ── Backwards-compatible: linux/win32 keep original single-path logic ─
+  // ── Linux and unsupported platforms ──────────────────────────────────
 
-  it("linux uses single hardcoded path and original error message", async () => {
+  it("linux probes both supported config paths", async () => {
     Object.defineProperty(process, "platform", { value: "linux", writable: true });
     vi.mocked(fsPromises.access).mockRejectedValue(new Error("ENOENT"));
-    mockDbInstance.__throwOnConstruct = true;
 
     const response = await GET();
 
     expect(response.body.found).toBe(false);
-    expect(response.body.error).toBe(
-      "Cursor database not found. Make sure Cursor IDE is installed and you are logged in."
-    );
-    // fs/promises.access should NOT have been called (linux skips probing)
-    expect(fsPromises.access).not.toHaveBeenCalled();
+    expect(response.body.error).toContain("/mock/home/.config/Cursor/");
+    expect(response.body.error).toContain("/mock/home/.config/cursor/");
+    expect(fsPromises.access).toHaveBeenCalledTimes(2);
   });
 
   it("unsupported platform returns 400", async () => {

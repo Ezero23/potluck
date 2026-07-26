@@ -1,249 +1,119 @@
-# Continue VSCode Extension Integration
+# Continue
 
-Integrate Potluck with Continue extension to bring AI assistance directly into Visual Studio Code.
+Continue can use Potluck as an OpenAI-compatible model provider. Current
+Continue releases prefer `config.yaml`; `config.json` is deprecated.
 
-## Prerequisites
+## Before you start
 
-- Visual Studio Code installed
-- Continue extension installed from VSCode marketplace
-- Potluck API key from [dashboard](http://localhost:20129/dashboard)
-- Potluck running (local or cloud)
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Add and test at least one provider.
+3. Open **Endpoint**, create an API key, and copy it.
+4. Install the Continue extension from its
+   [official documentation](https://docs.continue.dev/getting-started/install).
 
-## Configuration Steps
+## Find a valid model ID
 
-### 1. Open Continue Configuration
-
-1. Open VSCode
-2. Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux)
-3. Type "Continue: Open Config" and select it
-4. This opens `~/.continue/config.json`
-
-### 2. Add Potluck Model Configuration
-
-Add the following configuration to your `config.json`:
-
-**Single Model Setup:**
-```json
-{
-  "models": [
-    {
-      "title": "Potluck - Claude Opus",
-      "provider": "openai",
-      "model": "cc/claude-opus-4-5-20251101",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20128/v1"
-    }
-  ]
-}
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**Multiple Models Setup:**
-```json
-{
-  "models": [
-    {
-      "title": "Potluck - Claude Opus (Best)",
-      "provider": "openai",
-      "model": "cc/claude-opus-4-5-20251101",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20128/v1"
-    },
-    {
-      "title": "Potluck - Claude Sonnet (Balanced)",
-      "provider": "openai",
-      "model": "cc/claude-sonnet-4-20250514",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20128/v1"
-    },
-    {
-      "title": "Potluck - DeepSeek Chat (Code)",
-      "provider": "openai",
-      "model": "cx/deepseek-chat",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20128/v1"
-    },
-    {
-      "title": "Potluck - Claude Haiku (Fast)",
-      "provider": "openai",
-      "model": "cc/claude-haiku-4-20250514",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20128/v1"
-    }
-  ]
-}
+Choose one exact `data[].id` value. The examples below use `MODEL_ID` as a
+placeholder because each Potluck installation has a different model catalog.
+
+## Store the API key
+
+Create or edit `~/.continue/.env`:
+
+```dotenv
+POTLUCK_API_KEY=YOUR_POTLUCK_API_KEY
 ```
 
-**For Cloud Potluck:**
-Replace `apiBase` with:
-```json
-"apiBase": "http://localhost:20129/v1"
+Do not commit this file. Continue's IDE extension does not reliably inherit
+variables exported only in your shell, so the `.env` file is the supported
+local secret source.
+
+## Configure Continue
+
+Open Continue's config selector, select the gear icon, and edit the local
+`config.yaml`. The default global location is `~/.continue/config.yaml`.
+
+Add a Potluck model:
+
+```yaml
+name: Potluck
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Potluck
+    provider: openai
+    model: MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply
 ```
 
-### 3. Save and Reload
+If you already have a config, merge the model entry into its existing
+`models` list instead of replacing the whole file. Restart or reload the IDE
+after changing `~/.continue/.env`.
 
-1. Save the configuration file
-2. Reload VSCode window: `Cmd+Shift+P` → "Developer: Reload Window"
-3. Continue extension will load the new configuration
+## Add more models
 
-### 4. Select Model
+Add another item under `models` and give it a unique `name`:
 
-1. Open Continue sidebar (click Continue icon in left panel)
-2. Click model selector dropdown at the top
-3. Choose your preferred Potluck model
-
-## Available Models
-
-### Claude Models (Anthropic)
-- `cc/claude-opus-4-5-20251101` - Most capable, best for complex tasks
-- `cc/claude-sonnet-4-20250514` - Balanced performance and speed
-- `cc/claude-haiku-4-20250514` - Fastest, good for simple tasks
-
-### DeepSeek Models
-- `cx/deepseek-chat` - Excellent for code generation
-- `cx/deepseek-reasoner` - Best for complex problem solving
-
-### GLM Models (Zhipu AI)
-- `glm/glm-4-plus` - Advanced Chinese and English
-- `glm/glm-4-flash` - Fast responses
-
-## Usage Examples
-
-### Code Explanation
-1. Select code in editor
-2. Open Continue sidebar
-3. Type: "Explain this code"
-4. Model: `cc/claude-sonnet-4-20250514`
-
-### Code Generation
-1. Open Continue sidebar
-2. Type: "Create a React component for user profile card"
-3. Model: `cx/deepseek-chat`
-
-### Refactoring
-1. Select code to refactor
-2. Type: "Refactor this to use async/await"
-3. Model: `cc/claude-sonnet-4-20250514`
-
-### Bug Fixing
-1. Select problematic code
-2. Type: "Find and fix the bug in this code"
-3. Model: `cx/deepseek-reasoner`
-
-## Advanced Configuration
-
-### Custom System Prompts
-
-Add custom system prompts for specific behaviors:
-
-```json
-{
-  "models": [
-    {
-      "title": "Potluck - Code Expert",
-      "provider": "openai",
-      "model": "cx/deepseek-chat",
-      "apiKey": "your-api-key",
-      "apiBase": "http://localhost:20128/v1",
-      "systemMessage": "You are an expert programmer. Always provide clean, well-documented code with best practices."
-    }
-  ]
-}
+```yaml
+  - name: Potluck secondary
+    provider: openai
+    model: ANOTHER_MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
 ```
 
-### Temperature and Parameters
+Only use model IDs returned by your Potluck instance. Do not copy fixed model
+lists from old guides.
 
-Adjust model behavior with parameters:
+## Verify the connection
 
-```json
-{
-  "models": [
-    {
-      "title": "Potluck - Creative Writer",
-      "provider": "openai",
-      "model": "cc/claude-opus-4-5-20251101",
-      "apiKey": "your-api-key",
-      "apiBase": "http://localhost:20128/v1",
-      "temperature": 0.9,
-      "topP": 0.95
-    }
-  ]
-}
+Check Potluck:
+
+```bash
+curl http://localhost:21023/api/health
 ```
 
-### Context Providers
+Open Continue Chat, select the configured Potluck model, and send a short
+message. If Agent mode needs tool calls, choose a model that actually supports
+tool use.
 
-Configure what context Continue sends to the model:
+## Remote deployment
 
-```json
-{
-  "contextProviders": [
-    {
-      "name": "code",
-      "params": {
-        "maxLines": 100
-      }
-    },
-    {
-      "name": "diff",
-      "params": {}
-    },
-    {
-      "name": "terminal",
-      "params": {}
-    }
-  ]
-}
+Change `apiBase` to your HTTPS endpoint:
+
+```yaml
+apiBase: https://potluck.example.com/v1
 ```
 
-## Keyboard Shortcuts
-
-- `Cmd+L` (Mac) / `Ctrl+L` (Windows/Linux) - Open Continue chat
-- `Cmd+I` (Mac) / `Ctrl+I` (Windows/Linux) - Inline edit
-- `Cmd+Shift+R` (Mac) / `Ctrl+Shift+R` (Windows/Linux) - Regenerate response
+Enable endpoint API-key authentication under **Dashboard → Endpoint** before
+exposing Potluck publicly. `localhost` always refers to the machine running
+the Continue extension.
 
 ## Troubleshooting
 
-### Model Not Responding
-- Check Potluck is running: `curl http://localhost:20128/health`
-- Verify API key in config.json
-- Check VSCode Developer Console for errors: `Help` → `Toggle Developer Tools`
+- **Config is ignored:** use `config.yaml`, not the deprecated `config.json`,
+  and make sure `name`, `version`, and `schema` are present.
+- **Secret is missing:** place `POTLUCK_API_KEY=...` in
+  `~/.continue/.env`, then reload the IDE.
+- **401 response:** verify the Potluck key, not an upstream provider key.
+- **404 response:** confirm `apiBase` ends with `/v1`.
+- **Model not found:** copy an exact ID from `/v1/models`.
+- **Agent tools are unavailable:** select a tool-capable model; optionally add
+  `capabilities: [tool_use]` only after confirming the model supports it.
 
-### Wrong Model Selected
-- Click model dropdown in Continue sidebar
-- Select correct Potluck model
-- Model name must match exactly (case-sensitive)
-
-### Configuration Not Loading
-- Verify JSON syntax is valid (use JSON validator)
-- Check file location: `~/.continue/config.json`
-- Reload VSCode window after changes
-
-### Slow Performance
-- Switch to faster models (haiku, flash)
-- Reduce context size in contextProviders
-- Check network latency to Potluck
-
-## Best Practices
-
-### Model Selection Strategy
-- **Quick edits**: Use `cc/claude-haiku-4-20250514`
-- **Code generation**: Use `cx/deepseek-chat`
-- **Complex refactoring**: Use `cc/claude-opus-4-5-20251101`
-- **Problem solving**: Use `cx/deepseek-reasoner`
-
-### Context Management
-- Select only relevant code before asking
-- Use specific, clear prompts
-- Break complex tasks into smaller steps
-
-### Cost Optimization
-- Use faster/cheaper models for simple tasks
-- Limit context size when possible
-- Cache frequently used responses
-
-## Next Steps
-
-- [Configure Cursor](cursor.md) for enhanced IDE integration
-- [Set up Roo](roo.md) for AI assistant
-- [Explore CLI usage](../cli/basic-usage.md)
-- [Learn about model selection](../models/overview.md)
+See Continue's current
+[`config.yaml` reference](https://docs.continue.dev/reference) and
+[OpenAI-compatible provider guide](https://docs.continue.dev/customize/model-providers/top-level/openai).

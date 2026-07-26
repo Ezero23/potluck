@@ -1,8 +1,11 @@
-# Potluck — Agent Skills
+# Potluck Agent Skills
 
-Drop-in skills for any AI agent (Claude, Cursor, ChatGPT, custom SDK). Just **copy a link** below and paste it to your AI — it will fetch the skill and use Potluck for you.
+These files describe how an agent can call a running Potluck instance. They are
+intended for clients that support importing instruction or skill files. Support
+for remote skill URLs depends on the client.
 
-> Tip: start with the **potluck** entry skill — it covers setup and links to all capability skills.
+Start with the **potluck** entry skill. It covers the common setup and links to
+the capability-specific files.
 
 ## Skills
 
@@ -17,26 +20,41 @@ Drop-in skills for any AI agent (Claude, Cursor, ChatGPT, custom SDK). Just **co
 | Web search | https://raw.githubusercontent.com/Ezero23/potluck/refs/heads/main/skills/potluck-web-search/SKILL.md |
 | Web fetch (URL → markdown) | https://raw.githubusercontent.com/Ezero23/potluck/refs/heads/main/skills/potluck-web-fetch/SKILL.md |
 
-## How to use
+## Use with a compatible client
 
-Paste to your AI (Claude, Cursor, ChatGPT, …):
+Give the client the raw entry-skill URL using its supported import mechanism:
 
 ```
 Read this skill and use it: https://raw.githubusercontent.com/Ezero23/potluck/refs/heads/main/skills/potluck/SKILL.md
 ```
 
-Then ask normally — *"generate an image of a cat"*, *"transcribe this URL"*, etc.
+The requested capability still requires a corresponding provider configured in
+Potluck. Importing a skill does not create provider access or credentials.
 
-## Configure your shell once
+## Configure the endpoint
 
 ```bash
-export POTLUCK_URL="http://localhost:20128"   # local default, or your VPS / tunnel URL
-export POTLUCK_KEY="sk-..."                   # from Dashboard → Keys (only if requireApiKey=true)
+# npm run dev
+export POTLUCK_URL="http://localhost:20127"
+
+# Set this only when endpoint API-key enforcement is enabled.
+export POTLUCK_KEY="your-potluck-endpoint-key"
 ```
 
-Verify: `curl $POTLUCK_URL/api/health` → `{"ok":true}`.
+For Docker or production, replace `POTLUCK_URL` with the address and port of
+that deployment. Verify it with:
+
+```bash
+curl "$POTLUCK_URL/api/health"
+```
+
+Expected response:
+
+```json
+{"ok":true}
+```
 
 ## Links
 
-- Source: https://github.com/decolua/potluck
-- Dashboard: https://potluck.com
+- Source: https://github.com/Ezero23/potluck
+- Documentation: https://github.com/Ezero23/potluck#readme

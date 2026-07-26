@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getNavigation } from "@/constants/docsConfig";
 import { DEFAULT_LANG } from "@/constants/languages";
-import { ChevronDown, ChevronRight, BookOpen, Rocket, Terminal, Monitor, HelpCircle, MessageCircle, Layers, Plug, Cloud, Zap, Wallet, Gift, GitBranch, BarChart3, Code2, Sparkles, Server } from "lucide-react";
+import { ChevronDown, ChevronRight, BookOpen, Rocket, Terminal, Monitor, HelpCircle, MessageCircle, Layers, Plug, Cloud, Zap, Wallet, Gift, BarChart3, Code2, Sparkles, Server } from "lucide-react";
 
 // Icons keyed by structural key (language-independent)
 const SECTION_ICONS = {
@@ -24,12 +24,10 @@ const ITEM_ICONS = {
   subscription: Sparkles,
   cheap: Wallet,
   free: Gift,
-  smartRouting: GitBranch,
   combos: Layers,
   quotaTracking: BarChart3,
   claudeCode: Code2,
   codex: Code2,
-  cursor: Code2,
   cline: Code2,
   roo: Code2,
   continue: Code2,

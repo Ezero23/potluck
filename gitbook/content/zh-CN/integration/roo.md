@@ -1,127 +1,75 @@
-# Roo AI 助手集成
+# Roo Code
 
-将 百家饭 与 Roo AI 助手集成,通过统一界面访问多个 AI 模型。
+Roo Code 可以通过 **OpenAI Compatible** 提供商连接 Potluck。只有真正连接
+Ollama 时才应选择 Ollama，不要把它当成通用兼容类型。
 
-## 前置要求
+## 开始前
 
-- 已安装 Roo AI 助手
-- 来自 [仪表盘](https://your-potluck-cloud.example.com/dashboard) 的 百家饭 API key
-- 百家饭 正在运行(本地或云端)
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 安装 Roo Code VS Code 扩展。
 
-## 配置步骤
+## 选择合适的模型
 
-### 1. 打开 Roo 设置
+查询当前 Potluck 密钥可用的模型：
 
-启动 Roo AI 助手并打开设置面板。
-
-### 2. 配置 API Provider
-
-1. 进入 **API Provider** 设置
-2. 选择 **Ollama** 作为 provider 类型
-3. 配置以下设置:
-
-**本地 百家饭:**
-```
-Base URL: http://localhost:20129/v1
-API Key: your-api-key-from-dashboard
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**云端 百家饭:**
-```
-Base URL: https://your-potluck-cloud.example.com/v1
-API Key: your-api-key-from-dashboard
-```
+Roo Code 使用 OpenAI 兼容的原生工具调用。应选择返回列表中明确支持工具调用
+的模型；纯文本模型可能可以回答消息，但无法正确执行 Roo 的编码工具。
 
-### 3. 选择模型
+## 配置 Roo Code
 
-从可用的 百家饭 模型中选择:
+1. 在 VS Code 中打开 Roo Code。
+2. 点击设置图标。
+3. 将 **API Provider** 设为 **OpenAI Compatible**。
+4. 填写：
 
-**Claude 模型:**
-- `cc/claude-opus-4-5-20251101` - 最强
-- `cc/claude-sonnet-4-20250514` - 平衡
-- `cc/claude-haiku-4-20250514` - 快速
-
-**DeepSeek 模型:**
-- `cx/deepseek-chat` - 通用
-- `cx/deepseek-reasoner` - 复杂推理
-
-**GLM 模型:**
-- `glm/glm-4-plus` - 高级
-- `glm/glm-4-flash` - 快速响应
-
-### 4. 测试连接
-
-发送测试消息验证集成:
-
-```
-Hello! Can you confirm you're connected through 百家饭?
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
 ```
 
-## 使用示例
+5. 保存提供商配置，并新建一个 Roo 任务。
 
-### 基础聊天
-```
-向 Roo 提问: "Explain quantum computing in simple terms"
-模型: cc/claude-sonnet-4-20250514
-```
+不要从教程复制固定模型名。必须使用当前 Potluck 实例返回的完整
+`data[].id`。
 
-### 代码生成
-```
-向 Roo 提问: "Write a Python function to calculate Fibonacci numbers"
-模型: cx/deepseek-chat
-```
+## 验证连接
 
-### 复杂推理
-```
-向 Roo 提问: "Analyze the trade-offs between microservices and monolithic architecture"
-模型: cx/deepseek-reasoner
+先独立检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
 ```
 
-## 模型选择建议
+然后让 Roo 执行一个小型只读任务，例如列出当前工作区文件。确认请求出现在
+Potluck 的 **Usage（用量）** 页面后，再允许它修改文件。
 
-- **快速任务**:使用 `cc/claude-haiku-4-20250514` 或 `glm/glm-4-flash`
-- **均衡性能**:使用 `cc/claude-sonnet-4-20250514` 或 `cx/deepseek-chat`
-- **复杂推理**:使用 `cc/claude-opus-4-5-20251101` 或 `cx/deepseek-reasoner`
-- **成本优化**:使用 DeepSeek 或 GLM 模型
+## 远程部署
 
-## 故障排除
+远程实例使用 HTTPS 地址：
 
-### 连接失败
-- 确认 百家饭 正在运行:`curl http://localhost:20129/health`
-- 检查 API key 是否正确
-- 确保 Base URL 末尾包含 `/v1`
-
-### 模型不可用
-- 检查模型名是否完全匹配(大小写敏感)
-- 确认 百家饭 套餐中已启用该模型
-- 尝试列表中的其他模型
-
-### 响应缓慢
-- 切换到更快的模型(haiku、flash)
-- 检查网络连接
-- 查看 百家饭 日志排查问题
-
-## 高级配置
-
-### 自定义模型别名
-
-可在 Roo 设置中为常用模型创建快捷别名:
-
-```
-别名: "fast" → cc/claude-haiku-4-20250514
-别名: "smart" → cc/claude-opus-4-5-20251101
-别名: "code" → cx/deepseek-chat
+```text
+Base URL: https://potluck.example.com/v1
 ```
 
-### 多个配置文件
+暴露公网前，请在 **Dashboard → Endpoint** 开启端点 API Key 验证。
+`localhost` 表示运行 VS Code 的电脑。
 
-为不同场景设置不同配置:
-- **开发**:DeepSeek 模型用于编码
-- **写作**:Claude 模型用于内容创作
-- **研究**:Reasoner 模型用于分析
+## 故障排查
 
-## 下一步
+- **连接被拒绝：**确认 Potluck 正在 `21023` 运行。
+- **返回 401：**使用 Potluck API Key，不要填写上游提供商密钥。
+- **返回 404：**确认 Base URL 以 `/v1` 结尾。
+- **模型不存在：**复制 `/v1/models` 返回的完整 ID。
+- **能回复但不能调用工具：**换成支持 OpenAI 原生工具调用的模型。
+- **设置没有变化：**保存 Roo 提供商配置，重新加载 VS Code，并新建任务。
 
-- [配置 Cursor](cursor.md) 进行 IDE 集成
-- [设置 Continue](continue.md) 用于 VSCode
-- [探索 CLI 用法](../cli/basic-usage.md)
+Roo Code 当前配置字段和工具调用要求请参考
+[OpenAI Compatible 官方文档](https://roocodeinc.github.io/Roo-Code/providers/openai-compatible/)。

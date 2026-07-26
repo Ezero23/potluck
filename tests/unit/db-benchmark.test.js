@@ -24,32 +24,34 @@ async function bench(label, fn) {
   return dt;
 }
 
-beforeAll(async () => {
-  // SQLite setup
-  tempSqlite = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-bench-sqlite-"));
-  process.env.DATA_DIR = tempSqlite;
-  vi.resetModules();
-  sqliteDb = await import("@/lib/db/index.js");
-  await sqliteDb.initDb();
+const benchmarkSuite = process.env.RUN_DB_BENCHMARK === "1" ? describe : describe.skip;
 
-  // Lowdb setup — direct lowdb usage (mimics legacy behavior)
-  tempLowdb = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-bench-lowdb-"));
-  const { Low } = await import("lowdb");
-  const { JSONFile } = await import("lowdb/node");
-  const dbFile = path.join(tempLowdb, "db.json");
-  fs.writeFileSync(dbFile, JSON.stringify({ providerConnections: [], usageHistory: [] }));
-  lowDb = new Low(new JSONFile(dbFile), { providerConnections: [], usageHistory: [] });
-  await lowDb.read();
-});
+benchmarkSuite("DB Benchmark — SQLite vs Lowdb", () => {
+  beforeAll(async () => {
+    // SQLite setup
+    tempSqlite = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-bench-sqlite-"));
+    process.env.DATA_DIR = tempSqlite;
+    vi.resetModules();
+    sqliteDb = await import("@/lib/db/index.js");
+    await sqliteDb.initDb();
 
-afterAll(() => {
-  if (tempSqlite) fs.rmSync(tempSqlite, { recursive: true, force: true });
-  if (tempLowdb) fs.rmSync(tempLowdb, { recursive: true, force: true });
-  if (originalDataDir === undefined) delete process.env.DATA_DIR;
-  else process.env.DATA_DIR = originalDataDir;
-});
+    // Lowdb setup — direct lowdb usage (mimics legacy behavior)
+    tempLowdb = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-bench-lowdb-"));
+    const { Low } = await import("lowdb");
+    const { JSONFile } = await import("lowdb/node");
+    const dbFile = path.join(tempLowdb, "db.json");
+    fs.writeFileSync(dbFile, JSON.stringify({ providerConnections: [], usageHistory: [] }));
+    lowDb = new Low(new JSONFile(dbFile), { providerConnections: [], usageHistory: [] });
+    await lowDb.read();
+  });
 
-describe("DB Benchmark — SQLite vs Lowdb", () => {
+  afterAll(() => {
+    if (tempSqlite) fs.rmSync(tempSqlite, { recursive: true, force: true });
+    if (tempLowdb) fs.rmSync(tempLowdb, { recursive: true, force: true });
+    if (originalDataDir === undefined) delete process.env.DATA_DIR;
+    else process.env.DATA_DIR = originalDataDir;
+  });
+
   it(`INSERT ${N_ITEMS} provider connections`, async () => {
     console.log(`\n[INSERT ${N_ITEMS}]`);
 

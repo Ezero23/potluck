@@ -1,249 +1,114 @@
-# Continue VSCode 扩展集成
+# Continue
 
-将 百家饭 与 Continue 扩展集成,直接在 Visual Studio Code 中获得 AI 协助。
+Continue 可以把 Potluck 作为 OpenAI 兼容模型提供商。当前 Continue 推荐
+`config.yaml`，旧的 `config.json` 已被标记为废弃。
 
-## 前置要求
+## 开始前
 
-- 已安装 Visual Studio Code
-- 从 VSCode 市场安装了 Continue 扩展
-- 来自 [仪表盘](https://your-potluck-cloud.example.com/dashboard) 的 百家饭 API key
-- 百家饭 正在运行(本地或云端)
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 按照 [Continue 官方安装文档](https://docs.continue.dev/getting-started/install)
+   安装 Continue 扩展。
 
-## 配置步骤
+## 获取有效模型 ID
 
-### 1. 打开 Continue 配置
-
-1. 打开 VSCode
-2. 按 `Cmd+Shift+P` (Mac) 或 `Ctrl+Shift+P` (Windows/Linux)
-3. 输入 "Continue: Open Config" 并选择
-4. 这会打开 `~/.continue/config.json`
-
-### 2. 添加 百家饭 模型配置
-
-将以下配置添加到 `config.json`:
-
-**单模型设置:**
-```json
-{
-  "models": [
-    {
-      "title": "百家饭 - Claude Opus",
-      "provider": "openai",
-      "model": "cc/claude-opus-4-5-20251101",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20129/v1"
-    }
-  ]
-}
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**多模型设置:**
-```json
-{
-  "models": [
-    {
-      "title": "百家饭 - Claude Opus (Best)",
-      "provider": "openai",
-      "model": "cc/claude-opus-4-5-20251101",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20129/v1"
-    },
-    {
-      "title": "百家饭 - Claude Sonnet (Balanced)",
-      "provider": "openai",
-      "model": "cc/claude-sonnet-4-20250514",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20129/v1"
-    },
-    {
-      "title": "百家饭 - DeepSeek Chat (Code)",
-      "provider": "openai",
-      "model": "cx/deepseek-chat",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20129/v1"
-    },
-    {
-      "title": "百家饭 - Claude Haiku (Fast)",
-      "provider": "openai",
-      "model": "cc/claude-haiku-4-20250514",
-      "apiKey": "your-api-key-from-dashboard",
-      "apiBase": "http://localhost:20129/v1"
-    }
-  ]
-}
+选择一个完整的 `data[].id`。下面使用 `MODEL_ID` 作为占位符，因为每个
+Potluck 实例的模型目录都不同。
+
+## 保存 API Key
+
+创建或编辑 `~/.continue/.env`：
+
+```dotenv
+POTLUCK_API_KEY=YOUR_POTLUCK_API_KEY
 ```
 
-**云端 百家饭:**
-将 `apiBase` 替换为:
-```json
-"apiBase": "https://your-potluck-cloud.example.com/v1"
+不要提交该文件。Continue 的 IDE 扩展不会可靠继承只在终端中 `export`
+的变量，因此 `.env` 才是受支持的本地密钥来源。
+
+## 配置 Continue
+
+打开 Continue 的配置选择器，点击齿轮图标编辑本地 `config.yaml`。默认全局
+路径是 `~/.continue/config.yaml`。
+
+加入一个 Potluck 模型：
+
+```yaml
+name: Potluck
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Potluck
+    provider: openai
+    model: MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply
 ```
 
-### 3. 保存并重新加载
+如果已有配置，请把模型条目合并到现有 `models` 列表，不要覆盖整个文件。
+修改 `~/.continue/.env` 后需要重启或重新加载 IDE。
 
-1. 保存配置文件
-2. 重新加载 VSCode 窗口:`Cmd+Shift+P` → "Developer: Reload Window"
-3. Continue 扩展会加载新配置
+## 添加多个模型
 
-### 4. 选择模型
+在 `models` 下增加条目，并使用不同的 `name`：
 
-1. 打开 Continue 侧边栏(点击左侧 Continue 图标)
-2. 点击顶部模型选择下拉菜单
-3. 选择你偏好的 百家饭 模型
-
-## 可用模型
-
-### Claude 模型(Anthropic)
-- `cc/claude-opus-4-5-20251101` - 最强,适合复杂任务
-- `cc/claude-sonnet-4-20250514` - 性能与速度平衡
-- `cc/claude-haiku-4-20250514` - 最快,适合简单任务
-
-### DeepSeek 模型
-- `cx/deepseek-chat` - 出色的代码生成
-- `cx/deepseek-reasoner` - 复杂问题求解
-
-### GLM 模型(Zhipu AI)
-- `glm/glm-4-plus` - 高级中文与英文
-- `glm/glm-4-flash` - 快速响应
-
-## 使用示例
-
-### 代码解释
-1. 在编辑器中选中代码
-2. 打开 Continue 侧边栏
-3. 输入:"Explain this code"
-4. 模型:`cc/claude-sonnet-4-20250514`
-
-### 代码生成
-1. 打开 Continue 侧边栏
-2. 输入:"Create a React component for user profile card"
-3. 模型:`cx/deepseek-chat`
-
-### 重构
-1. 选中要重构的代码
-2. 输入:"Refactor this to use async/await"
-3. 模型:`cc/claude-sonnet-4-20250514`
-
-### Bug 修复
-1. 选中有问题的代码
-2. 输入:"Find and fix the bug in this code"
-3. 模型:`cx/deepseek-reasoner`
-
-## 高级配置
-
-### 自定义系统 Prompt
-
-为特定行为添加自定义系统 prompt:
-
-```json
-{
-  "models": [
-    {
-      "title": "百家饭 - Code Expert",
-      "provider": "openai",
-      "model": "cx/deepseek-chat",
-      "apiKey": "your-api-key",
-      "apiBase": "http://localhost:20129/v1",
-      "systemMessage": "You are an expert programmer. Always provide clean, well-documented code with best practices."
-    }
-  ]
-}
+```yaml
+  - name: Potluck secondary
+    provider: openai
+    model: ANOTHER_MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
 ```
 
-### Temperature 与参数
+只使用当前 Potluck 实例返回的模型 ID，不要复制旧教程中的固定模型清单。
 
-通过参数调整模型行为:
+## 验证连接
 
-```json
-{
-  "models": [
-    {
-      "title": "百家饭 - Creative Writer",
-      "provider": "openai",
-      "model": "cc/claude-opus-4-5-20251101",
-      "apiKey": "your-api-key",
-      "apiBase": "http://localhost:20129/v1",
-      "temperature": 0.9,
-      "topP": 0.95
-    }
-  ]
-}
+先检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
 ```
 
-### Context Provider
+打开 Continue Chat，选择刚配置的 Potluck 模型并发送简短消息。如果 Agent
+模式需要工具调用，应选择真正支持工具调用的模型。
 
-配置 Continue 发送给模型的上下文:
+## 远程部署
 
-```json
-{
-  "contextProviders": [
-    {
-      "name": "code",
-      "params": {
-        "maxLines": 100
-      }
-    },
-    {
-      "name": "diff",
-      "params": {}
-    },
-    {
-      "name": "terminal",
-      "params": {}
-    }
-  ]
-}
+将 `apiBase` 换成 HTTPS 地址：
+
+```yaml
+apiBase: https://potluck.example.com/v1
 ```
 
-## 键盘快捷键
+暴露公网前，请在 **Dashboard → Endpoint** 开启端点 API Key 验证。
+`localhost` 始终表示运行 Continue 扩展的机器。
 
-- `Cmd+L` (Mac) / `Ctrl+L` (Windows/Linux) - 打开 Continue 聊天
-- `Cmd+I` (Mac) / `Ctrl+I` (Windows/Linux) - 内联编辑
-- `Cmd+Shift+R` (Mac) / `Ctrl+Shift+R` (Windows/Linux) - 重新生成响应
+## 故障排查
 
-## 故障排除
+- **配置未加载：**使用 `config.yaml`，不要使用已废弃的 `config.json`；
+  同时确认存在 `name`、`version`、`schema`。
+- **找不到密钥：**将 `POTLUCK_API_KEY=...` 写入
+  `~/.continue/.env`，然后重新加载 IDE。
+- **返回 401：**确认使用的是 Potluck API Key，而不是上游提供商密钥。
+- **返回 404：**确认 `apiBase` 以 `/v1` 结尾。
+- **模型不存在：**复制 `/v1/models` 返回的完整 ID。
+- **Agent 工具不可用：**选择支持工具调用的模型；只有确认模型支持时，才
+  手动加入 `capabilities: [tool_use]`。
 
-### 模型无响应
-- 确认 百家饭 正在运行:`curl http://localhost:20129/health`
-- 检查 config.json 中的 API key
-- 查看 VSCode 开发者控制台错误:`Help` → `Toggle Developer Tools`
-
-### 选错模型
-- 点击 Continue 侧边栏的模型下拉菜单
-- 选择正确的 百家饭 模型
-- 模型名必须完全匹配(大小写敏感)
-
-### 配置未加载
-- 确认 JSON 语法有效(使用 JSON 验证工具)
-- 检查文件位置:`~/.continue/config.json`
-- 修改后重新加载 VSCode 窗口
-
-### 性能缓慢
-- 切换到更快的模型(haiku、flash)
-- 在 contextProviders 中减少上下文大小
-- 检查到 百家饭 的网络延迟
-
-## 最佳实践
-
-### 模型选择策略
-- **快速编辑**:使用 `cc/claude-haiku-4-20250514`
-- **代码生成**:使用 `cx/deepseek-chat`
-- **复杂重构**:使用 `cc/claude-opus-4-5-20251101`
-- **问题求解**:使用 `cx/deepseek-reasoner`
-
-### 上下文管理
-- 提问前只选中相关代码
-- 使用具体、清晰的 prompt
-- 将复杂任务拆分为小步骤
-
-### 成本优化
-- 简单任务使用更快/更便宜的模型
-- 尽可能限制上下文大小
-- 缓存常用响应
-
-## 下一步
-
-- [配置 Cursor](cursor.md) 以增强 IDE 集成
-- [设置 Roo](roo.md) AI 助手
-- [探索 CLI 用法](../cli/basic-usage.md)
-- [了解模型选择](../models/overview.md)
+当前格式请参考 Continue 的
+[`config.yaml` 官方参考](https://docs.continue.dev/reference)和
+[OpenAI 兼容提供商文档](https://docs.continue.dev/customize/model-providers/top-level/openai)。

@@ -1,537 +1,120 @@
-# 组合(Combos)- 自定义回退链
+# 模型组合
 
-创建自定义的模型组合并自动回退。组合让你根据成本、质量和可用性定义自己的路由策略。
+组合会把多个已配置的模型来源归到同一个名称下。客户端把组合名称作为请求中的 `model`，
+Potluck 再按照为该组合选择的策略处理请求。
 
----
+组合不会创建第三方账户、增加配额，也不会让不同模型自动变得完全兼容。依赖组合之前，应先
+单独连接并测试每一个成员。
 
-## 什么是组合?
+## 创建组合
 
-组合是你在仪表盘中创建的 **自定义回退链**。它不是单一模型,而是定义一组顺序模型,由 百家饭 依次尝试。
+1. 使用开发服务器时，打开 `http://localhost:20127/dashboard/combos`。
+2. 选择 **Create Combo**。
+3. 输入仅包含字母、数字、`-` 或 `_` 的名称。
+4. 从已连接的提供商中加入模型。
+5. 拖动模型，调整到需要的顺序。
+6. 保存组合并复制组合名称。
 
-**示例:**
-```
-组合名: premium-coding
-模型:
-  1. cc/claude-opus-4-5-20251101 (首选)
-  2. glm/glm-4.7 (#1 配额耗尽时)
-  3. minimax/MiniMax-M2.1 (#2 配额耗尽时)
-```
+生产和容器安装通常使用 `20129` 端口；应以你的实例实际监听端口为准。
 
-**CLI 中使用:**
-```
-Model: premium-coding
-```
-
-百家饭 会按顺序自动尝试每个模型,直到成功为止。
-
----
-
-## 为什么使用组合?
-
-### 1. 最大化订阅价值
-```
-cc/claude-opus → glm/glm-4.7 → if/kimi-k2-thinking
-
-→ 先用订阅,低价备用,免费应急
-→ 充分利用你已付费的订阅
-```
-
-### 2. 最小化成本
-```
-glm/glm-4.7 → minimax/MiniMax-M2.1 → if/kimi-k2-thinking
-
-→ 从最便宜的付费选项开始(每 1M $0.60)
-→ 回退到更便宜的(每 1M $0.20)
-→ 应急免费层
-→ 总成本: 约 $5-10/月,而 ChatGPT API 需要 $2000
-```
-
-### 3. 保障 24/7 可用
-```
-cc/claude-opus → cx/gpt-5.2-codex → glm/glm-4.7 → if/kimi-k2-thinking
-
-→ 末尾总是放免费层
-→ 永不耗尽配额
-→ 随时随地编码
-```
-
-### 4. 质量优化
-```
-cc/claude-opus-4-5 → cx/gpt-5.2-codex → gc/gemini-3-pro
-
-→ 优先最好的模型
-→ 回退到其他高端模型
-→ 整个回退链保持高质量
-```
-
----
-
-## 如何创建组合
-
-### 步骤 1:打开仪表盘
-
-```
-http://localhost:20129
-→ 用密码登录
-```
-
-### 步骤 2:进入组合页面
-
-```
-仪表盘 → 组合 → 新建组合
-```
-
-### 步骤 3:配置组合
-
-**组合名:**
-```
-premium-coding
-```
-
-**描述(可选):**
-```
-订阅优先,低价备用,免费应急
-```
-
-**选择模型:**
-```
-1. cc/claude-opus-4-5-20251101
-2. glm/glm-4.7
-3. minimax/MiniMax-M2.1
-```
-
-**拖动排序** - 自上而下表示优先级。
-
-### 步骤 4:保存
-
-```
-点击 "Save Combo"
-→ 组合出现在模型列表中
-```
-
-### 步骤 5:在 CLI 中使用
-
-```
-Cursor/Cline/任意工具:
-  Model: premium-coding
-```
-
----
-
-## 示例组合
-
-### 示例 1:Premium Coding(订阅 → 低价 → 免费)
-
-**目标**:最大化订阅价值,最小化额外成本。
-
-```
-仪表盘 → 组合 → 新建
-
-名称: premium-coding
-模型:
-  1. cc/claude-opus-4-5-20251101
-  2. glm/glm-4.7
-  3. minimax/MiniMax-M2.1
-```
-
-**用法:**
-```
-Cursor IDE:
-  Model: premium-coding
-```
-
-**行为:**
-```
-早上(全新配额):
-  请求 → cc/claude-opus-4-5 ✅
-
-下午(Claude 配额用完):
-  请求 → glm/glm-4.7 ✅ (自动切换)
-
-晚上(GLM 配额用完):
-  请求 → minimax/MiniMax-M2.1 ✅ (自动切换)
-```
-
-**月成本(100M tokens):**
-```
-80M 通过 Claude Code: $0(订阅)
-15M 通过 GLM: $9
-5M 通过 MiniMax: $1
-合计: $10 + 你的订阅
-```
-
-**节省**:相比 ChatGPT API($2000)约 99%。
-
----
-
-### 示例 2:Budget Combo(低价 → 免费)
-
-**目标**:最小化成本,免费层作为备用。
-
-```
-仪表盘 → 组合 → 新建
-
-名称: budget-combo
-模型:
-  1. glm/glm-4.7
-  2. minimax/MiniMax-M2.1
-  3. if/kimi-k2-thinking
-```
-
-**用法:**
-```
-Cline:
-  Provider: OpenAI Compatible
-  Base URL: http://localhost:20129/v1
-  Model: budget-combo
-```
-
-**行为:**
-```
-请求 → glm/glm-4.7
-  ✅ 每日配额可用 → 使用 GLM(每 1M $0.60)
-  ❌ 配额耗尽 → 尝试 MiniMax(每 1M $0.20)
-  ❌ MiniMax 配额用完 → 使用 iFlow(免费)
-```
-
-**月成本(100M tokens):**
-```
-70M 通过 GLM: $42
-20M 通过 MiniMax: $4
-10M 通过 iFlow: $0
-合计: $46,而 ChatGPT API 需 $2000
-```
-
-**节省**:97%。
-
----
-
-### 示例 3:Free Combo(零成本)
-
-**目标**:100% 免费,永不付费。
-
-```
-仪表盘 → 组合 → 新建
-
-名称: free-combo
-模型:
-  1. if/kimi-k2-thinking
-  2. qw/qwen3-coder-plus
-  3. kr/claude-sonnet-4.5
-```
-
-**用法:**
-```
-Claude Desktop:
-  Model: free-combo
-```
-
-**行为:**
-```
-请求 → if/kimi-k2-thinking
-  ✅ 可用 → 使用 iFlow
-  ❌ 错误 → 尝试 Qwen
-  ❌ 错误 → 尝试 Kiro
-```
-
-**月成本:**
-```
-100M tokens 通过免费提供商: $0
-合计: 永远 $0
-```
-
-**适用场景**:个人项目、学习、试验。
-
----
-
-### 示例 4:Quality First(仅高端模型)
-
-**目标**:最高质量,无低价回退。
-
-```
-仪表盘 → 组合 → 新建
-
-名称: quality-first
-模型:
-  1. cc/claude-opus-4-5-20251101
-  2. cx/gpt-5.2-codex
-  3. gc/gemini-3-pro-preview
-```
-
-**用法:**
-```
-Codex CLI:
-  export OPENAI_BASE_URL="http://localhost:20129"
-  Model: quality-first
-```
-
-**行为:**
-```
-请求 → cc/claude-opus-4-5
-  ❌ 配额用完 → cx/gpt-5.2-codex
-  ❌ 配额用完 → gc/gemini-3-pro-preview
-  ❌ 全部用完 → 返回错误(无低价回退)
-```
-
-**适用场景**:关键生产代码、复杂重构。
-
----
-
-### 示例 5:Multi-Subscription(用足所有订阅)
-
-**目标**:在产生额外费用前用足所有订阅。
-
-```
-仪表盘 → 组合 → 新建
-
-名称: multi-sub
-模型:
-  1. gc/gemini-3-flash-preview (每月免费 180K)
-  2. cc/claude-opus-4-5-20251101 (Pro 订阅)
-  3. cx/gpt-5.2-codex (Plus 订阅)
-  4. gh/gpt-5 (Copilot 订阅)
-  5. glm/glm-4.7 (低价备用)
-  6. if/kimi-k2-thinking (免费应急)
-```
-
-**月成本(200M tokens):**
-```
-50M 通过 Gemini CLI: $0(免费层)
-80M 通过 Claude Code: $0(订阅)
-40M 通过 Codex: $0(订阅)
-20M 通过 Copilot: $0(订阅)
-8M 通过 GLM: $4.80
-2M 通过 iFlow: $0
-合计: $4.80 + 你已有的订阅
-```
-
-**结果**:190M tokens 来自订阅,只有 $4.80 额外费用。
-
----
-
-### 示例 6:配额重置优化
-
-**目标**:根据重置时间分配使用。
-
-```
-仪表盘 → 组合 → 新建
-
-名称: reset-optimized
-模型:
-  1. cc/claude-opus-4-5 (5h 重置, 早上用)
-  2. gc/gemini-3-flash (每日 1K, 下午用)
-  3. glm/glm-4.7 (每日 10AM 重置, 晚上用)
-  4. minimax/MiniMax-M2.1 (5h 滚动, 夜里用)
-  5. if/kimi-k2-thinking (无限, 应急)
-```
-
-**日常安排:**
-```
-08:00 - 13:00: Claude Code(全新 5h 配额)
-13:00 - 18:00: Gemini CLI(每日 1K 配额)
-18:00 - 22:00: GLM(次日 10AM 重置)
-22:00 - 08:00: MiniMax(5h 滚动)或 iFlow
-```
-
-**结果**:24/7 编码,成本极低。
-
----
-
-## 在 CLI 工具中使用组合
-
-### Cursor IDE
-
-```
-Settings → Models → Advanced:
-  OpenAI API Base URL: http://localhost:20129/v1
-  OpenAI API Key: [从仪表盘获取]
-  Model: premium-coding
-```
-
-### Claude Desktop
-
-编辑 `~/.claude/config.json`:
-```json
-{
-  "anthropic_api_base": "http://localhost:20129/v1",
-  "anthropic_api_key": "your-potluck-api-key",
-  "model": "budget-combo"
-}
-```
-
-### Codex CLI
+请求时把组合名称作为 `model`：
 
 ```bash
-export OPENAI_BASE_URL="http://localhost:20129"
-export OPENAI_API_KEY="your-potluck-api-key"
-
-codex --model quality-first "your prompt"
-```
-
-### Cline / Continue / RooCode
-
-```
-Provider: OpenAI Compatible
-Base URL: http://localhost:20129/v1
-API Key: [从仪表盘获取]
-Model: free-combo
-```
-
-### API 请求
-
-```bash
-curl http://localhost:20129/v1/chat/completions \
-  -H "Authorization: Bearer your-api-key" \
+curl http://localhost:20127/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "premium-coding",
+    "model": "my-combo",
     "messages": [
-      {"role": "user", "content": "Write a function to..."}
+      {"role": "user", "content": "请回复本次使用的提供商和模型。"}
     ],
-    "stream": true
+    "stream": false
   }'
 ```
 
----
+组合至少需要一个可用模型。模型标识应以当前仪表盘或 `/v1/models` 的返回结果为准，旧示例
+中的标识可能已经失效。
 
-## 最佳实践
+## 策略
 
-### 1. 总是包含免费层
+### Fallback
 
-```
-✅ 好:
-cc/claude-opus → glm/glm-4.7 → if/kimi-k2-thinking
+Fallback 是默认策略。Potluck 从第一个模型开始，仅当本次尝试产生被判定为允许故障切换的
+错误时，才会继续尝试下一个成员。
 
-❌ 不好:
-cc/claude-opus → glm/glm-4.7
-(无免费回退,可能耗尽配额)
-```
+并非所有错误都会触发切换。无效请求和其他不可重试响应可能直接返回；所有成员都失败时，
+整个请求仍然会失败。
 
-**原因**:确保 24/7 可用,绝不会被配额卡住。
+组合成员应能够接受相同的请求形式。模型名称相似，不代表上下文长度、工具调用、图片支持或
+输出质量完全一致。
 
-### 2. 按成本排序(便宜 → 贵)
+### Round Robin
 
-```
-✅ 好:
-glm/glm-4.7 → minimax/MiniMax-M2.1 → cc/claude-opus
+Round Robin 会在不同请求之间改变起始成员，从而把流量分散到组合内。起始成员遇到符合条件的
+错误时，仍可继续尝试其他成员。
 
-❌ 不好:
-cc/claude-opus → glm/glm-4.7
-(在简单任务上浪费订阅配额)
-```
+轮询状态保存在当前运行进程中，应用重启后会重新开始。多个应用进程之间不会共享同一个轮询
+计数器。
 
-**例外**:如果想充分利用订阅价值,把订阅放在最前面。
+### Fusion
 
-### 3. 匹配质量要求
+Fusion 会并行请求面板模型，再由 Judge 模型综合成一个答案。没有单独指定 Judge 时，默认
+使用组合中的第一个成员。
 
-```
-生产代码:
-cc/claude-opus → cx/gpt-5.2-codex → glm/glm-4.7
+Fusion 的成本和延迟会明显高于单次请求，因为它可能调用所有面板成员，再额外调用一次 Judge。
+只有在多模型比较确实值得额外延迟、数据暴露和费用时才应启用。
 
-简单任务:
-glm/glm-4.7 → if/kimi-k2-thinking
+## 能力感知排序
 
-试验:
-if/kimi-k2-thinking → qw/qwen3-coder-plus
-```
+如果请求包含某项能力需求，例如受支持的媒体输入，Potluck 可以把声明支持该能力的组合成员
+移动到前面。这个判断来自本地能力元数据，并不保证第三方一定接受所有请求载荷。
 
-### 4. 考虑配额重置时间
+如果工作流依赖文本、工具调用、图片、PDF、音频、流式响应或结构化输出，应分别测试。
 
-```
-早上组合(配额刚刷新):
-cc/claude-opus → cx/gpt-5.2-codex
+## 安全配置建议
 
-晚上组合(配额大概率耗尽):
-glm/glm-4.7 → minimax/MiniMax-M2.1 → if/kimi-k2-thinking
-```
+- 先从两个经过独立测试的成员开始。
+- 按实际可靠性或质量目标排列成员。
+- 分别检查每个第三方的服务条款、限制和账单。
+- 不要把试用或订阅权益描述成永久免费。
+- 测试后检查 Usage 和 Quota 页面。
+- 保留一个直接模型标识，便于排查组合问题。
+- 除非所有可能收到请求的提供商都经过批准，否则不要通过组合发送敏感数据。
 
-### 5. 为不同场景创建多个组合
-
-```
-premium-coding: 复杂任务
-budget-combo: 简单任务
-free-combo: 试验
-quality-first: 生产代码
-```
-
-**根据任务需求切换组合**。
-
-### 6. 监控组合性能
-
-```
-仪表盘 → 分析 → 组合使用:
-  premium-coding:
-    80% 通过 cc/claude-opus(良好,使用订阅)
-    15% 通过 glm/glm-4.7(可接受备用)
-    5% 通过 minimax(罕见回退)
-```
-
-**优化**:回退使用过多时,提高主配额或重新排序模型。
-
----
-
-## 高级配置
-
-### 为组合设置预算上限
-
-```
-仪表盘 → 组合 → 编辑 → 预算:
-  每日上限: $5
-  每月上限: $50
-```
-
-达到上限时,百家饭 跳过付费模型,仅使用免费层。
-
-### 启用/禁用组合中的模型
-
-```
-仪表盘 → 组合 → 编辑 → 模型:
-  ✅ cc/claude-opus-4-5(启用)
-  ❌ glm/glm-4.7(暂时禁用)
-  ✅ if/kimi-k2-thinking(启用)
-```
-
-**用途**:暂时禁用昂贵模型而不删除组合。
-
-### 克隆已有组合
-
-```
-仪表盘 → 组合 → 克隆 "premium-coding"
-→ 生成带 "-copy" 后缀的副本
-→ 修改后另存为新组合
-```
-
-**用途**:为不同场景创建变体。
-
----
+仪表盘成本是基于本地价格配置的估算值，不是第三方账单。Potluck 当前不会强制执行组合级每日
+或每月预算，不会在达到消费阈值后自动切换所谓“免费层”，也不保证持续可用。
 
 ## 故障排除
 
-**问题:组合未出现在模型列表中**
+### 找不到组合
 
-**方案:**
-1. 刷新仪表盘
-2. 检查组合已保存(绿色对勾)
-3. 重启 CLI 工具以刷新模型列表
+- 确认组合已保存并至少包含一个成员。
+- 使用准确的组合名称；组合名称中不包含 `/`。
+- 刷新客户端模型列表或查询 `/v1/models`。
+- 确认客户端连接到了预期的 Potluck 实例。
 
-**问题:组合总是用最后一个模型(免费层)**
+### 请求总是从同一个成员开始
 
-**方案:**
-1. 检查主模型的配额(仪表盘 → 配额)
-2. 确认 API keys 有效(仪表盘 → 提供商)
-3. 检查是否超出预算上限
+- 确认策略选择的是 **Round Robin**，而不是 **Fallback**。
+- 应用进程重启后，轮询会从头开始。
+- 检查能力感知排序是否把兼容成员移动到了前面。
 
-**问题:组合成本超出预期**
+### 没有发生故障切换
 
-**方案:**
-1. 仪表盘 → 分析 → 查看组合使用情况
-2. 检查主模型是否配额耗尽
-3. 重新排序模型(更便宜的放前面)
-4. 设置预算上限
+- 检查返回状态和本地 Usage/请求详情。
+- 确认其他成员处于可用状态，并能接受相同请求。
+- 当前错误可能没有被判定为可重试。
+- 客户端断开或请求格式错误也可能阻止后续尝试。
 
----
+### Fusion 费用高于预期
 
-## 相关
+- 计算面板成员数量和 Judge 调用。
+- 检查本地模型价格配置。
+- 查看第三方实际账单。
+- 如果一个答案已经足够，改用 Fallback 或 Round Robin。
 
-- [智能路由](./smart-routing.md) - 自动回退如何工作
-- [配额跟踪](./quota-tracking.md) - 监控使用与成本
+## 相关指南
+
+- [配额与用量](./quota-tracking.md)
+- [快速开始](../getting-started/quick-start.md)
+- [故障排除](../troubleshooting.md)

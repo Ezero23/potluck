@@ -1,386 +1,191 @@
-# Frequently Asked Questions
-
-Common questions about Potluck.
-
----
+# Frequently asked questions
 
 ## What is Potluck?
 
-**Potluck is an AI model router that maximizes your subscription value and minimizes costs.**
+Potluck is a self-hosted router for model sources that you configure. It exposes
+OpenAI-compatible endpoints, translates supported request formats, and can distribute
+requests across provider accounts and API endpoints.
 
-It intelligently routes requests across multiple AI providers using a 3-tier fallback system:
-1. **Subscription tier** - Maximize Claude Code, Codex, Gemini quotas you already pay for
-2. **Cheap tier** - Ultra-cheap alternatives ($0.20-$0.60 per 1M tokens)
-3. **Free tier** - Emergency backup with unlimited free models
-
-**Key benefits:**
-- Never waste subscription quota
-- Automatic fallback when quota exhausted
-- Real-time quota tracking
-- 90% cost savings vs direct API usage
-
----
-
-## How does pricing work?
-
-**Potluck uses a 3-tier pricing strategy:**
-
-### Tier 1: Subscription (Maximize First)
-- **Claude Code** (Pro/Max): $20-100/month - 5-hour + weekly quota
-- **OpenAI Codex** (Plus/Pro): $20-200/month - 5-hour + weekly quota
-- **Gemini CLI**: FREE - 180K completions/month + 1K/day
-- **GitHub Copilot**: $10-19/month - Monthly reset
-- **Antigravity**: FREE - Similar to Gemini
-
-**Goal:** Use every bit of quota before it resets!
-
-### Tier 2: Cheap (Backup)
-- **GLM-4.7**: $0.60/$2.20 per 1M tokens - Daily reset 10AM
-- **MiniMax M2.1**: $0.20/$1.00 per 1M tokens - 5-hour rolling
-- **Kimi K2**: $9/month flat (10M tokens)
-
-**Goal:** 90% cheaper than ChatGPT API ($20/1M)!
-
-### Tier 3: Free (Emergency)
-- **iFlow**: 8 models FREE (Kimi K2, Qwen3, GLM, MiniMax...)
-- **Qwen**: 3 models FREE (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro**: 2 models FREE (Claude Sonnet 4.5, Haiku 4.5)
-
-**Goal:** Zero cost fallback when everything else is quota-limited!
-
----
+Its routing features include model combos, rotation-first routing profiles,
+same-model aggregation, concurrency-aware source selection, and best-effort fallback.
+Support varies by provider, model, endpoint, and request type.
 
 ## Is Potluck free?
 
-**Yes, Potluck itself is 100% free and open source.**
+The Potluck source code is available under the MIT license. Running it can still incur
+costs for infrastructure, provider subscriptions, API usage, domains, proxies, or
+other third-party services.
 
-**Free tier providers available:**
-- **Gemini CLI** - 180K completions/month (FREE Google account)
-- **iFlow** - 8 models unlimited (FREE OAuth)
-- **Qwen** - 3 models unlimited (FREE OAuth)
-- **Kiro** - Claude Sonnet/Haiku (FREE AWS Builder ID)
+Potluck does not provide free model quota and does not promise that a third-party
+trial, promotion, subscription allowance, or model remains free or unlimited. Check
+the provider's current terms and billing page.
 
-**You can code for FREE forever using only free tier providers!**
+## Which providers and models are supported?
 
-**Optional paid providers:**
-- Subscription services you may already have (Claude Code, Codex, Copilot)
-- Ultra-cheap alternatives ($0.20-$0.60 per 1M tokens)
+The list changes as provider integrations and upstream services evolve. The current
+dashboard is the source of truth for connection types supported by your Potluck
+version. After connecting an account, use the model selector or:
 
----
-
-## Which providers are supported?
-
-### Subscription Providers
-- **Claude Code** (Pro/Max) - Claude 4.5 Opus/Sonnet/Haiku
-- **OpenAI Codex** (Plus/Pro) - GPT 5.2 Codex, GPT 5.1 Codex Max
-- **Gemini CLI** (FREE) - Gemini 3 Flash/Pro, 2.5 Pro/Flash
-- **GitHub Copilot** - GPT-5, Claude 4.5, Gemini 3
-- **Antigravity** (Google) - Gemini 3 Pro, Claude Sonnet 4.5
-
-### Cheap Providers
-- **GLM** (Zhipu AI) - GLM 4.7, GLM 4.6V Vision
-- **MiniMax** - MiniMax M2.1
-- **Kimi** (Moonshot AI) - Kimi Latest
-- **OpenRouter** - Passthrough to any OpenRouter model
-
-### Free Providers
-- **iFlow** - 8 models (Kimi K2, Qwen3, GLM, MiniMax, DeepSeek...)
-- **Qwen** - 3 models (Qwen3 Coder Plus/Flash, Vision)
-- **Kiro** - 2 models (Claude Sonnet 4.5, Haiku 4.5)
-
-**Total: 15+ providers, 50+ models**
-
-See [providers documentation](providers/subscription.md) for details.
-
----
-
-## Can I use multiple providers?
-
-**Yes! This is Potluck's core feature.**
-
-**Combos allow you to chain multiple providers with automatic fallback:**
-
-```
-Example combo: "premium-coding"
-1. cc/claude-opus-4-5 (Subscription primary)
-2. glm/glm-4.7 (Cheap backup)
-3. if/kimi-k2 (Free emergency)
-
-→ Auto-switches when quota exhausted
-→ Never stops coding
-→ Minimal extra cost
-```
-
-**How to create combos:**
-```
-Dashboard → Combos → Create New
-→ Add models in priority order
-→ Use combo name in CLI: "premium-coding"
-```
-
-**Benefits:**
-- Zero downtime when quota runs out
-- Automatic cost optimization
-- Single model name for all tools
-
-See [combos documentation](features/combos.md) for examples.
-
----
-
-## How does quota tracking work?
-
-**Potluck tracks quota in real-time for all providers:**
-
-**Features:**
-- **Token consumption** - Input/output tokens per request
-- **Reset countdown** - Time until quota refreshes
-- **Usage stats** - Daily/weekly/monthly reports
-- **Cost estimation** - Projected spending (paid tiers)
-- **Quota alerts** - Notifications when quota low
-
-**Quota types:**
-- **5-hour rolling** - Claude Code, Codex, MiniMax
-- **Daily reset** - Gemini CLI (1K/day), GLM (10AM)
-- **Weekly reset** - Claude Code, Codex (additional quota)
-- **Monthly reset** - Gemini CLI (180K), GitHub Copilot (1st)
-
-**View quota:**
-```
-Dashboard → Providers → Quota Tracking
-→ Real-time usage + reset countdown
-```
-
-See [quota tracking documentation](features/quota-tracking.md) for details.
-
----
-
-## Does Potluck work with Cursor?
-
-**Yes, but Cursor requires a cloud endpoint.**
-
-**Problem:** Cursor IDE doesn't support localhost endpoints.
-
-**Solution:** Use Potluck cloud deployment:
-
-```
-Cursor Settings → Models → Advanced:
-  OpenAI API Base URL: https://your-potluck-cloud.example.com/v1
-  OpenAI API Key: [from dashboard]
-  Model: cc/claude-opus-4-5-20251101
-```
-
-**Alternative:** Self-host on VPS with public domain:
 ```bash
-# Deploy to VPS
-git clone https://github.com/Ezero23/potluck.git
-cd potluck
-npm install && npm run build
-npm start
-
-# Configure Nginx reverse proxy
-# Point Cursor to: https://your-domain.com/v1
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**Other CLI tools work with localhost:**
-- Cline ✅
-- Claude Desktop ✅
-- Codex CLI ✅
-- Continue ✅
-- RooCode ✅
+A listed model may still have account, region, quota, or feature restrictions. Test
+the exact combination you need, especially for tools, images, PDFs, audio, reasoning,
+streaming, and structured output.
 
-See [Cursor integration guide](integration/cursor.md) for details.
+## Can Potluck use multiple sources?
 
----
+Yes. A combo groups model identifiers under one name and can use Fallback, Round
+Robin, or Fusion. Routing profiles can also aggregate configured sources that match a
+model family.
+
+Fallback only continues for eligible failures. It cannot create quota or guarantee
+zero downtime, and a request can fail when all candidates are unavailable or
+incompatible. See [Model combos](./features/combos.md).
+
+## What is the difference between Quota and Usage?
+
+**Quota** asks supported providers for account-limit information. It is available only
+where the provider integration implements a usage lookup, and the returned fields are
+controlled by that provider.
+
+**Usage** summarizes requests recorded locally by Potluck, including available token
+counts and estimated cost. Estimates depend on provider usage fields and local pricing;
+they are not invoices. See [Quota and usage](./features/quota-tracking.md).
+
+## Does Potluck enforce budgets or send quota alerts?
+
+No. The current project does not provide universal email/Webhook quota alerts,
+spending forecasts, or daily/monthly budget enforcement. It also does not
+automatically move traffic to a no-cost provider after a spending threshold.
+
+Use provider-side spending limits, billing alerts, and account controls for financial
+safeguards.
+
+## Which port should I use?
+
+Development, production, Docker, and the CLI use port `21023` by default:
+
+```bash
+npm run dev
+```
+
+Configure clients with the port on which your instance is actually listening:
+
+```text
+Dashboard: http://localhost:21023/dashboard
+API:       http://localhost:21023/v1
+```
+
+## Which clients can connect to Potluck?
+
+Use an OpenAI-compatible base URL where the client officially supports one. Potluck
+does not currently claim a verified Cursor editor integration because Cursor does not
+document arbitrary OpenAI-compatible Base URLs as a stable contract. Client behavior
+changes over time, so use a maintained integration guide and test the current client
+release:
+
+- [Claude Code](./integration/claude-code.md)
+- [Codex](./integration/codex.md)
+- [Cline](./integration/cline.md)
+- [Continue](./integration/continue.md)
+- [Roo Code](./integration/roo.md)
+- [Other tools](./integration/other-tools.md)
 
 ## Can I self-host Potluck?
 
-**Yes! Potluck supports multiple deployment options:**
+Yes. You can run a production build directly or use the repository's Dockerfile:
 
-### Localhost (Default)
 ```bash
-git clone https://github.com/Ezero23/potluck.git
-cd potluck
-cp .env.example .env
-npm install
-npm run dev
-→ Dashboard: http://localhost:3000
-→ API: http://localhost:20129/v1
-```
-
-### VPS/Cloud
-```bash
-git clone https://github.com/Ezero23/potluck.git
-cd potluck
-npm install && npm run build
-
-export JWT_SECRET="your-secure-secret"
-export INITIAL_PASSWORD="your-password"
-export NODE_ENV="production"
-
-npm start
-```
-
-### Docker
-```bash
-docker build -t potluck .
-docker run -d \
-  -p 3000:3000 \
-  -e JWT_SECRET="your-secret" \
-  -v potluck-data:/app/data \
-  potluck
-```
-
-### Cloudflare Workers
-```bash
-cd potluck
-npm run deploy:cloudflare
-```
-
-**Environment variables:**
-- `JWT_SECRET` - **MUST change in production!**
-- `DATA_DIR` - Database storage path (default: `~/.potluck`)
-- `INITIAL_PASSWORD` - Dashboard login (default: `123456`)
-- `NODE_ENV` - Set to `production` for deploy
-
-See [deployment guide](getting-started/installation.md#deployment) for details.
-
----
-
-## Is my data secure?
-
-**Yes, Potluck prioritizes security and privacy:**
-
-**Local storage:**
-- All data stored locally in `~/.potluck` (or custom `DATA_DIR`)
-- No data sent to Potluck servers
-- OAuth tokens encrypted with JWT
-
-**No telemetry:**
-- No usage tracking
-- No analytics
-- No phone-home
-
-**Open source:**
-- Full source code available on GitHub
-- Audit security yourself
-- Community-reviewed
-
-**Best practices:**
-- Change `JWT_SECRET` in production
-- Use strong `INITIAL_PASSWORD`
-- Enable HTTPS for cloud deployments
-- Rotate API keys regularly
-
-**What Potluck stores:**
-- Provider OAuth tokens (encrypted)
-- API keys (encrypted)
-- Usage statistics (local only)
-- Combo configurations
-
-**What Potluck does NOT store:**
-- Your prompts or responses
-- Code you generate
-- Personal information
-
----
-
-## How do I update Potluck?
-
-**Update methods depend on installation type:**
-
-### From Source
-```bash
-cd potluck
-git pull origin main
-npm install
+npm ci
 npm run build
-npm start
+PORT=21023 HOSTNAME=0.0.0.0 NODE_ENV=production npm start
 ```
 
-### Docker
 ```bash
-cd potluck
-git pull origin main
 docker build -t potluck .
-docker stop potluck && docker rm potluck
-docker run -d \
-  -p 3000:3000 \
-  -v potluck-data:/app/data \
+docker run -d --name potluck \
+  -p 21023:21023 \
+  -v "$HOME/.potluck:/app/data" \
+  -e DATA_DIR=/app/data \
   potluck
 ```
 
-**Check version:**
-```bash
-git log -1 --oneline
+Use a persistent data volume. For a network-facing deployment, set a non-default
+dashboard password, require API keys, terminate HTTPS at a trusted reverse proxy, and
+protect `DATA_DIR`.
+
+## What is the initial dashboard password?
+
+When no password hash or `INITIAL_PASSWORD` has been configured, the initial password
+is `123456`. You can change it later in the dashboard.
+
+Do not expose an instance using the default password to the internet. Enable endpoint
+API-key enforcement in **Dashboard → Endpoint** and, when HTTPS is configured, set:
+
+```env
+AUTH_COOKIE_SECURE=true
 ```
 
-**Breaking changes:**
-- Check [CHANGELOG.md](https://github.com/Ezero23/potluck/blob/main/CHANGELOG.md)
-- Backup `~/.potluck` before major updates
-- Review migration guides for major versions
+`AUTH_COOKIE_SECURE=true` requires HTTPS.
 
----
+## Where is data stored?
 
-## How can I contribute?
+By default, application data is stored under `~/.potluck`; a different directory can
+be selected with `DATA_DIR`.
 
-**We welcome contributions!**
+Important paths include:
 
-### Ways to contribute:
+```text
+${DATA_DIR}/db/data.sqlite
+${DATA_DIR}/db/backups/
+${DATA_DIR}/routing.json
+```
 
-1. **Report bugs:**
-   - [GitHub Issues](https://github.com/Ezero23/potluck/issues)
-   - Include error logs, steps to reproduce
+Treat the entire directory as sensitive. It can contain provider credentials,
+settings, API keys, usage history, and request details.
 
-2. **Request features:**
-   - [GitHub Discussions](https://github.com/Ezero23/potluck/discussions)
-   - Describe use case and benefits
+## Does Potluck store prompts or responses?
 
-3. **Submit code:**
-   ```bash
-   # Fork repo
-   git clone https://github.com/YOUR_USERNAME/potluck.git
-   cd potluck
-   
-   # Create branch
-   git checkout -b feature/your-feature
-   
-   # Make changes
-   npm install
-   npm run dev
-   
-   # Test
-   npm test
-   
-   # Commit and push
-   git add .
-   git commit -m "Add your feature"
-   git push origin feature/your-feature
-   
-   # Create Pull Request on GitHub
-   ```
+It can. Usage records and request-detail logging can contain client requests,
+translated provider payloads, responses, errors, or related metadata depending on the
+enabled settings and request path.
 
-4. **Improve docs:**
-   - Fix typos, add examples
-   - Translate to other languages
-   - Write tutorials
+Do not rely on older claims that Potluck never stores prompt or response content.
+Disable request-body logging unless needed, review the Usage/Details views, protect
+database backups, and avoid sending secrets in prompts.
 
-5. **Add providers:**
-   - Implement new provider adapters
-   - See `app/lib/providers/` for examples
+## Does Potluck send requests anywhere other than the selected provider?
 
-**Contribution guidelines:**
-- Follow existing code style
-- Add tests for new features
-- Update documentation
-- Keep commits atomic and descriptive
+Model requests are sent to the provider or endpoint selected by routing. Optional
+features—such as tunnels, update checks, OAuth flows, proxy pools, Headroom, or other
+integrations—can contact additional services when configured or invoked.
 
-See [CONTRIBUTING.md](https://github.com/Ezero23/potluck/blob/main/CONTRIBUTING.md) for details.
+Review the configuration and code for the features you enable. Self-hosting does not
+mean that model requests remain on the local machine.
 
----
+## How should I update?
 
-## Need More Help?
+Back up `DATA_DIR` first. For a source installation:
 
-- **Documentation:** [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
-- **GitHub:** [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
-- **Issues:** [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)
-- **Troubleshooting:** [troubleshooting.md](troubleshooting.md)
+```bash
+git pull --ff-only
+npm ci
+npm run build
+PORT=21023 HOSTNAME=0.0.0.0 NODE_ENV=production npm start
+```
+
+Review release changes before upgrading. If you build containers locally, rebuild the
+image and replace the container while preserving the data volume.
+
+## Where do I report a problem?
+
+- [GitHub repository](https://github.com/Ezero23/potluck)
+- [Issue tracker](https://github.com/Ezero23/potluck/issues)
+- [Troubleshooting](./troubleshooting.md)
+
+Include the Potluck version, installation method, endpoint, provider type, response
+status, and sanitized logs. Remove credentials, tokens, prompts, and personal data
+before posting.

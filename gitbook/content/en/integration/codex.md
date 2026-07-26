@@ -1,136 +1,109 @@
-# OpenAI Codex CLI Integration
+# OpenAI Codex CLI
 
-Integrate Potluck with OpenAI Codex CLI to route your OpenAI API requests through Potluck's intelligent routing system.
+Potluck can serve Codex through its OpenAI-compatible Responses API. The
+recommended setup uses Potluck's dashboard so you do not have to edit Codex
+configuration files by hand.
 
-## Prerequisites
+## Before you start
 
-- OpenAI Codex CLI installed
-- Potluck running locally or cloud endpoint configured
-- API key from Potluck dashboard
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Add and test at least one provider.
+3. Open **Endpoint**, create an API key, and copy it.
+4. Install Codex CLI by following the
+   [official installation guide](https://developers.openai.com/codex/cli).
 
-## Setup
+Do not copy a model name from this page. Your available models depend on the
+providers and aliases configured in your Potluck instance.
 
-### 1. Configure Environment Variables
+## Automatic setup
 
-Set the following environment variables in your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`):
+1. Open `http://localhost:21023/dashboard/cli-tools`.
+2. Expand **OpenAI Codex CLI**.
+3. Select the local endpoint, an API key, and a model.
+4. Select **Apply settings**.
 
-```bash
-# Base URL for Potluck
-export OPENAI_BASE_URL="http://localhost:20128/v1"
+Potluck merges its provider into `~/.codex/config.toml` and stores the selected
+key in `~/.codex/auth.json`. Existing unrelated Codex settings are preserved.
 
-# API Key from Potluck dashboard
-export OPENAI_API_KEY="your-potluck-api-key"
-```
-
-### 2. Reload Shell Configuration
-
-```bash
-source ~/.zshrc  # or ~/.bashrc
-```
-
-### 3. Verify Configuration
-
-Check that the environment variables are set correctly:
+Run Codex from your project directory:
 
 ```bash
-echo $OPENAI_BASE_URL
-echo $OPENAI_API_KEY
+cd /path/to/your/project
+codex
 ```
 
-## Available Models
+## Manual setup
 
-Potluck provides the following Codex models:
+Use manual setup only when Potluck and Codex run on different machines or the
+dashboard cannot access the Codex configuration directory.
 
-| Model ID | Description |
-|----------|-------------|
-| `cx/gpt-5.2-codex` | GPT-5.2 Codex - Latest version |
-| `cx/gpt-5.1-codex-max` | GPT-5.1 Codex Max - Extended context |
+Add the following to `~/.codex/config.toml`, replacing `MODEL_ID` with a value
+returned by Potluck:
 
-## Usage Examples
+```toml
+model = "MODEL_ID"
+model_provider = "potluck"
 
-### Basic Usage
-
-```bash
-# Use GPT-5.2 Codex
-codex --model cx/gpt-5.2-codex "Write a function to sort an array"
-
-# Use GPT-5.1 Codex Max
-codex --model cx/gpt-5.1-codex-max "Explain this complex algorithm"
+[model_providers.potluck]
+name = "Potluck"
+base_url = "http://localhost:21023/v1"
+wire_api = "responses"
 ```
 
-### Code Generation
-
-```bash
-codex --model cx/gpt-5.2-codex "Create a REST API endpoint for user authentication"
-```
-
-### Code Explanation
-
-```bash
-codex --model cx/gpt-5.1-codex-max "Explain what this code does: $(cat myfile.js)"
-```
-
-## Configuration File
-
-You can also configure Codex CLI using a configuration file. Create or edit `~/.codex/config.json`:
+Codex reads API-key authentication from `~/.codex/auth.json`. If that file
+already exists, merge these fields instead of overwriting the file:
 
 ```json
 {
-  "baseUrl": "http://localhost:20128/v1",
-  "apiKey": "your-potluck-api-key",
-  "defaultModel": "cx/gpt-5.2-codex"
+  "auth_mode": "apikey",
+  "OPENAI_API_KEY": "YOUR_POTLUCK_API_KEY"
 }
 ```
 
+The configuration format above matches Potluck's built-in Codex configurator
+and Codex's current `config.toml` provider format.
+
+## Verify the connection
+
+Check Potluck first:
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+Then list the model IDs available to your key:
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Use one of the returned IDs:
+
+```bash
+codex --model MODEL_ID "Explain this repository"
+```
+
+## Remote deployment
+
+Replace `http://localhost:21023/v1` with your HTTPS Potluck URL followed by
+`/v1`, for example:
+
+```toml
+base_url = "https://potluck.example.com/v1"
+```
+
+Do not expose a remote Potluck instance without enabling endpoint API-key
+authentication under **Dashboard → Endpoint**.
+
 ## Troubleshooting
 
-### Authentication Errors
-
-If you encounter authentication errors:
-
-1. Verify your API key is correct in Potluck dashboard
-2. Check that `OPENAI_API_KEY` environment variable is set
-3. Ensure the API key has not expired
-
-### Connection Issues
-
-If you encounter connection errors:
-
-1. Verify Potluck is running: `curl http://localhost:20128/health`
-2. Check environment variables are set correctly
-3. Ensure no firewall is blocking port 20128
-
-### Model Not Available
-
-If you get "model not available" errors:
-
-1. Verify the model name matches your Potluck configuration
-2. Check that the OpenAI provider connection is active in Potluck dashboard
-3. Ensure the model is available in your connected providers
-
-## Cloud Endpoint
-
-To use Potluck cloud endpoint instead of localhost:
-
-```bash
-export OPENAI_BASE_URL="http://localhost:20129"
-```
-
-Make sure you have configured your API key in the Potluck cloud dashboard.
-
-## Advanced Configuration
-
-### Custom Timeout
-
-```bash
-export OPENAI_TIMEOUT=60  # seconds
-```
-
-### Debug Mode
-
-Enable debug mode to see detailed request/response logs:
-
-```bash
-export CODEX_DEBUG=true
-codex --model cx/gpt-5.2-codex "Your prompt"
-```
+- **Connection refused:** confirm Potluck is running and that the configured
+  URL uses port `21023`.
+- **401 response:** select an existing key in **Dashboard → CLI Tools**, or
+  update `OPENAI_API_KEY` in `~/.codex/auth.json`.
+- **Model not found:** query `/v1/models` and use the exact returned ID.
+- **Codex still contacts OpenAI directly:** confirm `model_provider =
+  "potluck"` is a top-level entry in `~/.codex/config.toml`.
+- **Remote connection fails:** use HTTPS and confirm the public URL reaches the
+  same Potluck service; `localhost` always refers to the Codex machine.

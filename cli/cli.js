@@ -6,6 +6,41 @@ const fs = require("fs");
 const https = require("https");
 const os = require("os");
 
+const pkg = require("./package.json");
+const args = process.argv.slice(2);
+const APP_NAME = pkg.name;
+const INSTALL_CMD_LATEST = `npm i -g ${APP_NAME}@latest --prefer-online`;
+const DEFAULT_PORT = 21023;
+const DEFAULT_HOST = "0.0.0.0";
+
+function printHelp() {
+  console.log(`
+Usage: ${APP_NAME} [options]
+
+Options:
+  -p, --port <port>   Port to run the server (default: ${DEFAULT_PORT})
+  -H, --host <host>   Host to bind (default: ${DEFAULT_HOST})
+  -n, --no-browser    Don't open browser automatically
+  -l, --log           Show server logs (default: hidden)
+  -t, --tray          Run in system tray mode (background)
+  --skip-update       Skip auto-update check
+  -h, --help          Show this help message
+  -v, --version       Show version
+`);
+}
+
+const infoArg = args.find((arg) =>
+  ["--help", "-h", "--version", "-v"].includes(arg)
+);
+if (infoArg === "--help" || infoArg === "-h") {
+  printHelp();
+  process.exit(0);
+}
+if (infoArg === "--version" || infoArg === "-v") {
+  console.log(pkg.version);
+  process.exit(0);
+}
+
 // Native spinner - no external dependency
 function createSpinner(text) {
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -42,10 +77,8 @@ function createSpinner(text) {
   };
 }
 
-const pkg = require("./package.json");
 const { ensureSqliteRuntime, buildEnvWithRuntime } = require("./hooks/sqliteRuntime");
 const { ensureTrayRuntime } = require("./hooks/trayRuntime");
-const args = process.argv.slice(2);
 
 // Self-heal SQLite runtime deps (sql.js + better-sqlite3) into ~/.potluck/runtime
 // so the server can resolve them via NODE_PATH. Best-effort — sql.js is required,
@@ -54,13 +87,6 @@ try { ensureSqliteRuntime({ silent: true }); } catch {}
 
 // Self-heal tray runtime (systray for macOS/Linux only). Windows skipped.
 try { ensureTrayRuntime({ silent: true }); } catch {}
-
-// Configuration constants
-const APP_NAME = pkg.name; // Use from package.json
-const INSTALL_CMD_LATEST = `npm i -g ${APP_NAME}@latest --prefer-online`;
-
-const DEFAULT_PORT = 20128;
-const DEFAULT_HOST = "0.0.0.0";
 
 // First non-internal IPv4 — the address remote peers actually reach when bound to 0.0.0.0.
 function getLanIp() {
@@ -106,24 +132,6 @@ for (let i = 0; i < args.length; i++) {
   } else if (args[i] === "--tray" || args[i] === "-t") {
     trayMode = true;
     process.env.TRAY_MODE = "1";
-  } else if (args[i] === "--help" || args[i] === "-h") {
-    console.log(`
-Usage: ${APP_NAME} [options]
-
-Options:
-  -p, --port <port>   Port to run the server (default: ${DEFAULT_PORT})
-  -H, --host <host>   Host to bind (default: ${DEFAULT_HOST})
-  -n, --no-browser    Don't open browser automatically
-  -l, --log           Show server logs (default: hidden)
-  -t, --tray          Run in system tray mode (background)
-  --skip-update       Skip auto-update check
-  -h, --help          Show this help message
-  -v, --version       Show version
-`);
-    process.exit(0);
-  } else if (args[i] === "--version" || args[i] === "-v") {
-    console.log(pkg.version);
-    process.exit(0);
   }
 }
 

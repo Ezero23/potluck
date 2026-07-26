@@ -24,10 +24,10 @@ export const COLORS = {
 
   // Dark theme backgrounds
   dark: {
-    bg: "#191918",
-    bgAlt: "#1F1F1E",
-    surface: "#242423",
-    sidebar: "rgba(30, 30, 30, 0.8)",
+    bg: "#000000",
+    bgAlt: "#0a0a0a",
+    surface: "#0f0f0f",
+    sidebar: "rgba(10, 10, 10, 0.9)",
     border: "rgba(255, 255, 255, 0.1)",
     textMain: "#ECEBE8",
     textMuted: "#9E9D99",

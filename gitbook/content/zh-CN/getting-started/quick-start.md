@@ -1,250 +1,125 @@
-# 入门指南
+# 快速开始
 
-5 分钟启动 百家饭,开始智能路由 AI 请求。
+本指南会启动一个本地 Potluck 开发实例，并通过它的 OpenAI 兼容接口发送一次测试请求。
 
----
+## 环境要求
 
-## 快速开始
+- Node.js 22
+- npm
+- 至少一个受支持提供商的有效凭据
 
-### 1. 安装
+生产环境和不同平台的说明请参阅[安装指南](./installation.md)。
+
+## 1. 安装
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git
 cd potluck
 cp .env.example .env
-npm install
+npm ci
 ```
 
-**要求:** Node.js 20+([安装详情](getting-started/installation.md))
+不要提交 `.env`、Potluck 数据目录、数据库备份、提供商凭据或请求日志。
 
-### 2. 启动
+## 2. 启动开发服务器
 
 ```bash
-PORT=20129 NEXT_PUBLIC_BASE_URL=http://localhost:20129 npm run dev
+npm run dev
 ```
 
-🎉 **仪表盘自动打开** 地址为 `http://localhost:20129`
+打开 `http://localhost:21023/dashboard`。
 
-- 默认密码:`123456`(在仪表盘中修改)
-- API key 自动生成
-- 可立即连接提供商
+未配置密码哈希时，仪表盘初始密码为 `123456`。之后可以在仪表盘中修改，也可以在首次启动前
+设置 `INITIAL_PASSWORD`。
 
-### 3. 连接提供商
+开发模式、生产模式、Docker 和 CLI 默认都使用 `21023`。如果你明确选择了其他端口，
+仪表盘和客户端 URL 必须统一使用该值。
 
-有 3 种方式连接提供商:
+## 3. 连接提供商
 
-#### 方式 A:OAuth(订阅型提供商)
+打开 **仪表盘 → 提供商**，选择与你的账户对应且受支持的提供商。不同提供商可能要求 API
+Key、OAuth 授权或设备码登录。
 
-**适用于:** Claude Code、Codex、Gemini CLI、GitHub Copilot
+模型名称、配额、价格和登录流程由第三方控制，随时可能变化。请以当前 Potluck 实例中的
+提供商卡片和模型选择器为准。
 
-```
-仪表盘 → 提供商 → 连接 [提供商]
-→ OAuth 登录 → 自动刷新 token
-→ 启用配额跟踪
-```
+添加提供商之前：
 
-**示例:Claude Code**
-1. 点击 "Connect Claude Code"
-2. 用你的 Claude 账户登录
-3. 授权 百家饭
-4. ✅ 完成!使用模型:`cc/claude-opus-4-5-20251101`
+- 确认使用方式符合第三方服务条款；
+- 确认账户是按量计费、订阅制还是受配额限制；
+- 条件允许时使用专门为 Potluck 创建的凭据；
+- 先用不含敏感信息的提示词测试连接。
 
-#### 方式 B:API Key(低价提供商)
+## 4. 创建 Potluck API Key
 
-**适用于:** GLM、MiniMax、Kimi、OpenRouter
+打开 **仪表盘 → Endpoint**，创建或复制 Potluck API Key。它与上游提供商凭据用途不同，
+不要混用。
 
-```
-仪表盘 → 提供商 → 添加 API Key
-→ 选择提供商
-→ 粘贴 API key
-→ 保存
-```
+在 **仪表盘 → Endpoint** 中启用端点 Key 验证后，客户端必须以 Bearer Token 形式发送该
+Key。只要实例能被其他设备访问，就强烈建议启用这一设置。
 
-**示例:GLM-4.7**
-1. 在 [Zhipu AI](https://open.bigmodel.cn/) 注册
-2. 从 Coding Plan 获取 API key
-3. 仪表盘 → 添加 API Key → 提供商:`glm` → 粘贴 key
-4. ✅ 完成!使用模型:`glm/glm-4.7`
+## 5. 查询可用模型
 
-#### 方式 C:免费提供商(零成本)
-
-**适用于:** iFlow、Qwen、Kiro
-
-```
-仪表盘 → 提供商 → 连接 [免费提供商]
-→ 设备码或 OAuth
-→ 无限使用
-```
-
-**示例:iFlow**
-1. 点击 "Connect iFlow"
-2. 用 iFlow 账户登录
-3. 授权
-4. ✅ 完成!使用 8 个模型:`if/kimi-k2-thinking`、`if/qwen3-coder-plus` 等
-
----
-
-## 4. 在 CLI 工具中使用
-
-将你的编码工具指向 百家饭:
-
-### Cursor IDE
-
-```
-Settings → Models → Advanced:
-  OpenAI API Base URL: http://localhost:20129/v1
-  OpenAI API Key: [从 potluck 仪表盘获取]
-  Model: cc/claude-opus-4-5-20251101
-```
-
-### Claude Desktop
-
-编辑 `~/.claude/config.json`:
-
-```json
-{
-  "anthropic_api_base": "http://localhost:20129/v1",
-  "anthropic_api_key": "your-potluck-api-key"
-}
-```
-
-### Cline / Continue / RooCode
-
-```
-Provider: OpenAI Compatible
-Base URL: http://localhost:20129/v1
-API Key: [从仪表盘获取]
-Model: cc/claude-opus-4-5-20251101
-```
-
-### Codex CLI
+模型标识取决于当前实例实际连接的提供商：
 
 ```bash
-export OPENAI_BASE_URL="http://localhost:20129"
-export OPENAI_API_KEY="your-potluck-api-key"
-
-codex "your prompt"
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
----
+请使用该接口返回或仪表盘模型选择器显示的标识。直接使用 `provider/model` 会指向对应来源；
+已经配置的路由配置可以使用 `profile:PROFILE_NAME`。
 
-## 5. 创建智能组合(可选)
+## 6. 发送测试请求
 
-组合(Combos)可在多个模型之间实现自动回退:
+将 `provider/model-id` 替换为 `/v1/models` 返回的模型：
 
-```
-仪表盘 → 组合 → 新建
-
-名称: premium-coding
-模型:
-  1. cc/claude-opus-4-5-20251101 (订阅主力)
-  2. glm/glm-4.7 (低价备用, $0.6/1M)
-  3. if/kimi-k2-thinking (免费回退)
-
-CLI 中使用: premium-coding
-```
-
-**工作原理:**
-1. 先尝试 Claude Opus(你的订阅)
-2. 配额耗尽 → GLM-4.7(超低价)
-3. 预算上限 → iFlow(免费)
-4. 零停机,自动切换!
-
----
-
-## 可用模型
-
-### 订阅型模型(优先使用)
-
-**Claude Code (`cc/`)** - Pro/Max 订阅:
-- `cc/claude-opus-4-5-20251101` - Claude 4.5 Opus
-- `cc/claude-sonnet-4-5-20250929` - Claude 4.5 Sonnet
-- `cc/claude-haiku-4-5-20251001` - Claude 4.5 Haiku
-
-**Codex (`cx/`)** - Plus/Pro 订阅:
-- `cx/gpt-5.2-codex` - GPT 5.2 Codex
-- `cx/gpt-5.1-codex-max` - GPT 5.1 Codex Max
-
-**Gemini CLI (`gc/`)** - 每月免费 180K:
-- `gc/gemini-3-flash-preview` - Gemini 3 Flash Preview
-- `gc/gemini-2.5-pro` - Gemini 2.5 Pro
-
-**GitHub Copilot (`gh/`)** - 订阅:
-- `gh/gpt-5` - GPT-5
-- `gh/claude-4.5-sonnet` - Claude 4.5 Sonnet
-
-### 低价模型(备用)
-
-**GLM (`glm/`)** - 每 1M $0.6/$2.2:
-- `glm/glm-4.7` - GLM 4.7(每日 10AM 重置)
-
-**MiniMax (`minimax/`)** - 每 1M $0.20/$1.00:
-- `minimax/MiniMax-M2.1` - MiniMax M2.1(5h 重置)
-
-**Kimi (`kimi/`)** - $9/月(10M tokens):
-- `kimi/kimi-latest` - Kimi Latest
-
-### 免费模型(应急)
-
-**iFlow (`if/`)** - 8 个免费模型:
-- `if/kimi-k2-thinking` - Kimi K2 Thinking
-- `if/qwen3-coder-plus` - Qwen3 Coder Plus
-- `if/glm-4.7` - GLM 4.7
-- `if/deepseek-r1` - DeepSeek R1
-
-**Qwen (`qw/`)** - 3 个免费模型:
-- `qw/qwen3-coder-plus` - Qwen3 Coder Plus
-- `qw/qwen3-coder-flash` - Qwen3 Coder Flash
-
-**Kiro (`kr/`)** - 2 个免费模型:
-- `kr/claude-sonnet-4.5` - Claude Sonnet 4.5
-- `kr/claude-haiku-4.5` - Claude Haiku 4.5
-
----
-
-## 成本优化策略
-
-### 月度预算:$10-20/月
-
-```
-1. 用 Gemini CLI 免费层(每月 180K)处理快速任务
-2. 用足 Claude Code 订阅配额(你已经付费了)
-3. 配额用完后回退到 GLM(每 1M $0.6)
-4. 应急: MiniMax M2.1(每 1M $0.20)或 iFlow(免费)
-
-真实案例(每月 100M tokens):
-  60M 通过 Gemini CLI: $0(免费层)
-  30M 通过 Claude Code: $0(你已有的订阅)
-  8M 通过 GLM: $4.80
-  2M 通过 MiniMax: $0.40
-  合计: $5.20/月 + 已有订阅
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "provider/model-id",
+    "messages": [
+      {"role": "user", "content": "请回复：Potluck 已连接。"}
+    ],
+    "stream": false
+  }'
 ```
 
-### 配额重置策略
+请求成功表示客户端已连接到 Potluck，且所选提供商接受了这次请求；它不代表该提供商一定
+支持所有接口、工具调用、流式模式或媒体输入。
 
+## 7. 连接客户端
+
+OpenAI 兼容客户端可使用：
+
+```text
+Base URL: http://localhost:21023/v1
+API key:  YOUR_POTLUCK_API_KEY
+Model:    provider/model-id
 ```
-日常安排:
-1. 早上: 全新的 Claude Code 配额(5h 重置)
-2. 下午: 切换到 Gemini CLI(每日 1K)
-3. 晚上: GLM 每日配额(次日 10AM 重置)
-4. 深夜: MiniMax(5h 滚动)或 iFlow(免费)
 
-→ 24/7 编码,几乎零额外成本!
-```
+不同客户端的配置方式并不完全相同，尤其是 Anthropic 兼容工具。请使用对应指南：
 
----
+- [Claude Code](../integration/claude-code.md)
+- [Codex](../integration/codex.md)
+- [Cline](../integration/cline.md)
+- [Continue](../integration/continue.md)
+- [Roo Code](../integration/roo.md)
+- [其他工具](../integration/other-tools.md)
+
+## 可选：配置故障切换
+
+组合和路由配置可以在遇到已配置的可重试错误时尝试其他合格来源。加入组合前，应先独立验证
+每一个来源。
+
+故障切换是尽力而为，不是零停机承诺。当凭据过期、所有候选来源都不可用、第三方修改接口、
+客户端断开或错误不可重试时，请求仍然可能失败。
 
 ## 下一步
 
-- [安装详情](getting-started/installation.md) - 要求与故障排除
-- [功能特性](features/) - 探索配额跟踪、组合、部署
-- [常见问题](faq.md) - 常见问题与解答
-- [故障排除](troubleshooting.md) - 解决常见问题
-
----
-
-## 需要帮助?
-
-- **网站**: [github.com/Ezero23/potluck](https://your-potluck-cloud.example.com)
-- **GitHub**: [github.com/Ezero23/potluck](https://github.com/Ezero23/potluck)
-- **Issues**: [github.com/Ezero23/potluck/issues](https://github.com/Ezero23/potluck/issues)
+- 查看[订阅型提供商](../providers/subscription.md)。
+- 了解[免费或促销访问](../providers/free.md)的限制。
+- 阅读[组合](../features/combos.md)说明。
+- 首次请求失败时查看[故障排除](../troubleshooting.md)。

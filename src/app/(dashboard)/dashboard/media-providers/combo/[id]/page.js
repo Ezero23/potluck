@@ -3,8 +3,10 @@
 import { useParams, notFound, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, Button, Input, Toggle, ModelSelectModal } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
+import { APP_CONFIG } from "@/shared/constants/config";
 import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 
 // Parse "providerId/model" or just "providerId" → { providerId, model }
@@ -37,6 +39,15 @@ const EXAMPLE_BODIES = {
   image: (n) => ({ model: n, prompt: "A cute cat playing piano", n: 1, size: "1024x1024" }),
   tts: (n) => ({ model: n, input: "Hello, this is a test.", voice: "alloy" }),
 };
+
+async function timedFetch(url, options) {
+  const start = performance.now();
+  const response = await fetch(url, options);
+  return {
+    response,
+    latencyMs: Math.round(performance.now() - start),
+  };
+}
 
 // Map combo.kind → listing route to go back to
 function getListingHref(kind) {
@@ -175,14 +186,15 @@ export default function ComboDetailPage() {
     setTestError("");
     if (testResult?.audioUrl) { try { URL.revokeObjectURL(testResult.audioUrl); } catch {} }
     if (testResult?.imageUrl?.startsWith("blob:")) { try { URL.revokeObjectURL(testResult.imageUrl); } catch {} }
-    const start = Date.now();
     try {
       const path = EXAMPLE_PATHS[combo.kind];
       const body = EXAMPLE_BODIES[combo.kind](combo.name);
       const headers = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
-      const res = await fetch(`/api${path}`, { method: "POST", headers, body: JSON.stringify(body) });
-      const latencyMs = Date.now() - start;
+      const { response: res, latencyMs } = await timedFetch(
+        `/api${path}`,
+        { method: "POST", headers, body: JSON.stringify(body) }
+      );
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         setTestError(d?.error?.message || d?.error || `HTTP ${res.status}`);
@@ -211,8 +223,9 @@ export default function ComboDetailPage() {
       setTestResult({ json: JSON.stringify(maskB64(data), null, 2), imageUrl, latencyMs });
     } catch (e) {
       setTestError(e.message || "Network error");
+    } finally {
+      setTesting(false);
     }
-    setTesting(false);
   };
 
   // Mask large b64_json strings to keep JSON view readable
@@ -235,7 +248,7 @@ export default function ComboDetailPage() {
   const examplePath = EXAMPLE_PATHS[combo.kind];
   const exampleBody = combo.kind && EXAMPLE_BODIES[combo.kind] ? EXAMPLE_BODIES[combo.kind](combo.name) : null;
   const curlExample = examplePath
-    ? `curl -X POST http://localhost:20128${examplePath} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}" \\\n  -d '${JSON.stringify(exampleBody)}'`
+    ? `curl -X POST http://localhost:${APP_CONFIG.defaultPort}${examplePath} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}" \\\n  -d '${JSON.stringify(exampleBody)}'`
     : "";
   const backHref = getListingHref(combo.kind);
 
@@ -357,7 +370,14 @@ export default function ComboDetailPage() {
                       Download
                     </a>
                   </div>
-                  <img src={testResult.imageUrl} alt="Generated" className="max-w-full rounded-lg border border-border" />
+                  <Image
+                    src={testResult.imageUrl}
+                    alt="Generated"
+                    width={1024}
+                    height={1024}
+                    unoptimized
+                    className="h-auto max-w-full rounded-lg border border-border"
+                  />
                 </div>
               )}
               {testResult.audioUrl && (

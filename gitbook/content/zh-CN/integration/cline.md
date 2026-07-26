@@ -1,201 +1,90 @@
-# Cline 集成
+# Cline
 
-将 百家饭 与 Cline VSCode 扩展集成,通过 百家饭 的智能路由系统转发你的 AI 请求。
+Cline 可以通过 Potluck 的 OpenAI 兼容 API 使用 Potluck。手动配置时应选择
+Cline 的 **OpenAI Compatible**；旧文档使用 Ollama 的做法已经不符合当前
+Cline 界面。
 
-## 前置要求
+## 开始前
 
-- 已安装 Visual Studio Code
-- 从 VSCode 市场安装了 Cline 扩展
-- 百家饭 本地运行或已配置云端 endpoint
-- 来自 百家饭 仪表盘的 API key
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 从 [Cline 官方安装页面](https://docs.cline.bot/getting-started/installing-cline)
+   安装 Cline。
 
-## 设置
+模型 ID 必须来自你自己的 Potluck 实例。Potluck 不保证固定上游模型一定存在。
 
-### 1. 打开 Cline 设置
+## 自动配置
 
-1. 打开 Visual Studio Code
-2. 打开 Cline 扩展面板(点击侧边栏的 Cline 图标)
-3. 点击 Cline 面板中的 **Settings**(齿轮图标)
+当 Cline 和 Potluck 运行在同一个桌面用户下时：
 
-### 2. 选择 API Provider
+1. 打开 `http://localhost:21023/dashboard/cli-tools`。
+2. 展开 **Cline**。
+3. 选择本地端点、API Key 和模型。
+4. 点击 **Apply**。
+5. 如果 VS Code 已经打开，请重新加载窗口。
 
-1. 在 Cline 设置中找到 **API Provider** 下拉菜单
-2. 从列表中选择 **Ollama**
-   - 注意:我们使用 Ollama provider 类型,因为它与 OpenAI 风格 API 兼容
+Potluck 只更新自己的 Cline 提供商字段。需要撤销时，可在同一张卡片点击
+**Reset**。
 
-### 3. 配置 Base URL
+## 手动配置
 
-将 base URL 设为你的 百家饭 endpoint:
+当 Cline 位于另一台机器，或自动配置无法检测 Cline 时使用：
 
-**本地 百家饭:**
-```
-http://localhost:20129/v1
-```
+1. 在 VS Code 中打开 Cline，点击设置图标。
+2. 将 **API Provider** 设为 **OpenAI Compatible**。
+3. 填写：
 
-**云端 百家饭:**
-```
-https://your-potluck-cloud.example.com
-```
-
-**步骤:**
-1. 在 **Base URL** 字段中输入你的 百家饭 endpoint
-2. 末尾必须包含 `/v1`
-
-### 4. 添加 API Key
-
-1. 在 **API Key** 字段中输入你的 百家饭 API key
-2. 可在 百家饭 仪表盘 **Settings → API Keys** 中找到 API key
-3. key 应以 `sk-` 开头
-
-### 5. 选择模型
-
-1. 在 **Model** 下拉菜单中,可以:
-   - 从可用模型中选择(若 Cline 自动检测)
-   - 或手动输入 百家饭 配置中的模型名
-
-2. 常见模型名:
-   - `gpt-4`
-   - `gpt-4o`
-   - `claude-opus-4-5`
-   - `claude-sonnet-4-5`
-   - `gemini-2.0-flash`
-
-### 6. 保存配置
-
-点击 **Save** 或关闭设置面板。Cline 会自动保存你的配置。
-
-## 配置示例
-
-你的 Cline 设置应如下所示:
-
-```
-API Provider: Ollama
-Base URL: http://localhost:20129/v1
-API Key: sk-xxxxxxxxxxxxx
-Model: gpt-4
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
 ```
 
-## 可用模型
+Base URL 末尾必须保留 `/v1`。不要为了连接 Potluck 而选择 Ollama；Cline
+已经提供专门的 OpenAI 兼容选项。
 
-你可以使用 百家饭 仪表盘中配置的任意模型。常见示例:
+## 获取有效模型 ID
 
-| 模型名 | 提供商 | 描述 |
-|------------|----------|-------------|
-| `gpt-4` | OpenAI | GPT-4 Turbo |
-| `gpt-4o` | OpenAI | GPT-4 Optimized |
-| `claude-opus-4-5` | Anthropic | Claude Opus 4.5 |
-| `claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `gemini-2.0-flash` | Google | Gemini 2.0 Flash |
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
 
-## 使用
+从响应中复制一个完整的 `data[].id` 到 Cline 的 **Model ID** 字段。不要根据
+提供商的宣传名称猜测模型 ID。
 
-### 与 AI 对话
+## 验证连接
 
-1. 在 VSCode 中打开 Cline 面板
-2. 在聊天输入框中输入消息
-3. 按 Enter 发送
-4. Cline 会通过 百家饭 处理你的请求
+先独立检查 Potluck：
 
-### 生成代码
+```bash
+curl http://localhost:21023/api/health
+```
 
-1. 让 Cline 生成代码:"创建一个登录表单的 React 组件"
-2. Cline 会通过 百家饭 生成代码
-3. 检查并接受生成的代码
+然后使用 Cline 的提供商验证功能，或新建一个 Cline 任务并发送简短消息。
+可在 Potluck 的 **Usage（用量）** 页面确认请求是否到达。
 
-### 代码解释
+## 远程部署
 
-1. 在编辑器中选中代码
-2. 让 Cline:"解释这段代码"
-3. 通过 百家饭 获得 AI 驱动的解释
+远程 Potluck 实例必须使用 HTTPS 地址：
 
-### 文件操作
+```text
+Base URL: https://potluck.example.com/v1
+```
 
-1. 让 Cline 创建、修改或删除文件
-2. Cline 会通过 百家饭 理解上下文并进行修改
-3. 在接受前检查变更
+`localhost` 表示运行 VS Code 的机器，无法指向另一台电脑上的 Potluck。
+暴露公网前，请在 **Dashboard → Endpoint** 开启端点 API Key 验证。
 
-## 故障排除
+## 故障排查
 
-### "Connection Failed" 错误
+- **连接被拒绝：**确认 Potluck 正在 `21023` 运行，并且 Cline 能访问该机器。
+- **返回 401：**选择或重新创建 Potluck API Key；不要填写上游提供商密钥。
+- **模型不存在：**查询 `/v1/models`，复制完整返回值。
+- **返回 404：**确认手动填写的 Base URL 以 `/v1` 结尾。
+- **设置未生效：**重新加载 VS Code 窗口并新建 Cline 任务。
+- **工具调用异常：**换用明确支持工具调用的模型；能输出文本不等于适合
+  Agent 任务。
 
-1. 确认 百家饭 正在运行:`curl http://localhost:20129/health`
-2. 确认 base URL 正确且包含 `/v1`
-3. 确保防火墙没有阻止 20129 端口
-4. 尝试重启 VSCode
-
-### "Invalid API Key" 错误
-
-1. 在 百家饭 仪表盘中确认 API key
-2. 确保复制了包含 `sk-` 前缀在内的完整 key
-3. 检查 API key 是否过期
-4. 尝试重新生成 API key
-
-### "Model Not Found" 错误
-
-1. 确认模型名与 百家饭 配置完全一致
-2. 检查 百家饭 仪表盘中提供商连接是否激活
-3. 确认连接的提供商中包含该模型
-4. 尝试使用完整模型名(例如用 `openai/gpt-4` 代替 `gpt-4`)
-
-### Cline 无响应
-
-1. 查看 Cline 输出面板中的错误信息
-2. 确认 百家饭 实例正在运行且健康
-3. 重新加载 VSCode 窗口(Cmd/Ctrl + Shift + P → "Reload Window")
-4. 检查 百家饭 日志是否有错误
-
-## 高级配置
-
-### 使用云端 Endpoint
-
-使用 百家饭 云端 endpoint 而非 localhost:
-
-1. 在 Cline 设置中将 Base URL 设为:`https://your-potluck-cloud.example.com`
-2. 确保已在 百家饭 云端仪表盘中配置 API key
-3. 确保云端 endpoint 已激活且可访问
-
-### 多个模型
-
-可以快速切换模型:
-
-1. 打开 Cline 设置
-2. 将 **Model** 字段改为另一个模型
-3. 保存并继续使用新模型对话
-
-### 自定义超时
-
-如果大请求出现超时:
-
-1. 打开 VSCode 设置(Cmd/Ctrl + ,)
-2. 搜索 "Cline timeout"
-3. 提高超时值(默认通常为 30 秒)
-
-## 最佳实践
-
-1. **使用合适的模型**:简单任务用更快的模型(如 Haiku 或 Flash),复杂任务用更强的模型(如 Opus 或 GPT-4)
-2. **监控使用**:在 百家饭 仪表盘查看用量统计和成本
-3. **管理上下文**:保持对话聚焦以减少 token 用量
-4. **切换模型**:根据任务复杂度切换模型,优化成本和性能
-5. **API Key 安全**:绝不将 API key 提交到版本控制
-
-## 与 百家饭 功能的集成
-
-### 模型路由
-
-百家饭 会根据以下因素自动将请求路由到最佳提供商:
-- 模型可用性
-- 提供商健康状态
-- 成本优化
-- 负载均衡
-
-### 回退支持
-
-某个提供商失败时,百家饭 会自动回退到仪表盘中配置的备用提供商。
-
-### 使用跟踪
-
-通过 百家饭 仪表盘监控你的 Cline 使用:
-- 请求总数
-- Token 使用
-- 每个模型的成本
-- 提供商分布
+Cline 当前字段及行为可参考
+[OpenAI Compatible 官方文档](https://docs.cline.bot/provider-config/openai-compatible)。

@@ -13,14 +13,13 @@ import {
   initDbHooks,
 } from "@/mitm/manager";
 import { getSettings, updateSettings } from "@/lib/localDb";
+import { getRequestOrigin } from "@/shared/utils/requestOrigin";
 
 initDbHooks(getSettings, updateSettings);
 
-const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
-
-function normalizeMitmRouterBaseUrlInput(input) {
+function normalizeMitmRouterBaseUrlInput(input, defaultBaseUrl) {
   if (input == null || String(input).trim() === "") {
-    return DEFAULT_MITM_ROUTER_BASE;
+    return defaultBaseUrl;
   }
   const t = String(input).trim().replace(/\/+$/, "");
   let u;
@@ -65,11 +64,12 @@ function checkPrivilege(pwd) {
 }
 
 // GET - Full MITM status (server + per-tool DNS)
-export async function GET() {
+export async function GET(request) {
   try {
     const status = await getMitmStatus();
     const settings = await getSettings();
     const hasCachedPassword = !!getCachedPassword() || !!(await loadEncryptedPassword());
+    const requestOrigin = getRequestOrigin(request);
     return NextResponse.json({
       running: status.running,
       pid: status.pid || null,
@@ -82,7 +82,7 @@ export async function GET() {
       isAdmin: checkIsAdmin(),
       mitmRouterBaseUrl:
         (settings.mitmRouterBaseUrl && String(settings.mitmRouterBaseUrl).trim()) ||
-        DEFAULT_MITM_ROUTER_BASE,
+        requestOrigin,
     });
   } catch (error) {
     console.log("Error getting MITM status:", error.message);
@@ -95,6 +95,7 @@ export async function POST(request) {
   try {
     const { apiKey, sudoPassword, mitmRouterBaseUrl, forceKillPort443 } = await request.json();
     const pwd = getPassword(sudoPassword) || await loadEncryptedPassword() || "";
+    const requestOrigin = getRequestOrigin(request);
 
     if (!apiKey || requiresSudoPassword(pwd)) {
       return NextResponse.json(
@@ -112,7 +113,7 @@ export async function POST(request) {
 
     if (mitmRouterBaseUrl !== undefined && mitmRouterBaseUrl !== null) {
       try {
-        const normalized = normalizeMitmRouterBaseUrlInput(mitmRouterBaseUrl);
+        const normalized = normalizeMitmRouterBaseUrlInput(mitmRouterBaseUrl, requestOrigin);
         await updateSettings({ mitmRouterBaseUrl: normalized });
       } catch (e) {
         return NextResponse.json(

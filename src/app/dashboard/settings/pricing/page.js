@@ -1,21 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import Card from "@/shared/components/Card";
 import PricingModal from "@/shared/components/PricingModal";
 
 export default function PricingSettingsPage() {
-  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [currentPricing, setCurrentPricing] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadPricing();
-  }, []);
-
-  const loadPricing = async () => {
+  const loadPricing = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/pricing");
@@ -28,10 +22,14 @@ export default function PricingSettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadPricing();
+  }, [loadPricing]);
 
   const handlePricingUpdated = () => {
-    loadPricing();
+    void loadPricing();
   };
 
   // Count total models with pricing

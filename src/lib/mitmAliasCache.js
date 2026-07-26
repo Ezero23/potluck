@@ -11,13 +11,25 @@ const DATA_DIR = process.env.DATA_DIR
     : path.join(os.homedir(), ".potluck"));
 
 const CACHE_FILE = path.join(DATA_DIR, "mitm", "aliases.json");
+const PRIVATE_DIR_MODE = 0o700;
+const PRIVATE_FILE_MODE = 0o600;
+
+function restrictMode(target, mode) {
+  if (process.platform !== "win32") fs.chmodSync(target, mode);
+}
 
 function writeAtomic(data) {
   const dir = path.dirname(CACHE_FILE);
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir, { recursive: true, mode: PRIVATE_DIR_MODE });
+  restrictMode(dir, PRIVATE_DIR_MODE);
   const tmp = `${CACHE_FILE}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), {
+    encoding: "utf8",
+    mode: PRIVATE_FILE_MODE,
+  });
+  restrictMode(tmp, PRIVATE_FILE_MODE);
   fs.renameSync(tmp, CACHE_FILE);
+  restrictMode(CACHE_FILE, PRIVATE_FILE_MODE);
 }
 
 // Sync entire mitmAlias map from DB → JSON file

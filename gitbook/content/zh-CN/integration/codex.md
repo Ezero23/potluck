@@ -1,136 +1,106 @@
-# OpenAI Codex CLI 集成
+# OpenAI Codex CLI
 
-将 百家饭 与 OpenAI Codex CLI 集成,通过 百家饭 的智能路由系统转发你的 OpenAI API 请求。
+Potluck 通过 OpenAI 兼容的 Responses API 为 Codex 提供服务。推荐直接使用
+Potluck 仪表盘完成配置，不需要新手手动修改 Codex 配置文件。
 
-## 前置要求
+## 开始前
 
-- 已安装 OpenAI Codex CLI
-- 百家饭 本地运行或已配置云端 endpoint
-- 来自 百家饭 仪表盘的 API key
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 按照 [Codex 官方安装文档](https://developers.openai.com/codex/cli)
+   安装 Codex CLI。
 
-## 设置
+不要照抄本文中的固定模型名。实际可用模型由你的提供商连接和模型别名决定。
 
-### 1. 配置环境变量
+## 自动配置
 
-在 shell 配置文件(`~/.bashrc`、`~/.zshrc` 或 `~/.bash_profile`)中设置以下环境变量:
+1. 打开 `http://localhost:21023/dashboard/cli-tools`。
+2. 展开 **OpenAI Codex CLI**。
+3. 选择本地端点、API Key 和模型。
+4. 点击 **Apply settings**。
 
-```bash
-# 百家饭 的 Base URL
-export OPENAI_BASE_URL="http://localhost:20129/v1"
+Potluck 会把自己的提供商配置合并到 `~/.codex/config.toml`，并把所选密钥
+写入 `~/.codex/auth.json`；其他无关的 Codex 设置会保留。
 
-# 来自 百家饭 仪表盘的 API Key
-export OPENAI_API_KEY="your-potluck-api-key"
-```
-
-### 2. 重新加载 Shell 配置
-
-```bash
-source ~/.zshrc  # 或 ~/.bashrc
-```
-
-### 3. 验证配置
-
-检查环境变量是否设置正确:
+进入项目目录后启动 Codex：
 
 ```bash
-echo $OPENAI_BASE_URL
-echo $OPENAI_API_KEY
+cd /你的/项目路径
+codex
 ```
 
-## 可用模型
+## 手动配置
 
-百家饭 提供以下 Codex 模型:
+仅当 Potluck 和 Codex 不在同一台机器，或仪表盘无法访问 Codex 配置目录时，
+才需要手动配置。
 
-| 模型 ID | 描述 |
-|----------|-------------|
-| `cx/gpt-5.2-codex` | GPT-5.2 Codex - 最新版本 |
-| `cx/gpt-5.1-codex-max` | GPT-5.1 Codex Max - 扩展上下文 |
+将以下内容加入 `~/.codex/config.toml`。把 `MODEL_ID` 替换成 Potluck
+实际返回的模型 ID：
 
-## 使用示例
+```toml
+model = "MODEL_ID"
+model_provider = "potluck"
 
-### 基础用法
-
-```bash
-# 使用 GPT-5.2 Codex
-codex --model cx/gpt-5.2-codex "Write a function to sort an array"
-
-# 使用 GPT-5.1 Codex Max
-codex --model cx/gpt-5.1-codex-max "Explain this complex algorithm"
+[model_providers.potluck]
+name = "Potluck"
+base_url = "http://localhost:21023/v1"
+wire_api = "responses"
 ```
 
-### 代码生成
-
-```bash
-codex --model cx/gpt-5.2-codex "Create a REST API endpoint for user authentication"
-```
-
-### 代码解释
-
-```bash
-codex --model cx/gpt-5.1-codex-max "Explain what this code does: $(cat myfile.js)"
-```
-
-## 配置文件
-
-也可以通过配置文件配置 Codex CLI。创建或编辑 `~/.codex/config.json`:
+Codex 从 `~/.codex/auth.json` 读取 API Key。如果该文件已经存在，请合并
+下面两个字段，不要覆盖整个文件：
 
 ```json
 {
-  "baseUrl": "http://localhost:20129/v1",
-  "apiKey": "your-potluck-api-key",
-  "defaultModel": "cx/gpt-5.2-codex"
+  "auth_mode": "apikey",
+  "OPENAI_API_KEY": "YOUR_POTLUCK_API_KEY"
 }
 ```
 
-## 故障排除
+以上格式与 Potluck 内置的 Codex 配置器以及 Codex 当前的
+`config.toml` 提供商格式一致。
 
-### 认证错误
+## 验证连接
 
-遇到认证错误时:
-
-1. 在 百家饭 仪表盘中确认 API key 正确
-2. 检查 `OPENAI_API_KEY` 环境变量已设置
-3. 确认 API key 未过期
-
-### 连接问题
-
-遇到连接错误时:
-
-1. 确认 百家饭 正在运行:`curl http://localhost:20129/health`
-2. 检查环境变量设置是否正确
-3. 确保防火墙没有阻止 20129 端口
-
-### 模型不可用
-
-出现 "model not available" 错误时:
-
-1. 确认模型名与 百家饭 配置一致
-2. 检查 百家饭 仪表盘中 OpenAI 提供商连接是否激活
-3. 确认连接的提供商中包含该模型
-
-## 云端 Endpoint
-
-使用 百家饭 云端 endpoint 而非 localhost:
+先检查 Potluck：
 
 ```bash
-export OPENAI_BASE_URL="https://your-potluck-cloud.example.com"
+curl http://localhost:21023/api/health
 ```
 
-确保已在 百家饭 云端仪表盘中配置 API key。
-
-## 高级配置
-
-### 自定义超时
+再查看当前 API Key 可用的模型：
 
 ```bash
-export OPENAI_TIMEOUT=60  # 秒
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-### Debug 模式
-
-启用 debug 模式查看详细请求/响应日志:
+使用返回列表中的模型 ID：
 
 ```bash
-export CODEX_DEBUG=true
-codex --model cx/gpt-5.2-codex "Your prompt"
+codex --model MODEL_ID "解释这个项目"
 ```
+
+## 远程部署
+
+将 `http://localhost:21023/v1` 换成 Potluck 的 HTTPS 公网地址，并保留
+末尾的 `/v1`，例如：
+
+```toml
+base_url = "https://potluck.example.com/v1"
+```
+
+不要在未启用 API Key 验证的情况下暴露公网实例。请在
+**Dashboard → Endpoint** 中开启端点认证。
+
+## 故障排查
+
+- **连接被拒绝：**确认 Potluck 正在运行，并检查配置是否使用 `21023`。
+- **返回 401：**在 **Dashboard → CLI Tools** 选择现有密钥，或更新
+  `~/.codex/auth.json` 中的 `OPENAI_API_KEY`。
+- **模型不存在：**查询 `/v1/models`，使用返回的完整模型 ID。
+- **Codex 仍直接访问 OpenAI：**确认 `model_provider = "potluck"` 位于
+  `~/.codex/config.toml` 顶层。
+- **远程连接失败：**使用 HTTPS，并确认公网地址指向同一个 Potluck 服务；
+  `localhost` 始终表示运行 Codex 的那台机器。

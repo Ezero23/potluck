@@ -6,6 +6,7 @@ import Image from "next/image";
 import BaseUrlSelect from "./BaseUrlSelect";
 import ApiKeySelect from "./ApiKeySelect";
 import { matchKnownEndpoint } from "./cliEndpointMatch";
+import { ensureV1 } from "./cliEndpointOptions";
 
 export default function JcodeToolCard({
   tool,
@@ -103,24 +104,9 @@ export default function JcodeToolCard({
     }
   };
 
-  const normalizeLocalhost = (url) => url.replace("://localhost", "://127.0.0.1");
+  const getEffectiveBaseUrl = () => ensureV1(customBaseUrl || baseUrl);
 
-  const getLocalBaseUrl = () => {
-    if (typeof window !== "undefined") {
-      return normalizeLocalhost(window.location.origin);
-    }
-    return "http://127.0.0.1:20128";
-  };
-
-  const getEffectiveBaseUrl = () => {
-    const url = customBaseUrl || getLocalBaseUrl();
-    return url.endsWith("/v1") ? url : `${url}/v1`;
-  };
-
-  const getDisplayUrl = () => {
-    const url = customBaseUrl || getLocalBaseUrl();
-    return url.endsWith("/v1") ? url : `${url}/v1`;
-  };
+  const getDisplayUrl = () => ensureV1(customBaseUrl || baseUrl);
 
   const handleApplySettings = async () => {
     setApplying(true);

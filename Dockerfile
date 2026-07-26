@@ -12,12 +12,12 @@ RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
       sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories; \
     fi
 
-RUN apk --no-cache upgrade && apk --no-cache add python3 make g++ linux-headers
+RUN apk add --no-cache python3 make g++ linux-headers
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
   if [ "$USE_CN_MIRROR" = "true" ]; then npm config set registry https://registry.npmmirror.com; fi && \
-  npm install
+  npm ci
 
 COPY . ./
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -29,7 +29,7 @@ WORKDIR /app
 LABEL org.opencontainers.image.title="potluck"
 
 ENV NODE_ENV=production
-ENV PORT=20129
+ENV PORT=21023
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATA_DIR=/app/data
@@ -55,11 +55,14 @@ ARG USE_CN_MIRROR=false
 RUN if [ "$USE_CN_MIRROR" = "true" ]; then \
       sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories; \
     fi && \
-  apk --no-cache upgrade && apk --no-cache add su-exec && \
+  apk add --no-cache su-exec && \
   printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh
 
-EXPOSE 20129
+EXPOSE 21023
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \
+  CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT}/api/health`).then((response)=>{if(!response.ok)process.exit(1)}).catch(()=>process.exit(1))"]
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "custom-server.js"]

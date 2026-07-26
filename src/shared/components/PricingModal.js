@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDefaultPricing, formatCost } from "open-sse/providers/pricing.js";
 
 export default function PricingModal({ isOpen, onClose, onSave }) {
@@ -8,13 +8,7 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadPricing();
-    }
-  }, [isOpen]);
-
-  const loadPricing = async () => {
+  const loadPricing = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/pricing");
@@ -33,7 +27,13 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      void loadPricing();
+    }
+  }, [isOpen, loadPricing]);
 
   const handlePricingChange = (provider, model, field, value) => {
     const numValue = parseFloat(value);

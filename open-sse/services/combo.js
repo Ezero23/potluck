@@ -75,10 +75,14 @@ export function reorderByCapabilities(models, required) {
   };
 
   // Stable sort by tier (Array.prototype.sort is stable in modern engines).
-  return models
+  const ranked = models
     .map((m, i) => ({ m, i, t: tierOf(m) }))
-    .sort((a, b) => a.t - b.t || a.i - b.i)
-    .map((x) => x.m);
+    .sort((a, b) => a.t - b.t || a.i - b.i);
+
+  // Preserve referential identity when capability ranking does not change order.
+  // Callers can then distinguish "no reordering needed" without a deep comparison.
+  if (ranked.every((entry, index) => entry.i === index)) return models;
+  return ranked.map((entry) => entry.m);
 }
 
 /**
@@ -127,7 +131,21 @@ export function detectRequiredCapabilities(body) {
   const contents = body.contents || body.request?.contents;                      // gemini / antigravity
   for (const c of trailingUserItems(contents)) scanContent(c.parts);
 
-  // search: temporarily disabled in auto-switch (feature not wired yet).
+  const isSearchTool = (tool) => {
+    if (!tool || typeof tool !== "object") return false;
+    const type = typeof tool.type === "string" ? tool.type.toLowerCase() : "";
+    if (type === "web_search" || type === "web_search_preview" || type.startsWith("web_search_")) {
+      return true;
+    }
+    if (tool.google_search || tool.googleSearch) return true;
+    return tool.type === "builtin_function" && tool.function?.name === "$web_search";
+  };
+
+  const tools = [
+    ...(Array.isArray(body.tools) ? body.tools : []),
+    ...(Array.isArray(body.request?.tools) ? body.request.tools : []),
+  ];
+  if (tools.some(isSearchTool)) required.add("search");
 
   return required;
 }

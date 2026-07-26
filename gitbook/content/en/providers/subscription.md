@@ -1,404 +1,173 @@
-# Subscription Providers - Maximize Your Value
+# One endpoint for your AI subscriptions
 
-Maximize your existing AI subscriptions with smart quota tracking and automatic fallback. Use every bit of your subscription before it resets!
+Bring the model sources you already use into Potluck and make them available through
+one local API. Connect an account once, discover its models in one catalog, and use
+the same Potluck endpoint from every supported client.
 
----
+```text
+Your accounts → Potluck → http://localhost:21023/v1 → Your AI tools
+```
 
-## Overview
+## Why bring subscriptions into Potluck?
 
-Subscription tier providers are your **primary** choice - you're already paying for them, so get full value:
+- **One place for every source.** Manage OAuth accounts, device-authorized accounts,
+  imported sessions, and API keys from the same Dashboard.
+- **One stable client endpoint.** Clients connect to Potluck instead of carrying a
+  separate provider configuration for every account.
+- **See capacity and activity together.** View upstream quota data where a provider
+  exposes it, alongside requests recorded locally by Potluck.
+- **Build a more resilient model pool.** Route across eligible accounts and use
+  Combos to try another tested source after a retryable failure.
+- **Keep control locally.** Potluck is self-hosted; you choose the machine, network
+  exposure, endpoint keys, and data directory.
 
-- ✅ **Claude Code** (Pro/Max) - Claude 4.5 Opus/Sonnet/Haiku
-- ✅ **OpenAI Codex** (Plus/Pro) - GPT 5.2 Codex, GPT 5.1 Codex Max
-- ✅ **Gemini CLI** (FREE tier!) - 180K completions/month
-- ✅ **GitHub Copilot** - GPT-5, Claude 4.5, Gemini 3
-- ✅ **Antigravity** (Google) - Gemini 3 Pro, Claude Sonnet 4.5
+The result is not “unlimited AI.” It is a cleaner way to use the access you already
+have without rebuilding every client configuration when a source changes.
 
-**Strategy:** Use these first, track quota in real-time, fallback to cheap/free when exhausted.
+## Sources you can bring together
 
----
+The installed Dashboard is the source of truth. Current Potluck builds include
+connection flows such as:
 
-## Claude Code (Pro/Max)
+| Source | Connection experience | What Potluck adds |
+| --- | --- | --- |
+| Claude Code | Browser OAuth | A shared model catalog, local usage history, and routing |
+| OpenAI Codex | Browser OAuth with a local callback | Codex models behind the same Potluck endpoint |
+| Gemini CLI | Google OAuth | One place to inspect available models and reported quota |
+| Antigravity | Google OAuth | Unified access alongside your other configured sources |
+| GitHub Copilot | GitHub device authorization | Copilot-backed models in Potluck routing |
+| Kiro | The device, social, import, or key flow shown in the Dashboard | Region-aware account connection and routing |
+| Cursor | Import from a local Cursor installation or paste supported token data | Cursor as an upstream source—not as a Potluck client |
 
-### Pricing
+Provider availability, account eligibility, models, and quotas can change upstream.
+Potluck deliberately reads what the current account exposes instead of promising a
+fixed model list.
 
-| Plan | Monthly Cost | Quota Reset | Models |
-|------|--------------|-------------|--------|
-| Pro | $20 | 5-hour + Weekly | Opus, Sonnet, Haiku |
-| Max | $100 | 5-hour + Weekly | Opus, Sonnet, Haiku |
+> **Account policy:** Most subscription-backed integrations are marked as risky in
+> Potluck because providers may not officially license consumer OAuth or application
+> sessions for proxy/router use. Check the provider's current terms. For critical or
+> commercial workloads, prefer an official API key.
 
-### Setup
+## Connect your first source
 
-**Step 1: Connect via Dashboard**
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Change the initial dashboard password.
+3. Open **Dashboard → Providers** and choose a source you are authorized to use.
+4. Read its account notice, then complete the authorization flow shown on screen.
+5. Return to Potluck, run the connection test, and enable an available model.
+
+Potluck keeps its main Dashboard and API on port `21023`. A temporary
+provider-specific OAuth callback used during login is not a second Potluck API port.
+
+## Discover the models you actually have
+
+Create or copy a Potluck endpoint key under **Dashboard → Endpoint**, then ask your
+running instance for its current model catalog:
 
 ```bash
-potluck
-# Dashboard opens → Providers → Connect Claude Code
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**Step 2: OAuth Login**
+Use an exact `data[].id` from the response. Aliases such as `cc/`, `cx/`, `gc/`,
+`ag/`, and `gh/` make sources recognizable, while the live catalog prevents stale
+documentation from choosing a model your account cannot use.
 
-- Click "Connect Claude Code"
-- Browser opens → Login to Claude.ai
-- Auto token refresh enabled
-- Quota tracking starts
-
-**Step 3: Use in CLI**
-
-```
-Model: cc/claude-opus-4-5-20251101
-       cc/claude-sonnet-4-5-20250929
-       cc/claude-haiku-4-5-20251001
-```
-
-### Available Models
-
-| Model ID | Description | Best For |
-|----------|-------------|----------|
-| `cc/claude-opus-4-5-20251101` | Claude 4.5 Opus | Complex tasks, architecture |
-| `cc/claude-sonnet-4-5-20250929` | Claude 4.5 Sonnet | Balanced speed/quality |
-| `cc/claude-haiku-4-5-20251001` | Claude 4.5 Haiku | Fast responses |
-
-### Pro Tips
-
-- **Use Opus for complex tasks** - Architecture decisions, refactoring
-- **Use Sonnet for speed** - Quick edits, code generation
-- **Track quota per model** - Dashboard shows usage per model
-- **5-hour reset** - Fresh quota every 5 hours + weekly reset
-
----
-
-## OpenAI Codex (Plus/Pro)
-
-### Pricing
-
-| Plan | Monthly Cost | Quota Reset | Models |
-|------|--------------|-------------|--------|
-| Plus | $20 | 5-hour + Weekly | GPT 5.2, GPT 5.1 |
-| Pro | $200 | 5-hour + Weekly | GPT 5.2 Codex, GPT 5.1 Max |
-
-### Setup
-
-**Step 1: Connect via Dashboard**
+Send a first non-sensitive request:
 
 ```bash
-potluck
-# Dashboard → Providers → Connect Codex
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MODEL_ID_FROM_V1_MODELS",
+    "messages": [{"role": "user", "content": "Reply with OK."}],
+    "stream": false
+  }'
 ```
 
-**Step 2: OAuth Login**
+Once this works, a supported OpenAI-compatible client can use the same Base URL,
+Potluck key, and model ID.
 
-- Click "Connect Codex"
-- Browser opens to `http://localhost:1455`
-- Login to OpenAI account
-- Auto token refresh enabled
+## Turn separate accounts into a model pool
 
-**Step 3: Use in CLI**
+A single connection is useful; several tested connections are where routing becomes
+valuable:
 
-```
-Model: cx/gpt-5.2-codex
-       cx/gpt-5.1-codex-max
-       cx/gpt-5.2
-       cx/gpt-5.1-codex
-```
+1. Add and test each account independently.
+2. Keep only the models you intend to expose.
+3. Use a direct model ID when you need a specific source.
+4. Create a Combo when another model is an acceptable fallback.
+5. Test tool calls, streaming, media, and structured output required by your client.
 
-### Available Models
+Potluck can make source selection easier, but fallback is still best effort. It cannot
+create quota, bypass account restrictions, or make two different models perfectly
+interchangeable.
 
-| Model ID | Description | Best For |
-|----------|-------------|----------|
-| `cx/gpt-5.2-codex` | GPT 5.2 Codex | Latest coding model |
-| `cx/gpt-5.1-codex-max` | GPT 5.1 Codex Max | Maximum context |
-| `cx/gpt-5.2` | GPT 5.2 | General tasks |
-| `cx/gpt-5.1-codex` | GPT 5.1 Codex | Stable coding |
+## Quota visibility without guesswork
 
-### Pro Tips
+**Dashboard → Quota** shows account-limit information for providers where Potluck has
+an upstream usage integration. This helps you see reported windows and reset times
+without opening several apps.
 
-- **5-hour rolling quota** - Fresh quota every 5 hours
-- **Weekly reset** - Full quota reset weekly
-- **Pro tier** - 10× more quota than Plus
+**Dashboard → Usage** shows requests recorded locally by Potluck, including available
+token counts and cost estimates. Use it to understand routing activity and diagnose
+failures.
 
----
+These views complement, rather than replace, the provider's account page:
 
-## Gemini CLI (FREE 180K/month!)
+- upstream price and allowance remain the provider's decision;
+- not every provider exposes quota data;
+- local estimates are not invoices;
+- a trial, promotion, reset window, or model can change.
 
-### Pricing
+That is why Potluck markets the visibility and routing it provides—not a third party's
+temporary price or quota.
 
-| Plan | Monthly Cost | Quota | Reset |
-|------|--------------|-------|-------|
-| FREE | $0 | 180K completions/month + 1K/day | Daily + Monthly |
+## Protect the access you connect
 
-**Best Value:** Huge free tier! Use this before paid tiers.
-
-### Setup
-
-**Step 1: Connect via Dashboard**
-
-```bash
-potluck
-# Dashboard → Providers → Connect Gemini CLI
-```
-
-**Step 2: Google OAuth**
-
-- Click "Connect Gemini CLI"
-- Browser opens → Login to Google account
-- Grant permissions
-- Auto token refresh enabled
-
-**Step 3: Use in CLI**
-
-```
-Model: gc/gemini-3-flash-preview
-       gc/gemini-3-pro-preview
-       gc/gemini-2.5-pro
-       gc/gemini-2.5-flash
-```
-
-### Available Models
-
-| Model ID | Description | Best For |
-|----------|-------------|----------|
-| `gc/gemini-3-flash-preview` | Gemini 3 Flash Preview | Fast responses |
-| `gc/gemini-3-pro-preview` | Gemini 3 Pro Preview | Complex tasks |
-| `gc/gemini-2.5-pro` | Gemini 2.5 Pro | Stable production |
-| `gc/gemini-2.5-flash` | Gemini 2.5 Flash | Quick tasks |
-
-### Pro Tips
-
-- **180K completions/month** - Massive free tier
-- **1K/day limit** - Daily quota resets at midnight
-- **Use first** - Free tier, use before paid subscriptions
-- **No credit card** - Completely free with Google account
-
----
-
-## GitHub Copilot
-
-### Pricing
-
-| Plan | Monthly Cost | Quota Reset | Models |
-|------|--------------|-------------|--------|
-| Individual | $10 | Monthly (1st) | GPT-5, Claude 4.5, Gemini 3 |
-| Business | $19 | Monthly (1st) | GPT-5, Claude 4.5, Gemini 3 |
-
-### Setup
-
-**Step 1: Connect via Dashboard**
-
-```bash
-potluck
-# Dashboard → Providers → Connect GitHub
-```
-
-**Step 2: OAuth via GitHub**
-
-- Click "Connect GitHub"
-- Browser opens → Login to GitHub
-- Authorize GitHub Copilot
-- Auto token refresh enabled
-
-**Step 3: Use in CLI**
-
-```
-Model: gh/gpt-5
-       gh/gpt-5.1-codex-max
-       gh/claude-4.5-sonnet
-       gh/gemini-3-pro
-```
-
-### Available Models
-
-| Model ID | Description | Best For |
-|----------|-------------|----------|
-| `gh/gpt-5` | GPT-5 | Latest OpenAI model |
-| `gh/gpt-5.1-codex-max` | GPT-5.1 Codex Max | Maximum context |
-| `gh/claude-4.5-sonnet` | Claude 4.5 Sonnet | Anthropic quality |
-| `gh/gemini-3-pro` | Gemini 3 Pro | Google quality |
-
-### Pro Tips
-
-- **Monthly reset** - Full quota reset on 1st of month
-- **Multiple models** - Access GPT, Claude, Gemini in one subscription
-- **Business tier** - Higher quota for teams
-
----
-
-## Antigravity (Google Account)
-
-### Pricing
-
-| Plan | Monthly Cost | Quota | Models |
-|------|--------------|-------|--------|
-| FREE | $0 | Similar to Gemini CLI | Gemini 3 Pro, Claude Sonnet 4.5 |
-
-### Setup
-
-**Step 1: Connect via Dashboard**
-
-```bash
-potluck
-# Dashboard → Providers → Connect Antigravity
-```
-
-**Step 2: Google OAuth**
-
-- Click "Connect Antigravity"
-- Browser opens → Login to Google account
-- Grant permissions
-- Auto token refresh enabled
-
-**Step 3: Use in CLI**
-
-```
-Model: ag/gemini-3-pro-high
-       ag/claude-sonnet-4-5
-       ag/claude-opus-4-5-thinking
-```
-
-### Available Models
-
-| Model ID | Description | Best For |
-|----------|-------------|----------|
-| `ag/gemini-3-pro-high` | Gemini 3 Pro High | High-quality responses |
-| `ag/claude-sonnet-4-5` | Claude Sonnet 4.5 | Anthropic quality |
-| `ag/claude-opus-4-5-thinking` | Claude Opus 4.5 Thinking | Complex reasoning |
-
-### Pro Tips
-
-- **Free tier** - No cost with Google account
-- **Claude access** - Free Claude Sonnet/Opus
-- **Quota similar to Gemini CLI** - Daily/monthly limits
-
----
-
-## Pricing Comparison
-
-| Provider | Monthly Cost | Quota Reset | Value |
-|----------|--------------|-------------|-------|
-| **Claude Code Pro** | $20 | 5-hour + Weekly | ⭐⭐⭐⭐⭐ Best quality |
-| **Claude Code Max** | $100 | 5-hour + Weekly | ⭐⭐⭐⭐⭐ Highest quota |
-| **Codex Plus** | $20 | 5-hour + Weekly | ⭐⭐⭐⭐ Good value |
-| **Codex Pro** | $200 | 5-hour + Weekly | ⭐⭐⭐⭐⭐ 10× quota |
-| **Gemini CLI** | **$0** | Daily + Monthly | ⭐⭐⭐⭐⭐ FREE 180K/month! |
-| **GitHub Copilot** | $10-19 | Monthly (1st) | ⭐⭐⭐⭐ Multi-model |
-| **Antigravity** | **$0** | Daily + Monthly | ⭐⭐⭐⭐ FREE Claude! |
-
----
-
-## Usage Example
-
-### Cursor IDE Setup
-
-```
-Settings → Models → Advanced:
-  OpenAI API Base URL: http://localhost:20128/v1
-  OpenAI API Key: [from potluck dashboard]
-  Model: cc/claude-opus-4-5-20251101
-```
-
-### Create Combo (Recommended)
-
-```
-Dashboard → Combos → Create New
-
-Name: premium-coding
-Models:
-  1. gc/gemini-3-flash-preview (FREE, use first)
-  2. cc/claude-opus-4-5-20251101 (Subscription)
-  3. cx/gpt-5.2-codex (Subscription backup)
-
-Use in CLI: premium-coding
-```
-
-**Result:** Maximize free tier → Use subscription → Auto fallback
-
----
-
-## Quota Tracking
-
-Potluck tracks quota in real-time:
-
-- **Token consumption** - Input/output tokens per request
-- **Reset countdown** - Time until next quota reset
-- **Usage percentage** - How much quota used
-- **Auto fallback** - Switch to next tier when exhausted
-
-**Dashboard view:**
-
-```
-Claude Code Pro
-├─ Quota: 75% used
-├─ Reset: 2h 15m (5-hour)
-├─ Weekly reset: 3 days
-└─ Fallback: glm/glm-4.7 (cheap tier)
-```
-
----
-
-## Best Practices
-
-### 1. Use Free Tier First
-
-```
-Priority:
-1. Gemini CLI (180K/month FREE)
-2. Antigravity (FREE Claude)
-3. Claude Code/Codex (paid subscriptions)
-```
-
-### 2. Track Quota Daily
-
-- Check dashboard every morning
-- Plan heavy tasks around quota resets
-- Use cheap/free tier for non-critical tasks
-
-### 3. Create Smart Combos
-
-```
-Example combo:
-1. gc/gemini-3-flash-preview (FREE primary)
-2. cc/claude-opus-4-5 (Complex tasks)
-3. glm/glm-4.7 (Cheap backup)
-4. if/kimi-k2-thinking (FREE fallback)
-```
-
-### 4. Optimize by Time
-
-```
-Morning: Fresh 5-hour quota (Claude/Codex)
-Afternoon: Gemini CLI (1K/day)
-Evening: Subscription quota
-Night: Cheap/free tier
-```
-
----
+- Keep `DATA_DIR`, backups, logs, and `.env` private.
+- Require a Potluck endpoint key before another machine can call the API.
+- Use HTTPS and a strong Dashboard password for remote deployments.
+- Never paste provider tokens into issues, screenshots, prompts, or shared terminals.
+- Revoke or reconnect an account immediately if its credential may have leaked.
 
 ## Troubleshooting
 
-### "Quota exhausted"
+### Authorization does not finish
 
-**Solution:**
-- Check dashboard quota tracker
-- Wait for reset (5-hour or daily)
-- Use combo fallback to cheap/free tier
+- Keep Potluck running while the browser or device-code flow is active.
+- Use the callback address displayed by the provider page.
+- Disable extensions or proxies that rewrite localhost callbacks.
+- For a remote server, follow the provider page's remote-login flow; do not expose a
+  callback port publicly just to make login work.
 
-### "OAuth token expired"
+### The account disconnects later
 
-**Solution:**
-- Auto-refreshed by Potluck
-- If issues: Dashboard → Provider → Reconnect
+Open its provider page and reconnect it. Browser OAuth credentials may refresh, while
+some imported application sessions may not. Check sanitized logs without sharing
+tokens or authorization codes.
 
-### "Rate limiting"
+### No models appear
 
-**Solution:**
-- Subscription quota out
-- Add fallback: `cc/claude-opus → glm/glm-4.7`
-- Use free tier: `if/kimi-k2-thinking`
+- Run the connection test again.
+- Confirm that the account can use the upstream product.
+- Refresh the provider model list.
+- Query `/v1/models` and use only IDs returned by your instance.
 
----
+### A request returns 401, 403, or 429
 
-## Next Steps
+- `401` usually points to an invalid or expired credential.
+- `403` can indicate an account, organization, product, region, or policy restriction.
+- `429` can indicate a rate limit or exhausted allowance.
 
-- **Setup cheap backup:** [Cheap Providers](./cheap.md)
-- **Add free fallback:** [Free Providers](./free.md)
-- **Create combos:** Dashboard → Combos → Create New
+Read the sanitized upstream error and check the provider's account page. Do not try to
+work around account restrictions by repeatedly importing credentials.
+
+## Build the rest of your setup
+
+- Add an [official API-key provider](./cheap.md) for lower-risk production traffic.
+- Review [trials and promotions](./free.md) without assuming they remain free.
+- Build and test [Combos and fallback](../features/combos.md).
+- Connect [supported AI clients](../integration/other-tools.md) to
+  `http://localhost:21023/v1`.

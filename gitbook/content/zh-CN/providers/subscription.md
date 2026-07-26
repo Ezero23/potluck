@@ -1,404 +1,164 @@
-# 订阅型提供商 - 最大化你的价值
+# 一个 Endpoint，汇聚你的 AI 订阅
 
-通过智能配额跟踪和自动回退,最大化你已有的 AI 订阅价值。在重置前用完每一点订阅配额!
+把已经在使用的模型来源接入 Potluck，通过一个本地 API 统一提供给你的 AI
+工具。账号只连接一次，模型进入同一个目录，所有受支持客户端复用同一套 Potluck
+Endpoint 配置。
 
----
+```text
+你的账号 → Potluck → http://localhost:21023/v1 → 你的 AI 工具
+```
 
-## 概览
+## 为什么把订阅接入 Potluck？
 
-订阅型提供商是你的 **首选** - 既然已经付费了,就要用足:
+- **所有来源，一处管理。** OAuth 账号、设备授权账号、导入会话和 API Key
+  都在同一个 Dashboard 中管理。
+- **客户端只配置一次。** 客户端连接 Potluck，不必为每一个账号维护不同的
+  Provider 配置。
+- **容量和活动一起看。** 对支持的提供商显示上游配额，同时查看 Potluck
+  在本地记录的请求。
+- **建立更有韧性的模型池。** 在合格账号之间路由，并通过 Combo 在可重试
+  失败后尝试另一个已经测试的来源。
+- **控制权留在本地。** Potluck 由你自托管，运行机器、网络暴露、Endpoint
+  Key 和数据目录都由你决定。
 
-- ✅ **Claude Code**(Pro/Max)- Claude 4.5 Opus/Sonnet/Haiku
-- ✅ **OpenAI Codex**(Plus/Pro)- GPT 5.2 Codex、GPT 5.1 Codex Max
-- ✅ **Gemini CLI**(免费层!)- 每月 180K 次补全
-- ✅ **GitHub Copilot** - GPT-5、Claude 4.5、Gemini 3
-- ✅ **Antigravity**(Google)- Gemini 3 Pro、Claude Sonnet 4.5
+它带来的不是“无限 AI”，而是更高效地组织已有访问权限：当来源变化时，不必
+重新修改每一个客户端。
 
-**策略:** 优先使用这些,实时跟踪配额,耗尽时回退到低价/免费层。
+## 可以汇聚哪些来源？
 
----
+已安装版本的 Dashboard 才是事实来源。当前 Potluck 包含以下类型的连接流程：
 
-## Claude Code(Pro/Max)
+| 来源 | 连接体验 | Potluck 带来的价值 |
+| --- | --- | --- |
+| Claude Code | 浏览器 OAuth | 统一模型目录、本地用量记录和路由 |
+| OpenAI Codex | 浏览器 OAuth 和本地回调 | 把 Codex 模型接入同一个 Potluck Endpoint |
+| Gemini CLI | Google OAuth | 集中查看可用模型和上游返回的配额 |
+| Antigravity | Google OAuth | 与其他已配置来源统一使用 |
+| GitHub Copilot | GitHub 设备授权 | 将 Copilot 支持的模型纳入 Potluck 路由 |
+| Kiro | Dashboard 展示的设备、社交、导入或 Key 流程 | 根据区域和账号类型完成连接与路由 |
+| Cursor | 从本机 Cursor 导入，或粘贴受支持的 Token 数据 | 把 Cursor 作为上游来源，而不是把 Cursor 编辑器当作 Potluck 客户端 |
 
-### 价格
+提供商可用性、账号资格、模型和配额都可能由上游调整。Potluck 读取当前账号
+实际公开的内容，而不是承诺一份很快过期的固定模型表。
 
-| 套餐 | 月费 | 配额重置 | 模型 |
-|------|--------------|-------------|--------|
-| Pro | $20 | 5 小时 + 每周 | Opus、Sonnet、Haiku |
-| Max | $100 | 5 小时 + 每周 | Opus、Sonnet、Haiku |
+> **账号政策：** Potluck 将大多数订阅型接入标记为高风险，因为提供商可能
+> 没有正式授权把个人 OAuth 或应用会话用于代理、路由器。请核对提供商当前
+> 条款。关键或商业工作负载应优先使用官方 API Key。
 
-### 设置
+## 接入第一个来源
 
-**步骤 1:通过仪表盘连接**
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 修改初始仪表盘密码。
+3. 打开 **Dashboard → Providers（提供商）**，选择一个你有权使用的来源。
+4. 阅读账号提示，然后完成页面显示的授权流程。
+5. 返回 Potluck，运行连接测试，并启用一个当前可用的模型。
+
+Potluck 的主 Dashboard 和 API 始终共用 `21023`。登录期间临时使用的提供商
+专用 OAuth 回调端口，不是第二个 Potluck API 端口。
+
+## 发现你真正拥有的模型
+
+在 **Dashboard → Endpoint（端点）** 创建或复制 Potluck API Key，然后从
+运行中的实例读取当前模型目录：
 
 ```bash
-npm run dev
-# 仪表盘打开 → 提供商 → 连接 Claude Code
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
 ```
 
-**步骤 2:OAuth 登录**
+只使用响应中的完整 `data[].id`。`cc/`、`cx/`、`gc/`、`ag/`、`gh/`
+等别名让来源更容易识别；实时模型目录则避免旧文档替你选择一个账号已经无法
+使用的模型。
 
-- 点击 "Connect Claude Code"
-- 浏览器打开 → 登录 Claude.ai
-- 启用自动 token 刷新
-- 开始配额跟踪
-
-**步骤 3:在 CLI 中使用**
-
-```
-Model: cc/claude-opus-4-5-20251101
-       cc/claude-sonnet-4-5-20250929
-       cc/claude-haiku-4-5-20251001
-```
-
-### 可用模型
-
-| 模型 ID | 描述 | 最佳场景 |
-|----------|-------------|----------|
-| `cc/claude-opus-4-5-20251101` | Claude 4.5 Opus | 复杂任务、架构 |
-| `cc/claude-sonnet-4-5-20250929` | Claude 4.5 Sonnet | 平衡速度/质量 |
-| `cc/claude-haiku-4-5-20251001` | Claude 4.5 Haiku | 快速响应 |
-
-### 专业建议
-
-- **Opus 用于复杂任务** - 架构决策、重构
-- **Sonnet 用于速度** - 快速编辑、代码生成
-- **按模型跟踪配额** - 仪表盘按模型显示使用情况
-- **5 小时重置** - 每 5 小时刷新配额,加每周重置
-
----
-
-## OpenAI Codex(Plus/Pro)
-
-### 价格
-
-| 套餐 | 月费 | 配额重置 | 模型 |
-|------|--------------|-------------|--------|
-| Plus | $20 | 5 小时 + 每周 | GPT 5.2、GPT 5.1 |
-| Pro | $200 | 5 小时 + 每周 | GPT 5.2 Codex、GPT 5.1 Max |
-
-### 设置
-
-**步骤 1:通过仪表盘连接**
+发送第一条不含敏感信息的请求：
 
 ```bash
-npm run dev
-# 仪表盘 → 提供商 → 连接 Codex
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MODEL_ID_FROM_V1_MODELS",
+    "messages": [{"role": "user", "content": "Reply with OK."}],
+    "stream": false
+  }'
 ```
 
-**步骤 2:OAuth 登录**
+请求成功后，受支持的 OpenAI 兼容客户端就可以复用同一个 Base URL、
+Potluck Key 和模型 ID。
 
-- 点击 "Connect Codex"
-- 浏览器打开 `http://localhost:1455`
-- 登录 OpenAI 账户
-- 启用自动 token 刷新
+## 把分散账号变成模型池
 
-**步骤 3:在 CLI 中使用**
+一个连接已经有用；多个经过测试的连接，才真正发挥路由价值：
 
-```
-Model: cx/gpt-5.2-codex
-       cx/gpt-5.1-codex-max
-       cx/gpt-5.2
-       cx/gpt-5.1-codex
-```
+1. 分别添加并测试每一个账号。
+2. 只保留你准备对客户端开放的模型。
+3. 需要指定来源时，直接使用完整模型 ID。
+4. 另一个模型可以接受时，再创建 Combo 作为回退。
+5. 测试客户端需要的工具调用、流式输出、媒体和结构化输出。
 
-### 可用模型
+Potluck 让来源选择更容易，但回退仍然是尽力而为。它不能创造配额、绕过账号
+限制，也不能让两个不同模型变得完全等价。
 
-| 模型 ID | 描述 | 最佳场景 |
-|----------|-------------|----------|
-| `cx/gpt-5.2-codex` | GPT 5.2 Codex | 最新编码模型 |
-| `cx/gpt-5.1-codex-max` | GPT 5.1 Codex Max | 最大上下文 |
-| `cx/gpt-5.2` | GPT 5.2 | 通用任务 |
-| `cx/gpt-5.1-codex` | GPT 5.1 Codex | 稳定编码 |
+## 不再靠猜的配额可见性
 
-### 专业建议
+对已经实现上游用量接口的提供商，**Dashboard → Quota（配额）** 会展示账号
+返回的时间窗口和重置时间，减少在多个应用之间来回查看。
 
-- **5 小时滚动配额** - 每 5 小时刷新配额
-- **每周重置** - 每周配额完全重置
-- **Pro 层** - 配额是 Plus 的 10 倍
+**Dashboard → Usage（用量）** 展示 Potluck 在本地记录的请求、可用 Token
+统计和成本估算，可用于理解路由活动和排查失败。
 
----
+这些页面是提供商账号页面的补充，而不是替代：
 
-## Gemini CLI(每月免费 180K!)
+- 上游价格和额度仍由提供商决定；
+- 并非每个提供商都公开配额；
+- 本地估算不是账单；
+- 试用、促销、重置窗口和模型都可能变化。
 
-### 价格
+因此，Potluck 营销的是自己真正提供的可见性和路由能力，而不是第三方的临时
+价格或额度。
 
-| 套餐 | 月费 | 配额 | 重置 |
-|------|--------------|-------|-------|
-| 免费 | $0 | 180K 次补全/月 + 每日 1K | 每日 + 每月 |
+## 保护接入 Potluck 的访问权限
 
-**最佳性价比:** 巨大的免费层!请在付费层之前使用。
+- 妥善保护 `DATA_DIR`、备份、日志和 `.env`。
+- 在其他机器可以访问 API 前启用 Potluck Endpoint Key。
+- 远程部署必须使用 HTTPS 和强仪表盘密码。
+- 不要把 Provider Token 粘贴到 Issue、截图、Prompt 或共享终端。
+- 凭据可能泄露时，立即撤销或重新连接账号。
 
-### 设置
+## 故障排查
 
-**步骤 1:通过仪表盘连接**
+### 授权没有完成
 
-```bash
-npm run dev
-# 仪表盘 → 提供商 → 连接 Gemini CLI
-```
+- 浏览器或设备码授权期间保持 Potluck 运行。
+- 使用提供商页面显示的回调地址。
+- 暂时关闭会改写 localhost 回调的扩展或代理。
+- 远程服务器应使用提供商页面的远程登录流程，不要为了登录直接暴露回调端口。
 
-**步骤 2:Google OAuth**
+### 账号后来断开
 
-- 点击 "Connect Gemini CLI"
-- 浏览器打开 → 登录 Google 账户
-- 授予权限
-- 启用自动 token 刷新
+打开对应 Provider 页面并重新连接。浏览器 OAuth 凭据可能支持刷新，但部分
+导入的应用会话不支持。检查脱敏日志时不要分享 Token 或授权码。
 
-**步骤 3:在 CLI 中使用**
+### 没有显示模型
 
-```
-Model: gc/gemini-3-flash-preview
-       gc/gemini-3-pro-preview
-       gc/gemini-2.5-pro
-       gc/gemini-2.5-flash
-```
+- 重新运行连接测试。
+- 确认账号有权使用对应的上游产品。
+- 刷新 Provider 模型列表。
+- 查询 `/v1/models`，只使用当前实例返回的 ID。
 
-### 可用模型
+### 请求返回 401、403 或 429
 
-| 模型 ID | 描述 | 最佳场景 |
-|----------|-------------|----------|
-| `gc/gemini-3-flash-preview` | Gemini 3 Flash Preview | 快速响应 |
-| `gc/gemini-3-pro-preview` | Gemini 3 Pro Preview | 复杂任务 |
-| `gc/gemini-2.5-pro` | Gemini 2.5 Pro | 稳定生产 |
-| `gc/gemini-2.5-flash` | Gemini 2.5 Flash | 快速任务 |
+- `401` 通常表示凭据无效或已经过期。
+- `403` 可能表示账号、组织、产品、区域或政策限制。
+- `429` 可能表示频率限制或额度耗尽。
 
-### 专业建议
+阅读脱敏后的上游错误，并检查提供商账号页面。不要通过反复导入凭据来绕过账号
+限制。
 
-- **每月 180K 次补全** - 大量免费层
-- **每日 1K 限制** - 每天午夜重置
-- **优先使用** - 免费层,先于付费订阅
-- **无需信用卡** - Google 账户完全免费
+## 完成你的 Potluck 配置
 
----
-
-## GitHub Copilot
-
-### 价格
-
-| 套餐 | 月费 | 配额重置 | 模型 |
-|------|--------------|-------------|--------|
-| 个人 | $10 | 每月(1 日) | GPT-5、Claude 4.5、Gemini 3 |
-| 商业 | $19 | 每月(1 日) | GPT-5、Claude 4.5、Gemini 3 |
-
-### 设置
-
-**步骤 1:通过仪表盘连接**
-
-```bash
-npm run dev
-# 仪表盘 → 提供商 → 连接 GitHub
-```
-
-**步骤 2:通过 GitHub 进行 OAuth**
-
-- 点击 "Connect GitHub"
-- 浏览器打开 → 登录 GitHub
-- 授权 GitHub Copilot
-- 启用自动 token 刷新
-
-**步骤 3:在 CLI 中使用**
-
-```
-Model: gh/gpt-5
-       gh/gpt-5.1-codex-max
-       gh/claude-4.5-sonnet
-       gh/gemini-3-pro
-```
-
-### 可用模型
-
-| 模型 ID | 描述 | 最佳场景 |
-|----------|-------------|----------|
-| `gh/gpt-5` | GPT-5 | 最新 OpenAI 模型 |
-| `gh/gpt-5.1-codex-max` | GPT-5.1 Codex Max | 最大上下文 |
-| `gh/claude-4.5-sonnet` | Claude 4.5 Sonnet | Anthropic 质量 |
-| `gh/gemini-3-pro` | Gemini 3 Pro | Google 质量 |
-
-### 专业建议
-
-- **每月重置** - 每月 1 日完全重置
-- **多模型** - 一个订阅访问 GPT、Claude、Gemini
-- **商业层** - 团队更高配额
-
----
-
-## Antigravity(Google 账户)
-
-### 价格
-
-| 套餐 | 月费 | 配额 | 模型 |
-|------|--------------|-------|--------|
-| 免费 | $0 | 类似 Gemini CLI | Gemini 3 Pro、Claude Sonnet 4.5 |
-
-### 设置
-
-**步骤 1:通过仪表盘连接**
-
-```bash
-npm run dev
-# 仪表盘 → 提供商 → 连接 Antigravity
-```
-
-**步骤 2:Google OAuth**
-
-- 点击 "Connect Antigravity"
-- 浏览器打开 → 登录 Google 账户
-- 授予权限
-- 启用自动 token 刷新
-
-**步骤 3:在 CLI 中使用**
-
-```
-Model: ag/gemini-3-pro-high
-       ag/claude-sonnet-4-5
-       ag/claude-opus-4-5-thinking
-```
-
-### 可用模型
-
-| 模型 ID | 描述 | 最佳场景 |
-|----------|-------------|----------|
-| `ag/gemini-3-pro-high` | Gemini 3 Pro High | 高质量响应 |
-| `ag/claude-sonnet-4-5` | Claude Sonnet 4.5 | Anthropic 质量 |
-| `ag/claude-opus-4-5-thinking` | Claude Opus 4.5 Thinking | 复杂推理 |
-
-### 专业建议
-
-- **免费层** - Google 账户零成本
-- **可访问 Claude** - 免费的 Claude Sonnet/Opus
-- **配额类似 Gemini CLI** - 每日/每月上限
-
----
-
-## 价格对比
-
-| 提供商 | 月费 | 配额重置 | 价值 |
-|----------|--------------|-------------|-------|
-| **Claude Code Pro** | $20 | 5 小时 + 每周 | ⭐⭐⭐⭐⭐ 最佳质量 |
-| **Claude Code Max** | $100 | 5 小时 + 每周 | ⭐⭐⭐⭐⭐ 最高配额 |
-| **Codex Plus** | $20 | 5 小时 + 每周 | ⭐⭐⭐⭐ 良好性价比 |
-| **Codex Pro** | $200 | 5 小时 + 每周 | ⭐⭐⭐⭐⭐ 10× 配额 |
-| **Gemini CLI** | **$0** | 每日 + 每月 | ⭐⭐⭐⭐⭐ 免费 180K/月! |
-| **GitHub Copilot** | $10-19 | 每月(1 日) | ⭐⭐⭐⭐ 多模型 |
-| **Antigravity** | **$0** | 每日 + 每月 | ⭐⭐⭐⭐ 免费 Claude! |
-
----
-
-## 使用示例
-
-### Cursor IDE 设置
-
-```
-Settings → Models → Advanced:
-  OpenAI API Base URL: http://localhost:20129/v1
-  OpenAI API Key: [从 potluck 仪表盘获取]
-  Model: cc/claude-opus-4-5-20251101
-```
-
-### 创建组合(推荐)
-
-```
-仪表盘 → 组合 → 新建
-
-名称: premium-coding
-模型:
-  1. gc/gemini-3-flash-preview (免费, 优先使用)
-  2. cc/claude-opus-4-5-20251101 (订阅)
-  3. cx/gpt-5.2-codex (订阅备用)
-
-CLI 中使用: premium-coding
-```
-
-**结果:** 最大化免费层 → 使用订阅 → 自动回退
-
----
-
-## 配额跟踪
-
-百家饭 实时跟踪配额:
-
-- **Token 消耗** - 每次请求的输入/输出 tokens
-- **重置倒计时** - 下次配额重置剩余时间
-- **使用百分比** - 配额已用比例
-- **自动回退** - 耗尽时切换到下一层
-
-**仪表盘视图:**
-
-```
-Claude Code Pro
-├─ 配额: 已用 75%
-├─ 重置: 2h 15m(5 小时)
-├─ 每周重置: 3 天
-└─ 回退: glm/glm-4.7(低价层)
-```
-
----
-
-## 最佳实践
-
-### 1. 优先使用免费层
-
-```
-优先级:
-1. Gemini CLI(每月免费 180K)
-2. Antigravity(免费 Claude)
-3. Claude Code/Codex(付费订阅)
-```
-
-### 2. 每日跟踪配额
-
-- 每天早上查看仪表盘
-- 围绕配额重置规划重任务
-- 非关键任务用低价/免费层
-
-### 3. 创建智能组合
-
-```
-示例组合:
-1. gc/gemini-3-flash-preview(免费主力)
-2. cc/claude-opus-4-5(复杂任务)
-3. glm/glm-4.7(低价备用)
-4. if/kimi-k2-thinking(免费回退)
-```
-
-### 4. 按时间优化
-
-```
-早上: 全新 5 小时配额(Claude/Codex)
-下午: Gemini CLI(每日 1K)
-晚上: 订阅配额
-深夜: 低价/免费层
-```
-
----
-
-## 故障排除
-
-### "Quota exhausted"
-
-**方案:**
-- 查看仪表盘配额跟踪
-- 等待重置(5 小时或每日)
-- 使用组合回退到低价/免费层
-
-### "OAuth token expired"
-
-**方案:**
-- 百家饭 会自动刷新
-- 若仍有问题: 仪表盘 → 提供商 → 重新连接
-
-### "Rate limiting"
-
-**方案:**
-- 订阅配额已用尽
-- 添加回退:`cc/claude-opus → glm/glm-4.7`
-- 使用免费层:`if/kimi-k2-thinking`
-
----
-
-## 下一步
-
-- **设置低价备用:** [低价提供商](./cheap.md)
-- **添加免费回退:** [免费提供商](./free.md)
-- **创建组合:** 仪表盘 → 组合 → 新建
+- 添加[官方 API Key 提供商](./cheap.md)，承载风险更低的生产流量。
+- 阅读[试用与促销](./free.md)，不要假设它们会一直免费。
+- 创建并测试[组合与回退](../features/combos.md)。
+- 将[受支持的 AI 客户端](../integration/other-tools.md)连接到
+  `http://localhost:21023/v1`。

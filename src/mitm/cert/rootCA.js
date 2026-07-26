@@ -5,6 +5,16 @@ const { MITM_DIR } = require("../paths");
 
 const ROOT_CA_KEY_PATH = path.join(MITM_DIR, "rootCA.key");
 const ROOT_CA_CERT_PATH = path.join(MITM_DIR, "rootCA.crt");
+const PRIVATE_DIR_MODE = 0o700;
+const PRIVATE_KEY_MODE = 0o600;
+const CERT_MODE = 0o644;
+
+function secureCertificatePermissions() {
+  if (process.platform === "win32") return;
+  if (fs.existsSync(MITM_DIR)) fs.chmodSync(MITM_DIR, PRIVATE_DIR_MODE);
+  if (fs.existsSync(ROOT_CA_KEY_PATH)) fs.chmodSync(ROOT_CA_KEY_PATH, PRIVATE_KEY_MODE);
+  if (fs.existsSync(ROOT_CA_CERT_PATH)) fs.chmodSync(ROOT_CA_CERT_PATH, CERT_MODE);
+}
 
 /**
  * Check if cert file is expired or expiring within 30 days
@@ -26,6 +36,7 @@ function isCertExpired(certPath) {
 function generateRootCA() {
   const exists = fs.existsSync(ROOT_CA_KEY_PATH) && fs.existsSync(ROOT_CA_CERT_PATH);
   if (exists && !isCertExpired(ROOT_CA_CERT_PATH)) {
+    secureCertificatePermissions();
     console.log("✅ Root CA already exists");
     return { key: ROOT_CA_KEY_PATH, cert: ROOT_CA_CERT_PATH };
   }
@@ -35,9 +46,8 @@ function generateRootCA() {
     try { fs.unlinkSync(ROOT_CA_CERT_PATH); } catch { /* ignore */ }
   }
 
-  if (!fs.existsSync(MITM_DIR)) {
-    fs.mkdirSync(MITM_DIR, { recursive: true });
-  }
+  fs.mkdirSync(MITM_DIR, { recursive: true, mode: PRIVATE_DIR_MODE });
+  if (process.platform !== "win32") fs.chmodSync(MITM_DIR, PRIVATE_DIR_MODE);
 
   console.log("🔐 Generating Root CA certificate...");
 
@@ -85,8 +95,9 @@ function generateRootCA() {
   const privateKeyPem = forge.pki.privateKeyToPem(keys.privateKey);
   const certPem = forge.pki.certificateToPem(cert);
 
-  fs.writeFileSync(ROOT_CA_KEY_PATH, privateKeyPem);
-  fs.writeFileSync(ROOT_CA_CERT_PATH, certPem);
+  fs.writeFileSync(ROOT_CA_KEY_PATH, privateKeyPem, { mode: PRIVATE_KEY_MODE });
+  fs.writeFileSync(ROOT_CA_CERT_PATH, certPem, { mode: CERT_MODE });
+  secureCertificatePermissions();
 
   console.log("✅ Root CA generated successfully");
   return { key: ROOT_CA_KEY_PATH, cert: ROOT_CA_CERT_PATH };

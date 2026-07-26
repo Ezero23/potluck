@@ -1,473 +1,272 @@
-# ☁️ 云端部署
+# 服务器部署
 
-将 百家饭 部署到 VPS 或 Docker,实现远程访问和生产使用。
+本文说明如何在 Linux 服务器上部署一个自托管 Potluck 实例。Potluck 不提供官方托管云服务；域名、服务器、TLS 证书、提供商账户和运行费用均由部署者负责。
+
+对于新安装，推荐使用 Docker 并挂载持久数据目录。
 
 ---
 
-## 🖥️ VPS 部署
+## 开始前准备
 
-### 前置要求
+你需要：
 
-- Ubuntu 20.04+ 或类似 Linux 发行版
-- Node.js 20+
-- Git
-- root 或 sudo 权限
+- 一台安装了 Docker 的 Linux 服务器；
+- 如果通过公网使用，需要一个域名；
+- 修改 DNS 和防火墙规则的权限；
+- 至少一个你有权使用的模型提供商账户。
 
-### 步骤 1:克隆仓库
+生成随机值：
+
+```bash
+openssl rand -hex 32
+```
+
+把生成值用作 `JWT_SECRET`，并另外设置一个独立的强仪表盘密码。
+
+---
+
+## Docker 部署
+
+### 1. 创建私有数据目录
+
+```bash
+sudo install -d -m 700 /var/lib/potluck
+sudo chown "$(id -u):$(id -g)" /var/lib/potluck
+```
+
+### 2. 启动容器
+
+如果 Nginx 与 Potluck 位于同一台服务器，把 Potluck 只绑定到回环地址：
+
+```bash
+docker run -d \
+  --name potluck \
+  --restart unless-stopped \
+  -p 127.0.0.1:21023:21023 \
+  -e DATA_DIR=/app/data \
+  -e JWT_SECRET="REPLACE_WITH_RANDOM_SECRET" \
+  -e INITIAL_PASSWORD="REPLACE_WITH_STRONG_PASSWORD" \
+  -v /var/lib/potluck:/app/data \
+  ghcr.io/ezero23/potluck:latest
+```
+
+容器监听 `21023`。仪表盘和兼容 API 路由使用同一个端口。
+
+在服务器本机检查：
+
+```bash
+curl http://127.0.0.1:21023/api/health
+```
+
+预期响应：
+
+```json
+{"ok":true}
+```
+
+查看日志：
+
+```bash
+docker logs --tail 100 -f potluck
+```
+
+如果某个版本没有可用的发布镜像，可以从源码构建：
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git
 cd potluck
-```
-
-### 步骤 2:安装依赖
-
-```bash
-npm install
-```
-
-### 步骤 3:构建应用
-
-```bash
-npm run build
-```
-
-### 步骤 4:配置环境变量
-
-创建 `.env` 文件或导出变量:
-
-```bash
-export JWT_SECRET="your-secure-secret-change-this-to-random-string"
-export INITIAL_PASSWORD="your-secure-password"
-export DATA_DIR="/var/lib/potluck"
-export NODE_ENV="production"
-```
-
-**环境变量:**
-
-| 变量 | 默认值 | 说明 |
-|----------|---------|-------------|
-| `JWT_SECRET` | 自动生成 | **生产环境必须修改!** 用于 JWT token 签名 |
-| `INITIAL_PASSWORD` | `123456` | 仪表盘登录密码 |
-| `DATA_DIR` | `~/.potluck` | 数据库与数据存储路径 |
-| `NODE_ENV` | `development` | 部署时设为 `production` |
-| `ENABLE_REQUEST_LOGS` | `false` | 启用 debug 请求/响应日志 |
-
-### 步骤 5:创建数据目录
-
-```bash
-sudo mkdir -p /var/lib/potluck
-sudo chown $USER:$USER /var/lib/potluck
-```
-
-### 步骤 6:启动应用
-
-```bash
-npm run start
-```
-
-### 步骤 7:用 PM2 部署到生产环境
-
-PM2 让应用持续运行,崩溃时自动重启:
-
-```bash
-# 全局安装 PM2
-npm install -g pm2
-
-# 用 PM2 启动 百家饭
-pm2 start npm --name potluck -- start
-
-# 保存 PM2 配置
-pm2 save
-
-# 设置开机自启
-pm2 startup
-# 按上一条命令打印的提示执行
-```
-
-**PM2 管理命令:**
-
-```bash
-# 查看日志
-pm2 logs potluck
-
-# 重启应用
-pm2 restart potluck
-
-# 停止应用
-pm2 stop potluck
-
-# 查看状态
-pm2 status
-
-# 监控资源
-pm2 monit
-```
-
----
-
-## 🐳 Docker 部署
-
-### 方式 1:使用 Dockerfile
-
-在 `app` 目录中创建 `Dockerfile`:
-
-```dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy application files
-COPY . .
-
-# Build application
-RUN npm run build
-
-# Expose ports
-EXPOSE 3000 20129
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV DATA_DIR=/app/data
-
-# Create data directory
-RUN mkdir -p /app/data
-
-# Start application
-CMD ["npm", "run", "start"]
-```
-
-**构建并运行:**
-
-```bash
-# 构建镜像
 docker build -t potluck .
-
-# 运行容器
-docker run -d \
-  --name potluck \
-  -p 3000:3000 \
-  -p 20129:20129 \
-  -e JWT_SECRET="your-secure-secret-change-this" \
-  -e INITIAL_PASSWORD="your-secure-password" \
-  -v potluck-data:/app/data \
-  potluck
 ```
 
-### 方式 2:Docker Compose
-
-创建 `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  potluck:
-    build: .
-    container_name: potluck
-    ports:
-      - "3000:3000"
-      - "20129:20129"
-    environment:
-      - NODE_ENV=production
-      - JWT_SECRET=your-secure-secret-change-this
-      - INITIAL_PASSWORD=your-secure-password
-      - DATA_DIR=/app/data
-    volumes:
-      - potluck-data:/app/data
-    restart: unless-stopped
-
-volumes:
-  potluck-data:
-```
-
-**使用 Docker Compose 运行:**
-
-```bash
-# 启动服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
-
-# 重新构建并重启
-docker-compose up -d --build
-```
+然后把运行命令中的镜像名称换成 `potluck`。
 
 ---
 
-## 🌐 Nginx 反向代理
+## Docker Compose
 
-### 为什么使用 Nginx?
-
-- SSL/TLS 终止
-- 域名映射
-- 负载均衡
-- 更好的安全性
-
-### 步骤 1:安装 Nginx
+仓库包含 `docker-compose.yml`。它会从当前源码构建 Potluck，并启动可选的 Headroom 服务：
 
 ```bash
-sudo apt update
-sudo apt install nginx
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
 ```
 
-### 步骤 2:配置 Nginx
+启动前编辑 `.env`：
 
-创建 `/etc/nginx/sites-available/potluck`:
+```dotenv
+JWT_SECRET=REPLACE_WITH_RANDOM_SECRET
+INITIAL_PASSWORD=REPLACE_WITH_STRONG_PASSWORD
+PORT=21023
+NODE_ENV=production
+```
+
+然后运行：
+
+```bash
+docker compose up -d --build
+docker compose ps
+curl http://127.0.0.1:21023/api/health
+```
+
+仓库当前的 Compose 文件会把 Potluck 发布在 `21023`，并把可选 Headroom 服务发布在
+`8787`。公网服务器应通过主机防火墙限制这两个端口，只让反向代理直接面向互联网。
+
+启用公网反向代理前，先通过 SSH 隧道连接：
+
+```bash
+ssh -L 21023:127.0.0.1:21023 user@your-server
+```
+
+打开 `http://localhost:21023/dashboard`，修改仪表盘密码，然后在
+**仪表盘 → Endpoint** 创建 Potluck 端点 Key 并启用 API Key 验证。
+
+---
+
+## Nginx 与 HTTPS
+
+使用 Linux 发行版支持的软件包安装 Nginx 和 Certbot。申请证书前，先把域名 DNS 记录指向服务器。
+
+仪表盘和 API 使用同一个上游：
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
-
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
+    server_name potluck.example.com;
+    return 301 https://$host$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
+    listen 443 ssl;
+    server_name potluck.example.com;
 
-    # SSL certificates (use certbot to generate)
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/potluck.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/potluck.example.com/privkey.pem;
 
-    # SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
+    client_max_body_size 128m;
 
-    # Proxy to 百家饭
     location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        
-        # SSE support - CRITICAL for streaming
-        proxy_buffering off;
-        proxy_read_timeout 86400;
-    }
-
-    # API endpoint
-    location /v1 {
-        proxy_pass http://localhost:20129;
+        proxy_pass http://127.0.0.1:21023;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # SSE support - CRITICAL for streaming
         proxy_buffering off;
         proxy_read_timeout 86400;
     }
 }
 ```
 
-### 步骤 3:启用站点
+替换 `potluck.example.com`，测试并重新加载 Nginx：
 
 ```bash
-# 创建软链接
-sudo ln -s /etc/nginx/sites-available/potluck /etc/nginx/sites-enabled/
-
-# 测试配置
 sudo nginx -t
-
-# 重新加载 Nginx
 sudo systemctl reload nginx
 ```
 
-### 步骤 4:使用 Let's Encrypt 配置 SSL
+公网地址为：
 
-```bash
-# 安装 certbot
-sudo apt install certbot python3-certbot-nginx
-
-# 获取 SSL 证书
-sudo certbot --nginx -d your-domain.com
-
-# 自动续期已自动配置
-# 测试续期
-sudo certbot renew --dry-run
+```text
+仪表盘：https://potluck.example.com/dashboard
+API Base URL：https://potluck.example.com/v1
+健康检查：https://potluck.example.com/api/health
 ```
+
+Potluck 没有单独的仪表盘端口。
 
 ---
 
-## 🔒 安全注意事项
+## 安全检查清单
 
-### 1. 修改默认凭据
+允许外部访问前：
 
-**关键:** 部署前修改 `JWT_SECRET` 和 `INITIAL_PASSWORD`:
+- 修改默认仪表盘密码；
+- 设置持久且随机的 `JWT_SECRET`；
+- 保持仪表盘登录验证启用；
+- 启用 Potluck 端点 API Key 验证；
+- 使用 HTTPS；
+- 公网只开放 `80` 和 `443`；
+- 不公开 `21023` 和可选的 Headroom 端口；
+- 保护 `.env`、`DATA_DIR`、日志和备份；
+- 不要把提供商凭据复用为 Potluck 端点 Key；
+- 升级前阅读发布说明。
 
-```bash
-# 生成安全的 JWT secret
-openssl rand -base64 32
-
-# 将该值用于 JWT_SECRET
-export JWT_SECRET="generated-secret-here"
-```
-
-### 2. 防火墙配置
-
-```bash
-# 允许 SSH
-sudo ufw allow 22/tcp
-
-# 允许 HTTP/HTTPS(若使用 Nginx)
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-
-# 若不使用反向代理,放开 百家饭 端口
-sudo ufw allow 3000/tcp
-sudo ufw allow 20129/tcp
-
-# 启用防火墙
-sudo ufw enable
-```
-
-### 3. 限制仪表盘访问
-
-如果只需要 API 访问,可限制仪表盘端口:
-
-```bash
-# 仅允许 localhost 访问仪表盘
-sudo ufw deny 3000/tcp
-```
-
-通过 SSH 隧道访问仪表盘:
-
-```bash
-ssh -L 3000:localhost:3000 user@your-server.com
-# 然后在浏览器打开 http://localhost:3000
-```
-
-### 4. 定期更新
-
-```bash
-# 更新系统包
-sudo apt update && sudo apt upgrade -y
-
-# 更新 百家饭
-cd /path/to/potluck/app
-git pull
-npm install
-npm run build
-pm2 restart potluck
-```
-
-### 5. 备份策略
-
-```bash
-# 备份数据目录
-tar -czf potluck-backup-$(date +%Y%m%d).tar.gz /var/lib/potluck
-
-# 每日自动备份(加入 crontab)
-0 2 * * * tar -czf /backups/potluck-$(date +\%Y\%m\%d).tar.gz /var/lib/potluck
-```
+Potluck 保存的凭据可以访问第三方服务。应把完整数据目录视为敏感数据。
 
 ---
 
-## 📊 监控
+## 备份与更新
 
-### 检查应用状态
+活动数据库位于：
 
-```bash
-# PM2 状态
-pm2 status
-
-# 查看日志
-pm2 logs potluck --lines 100
-
-# 监控资源
-pm2 monit
+```text
+/var/lib/potluck/db/data.sqlite
 ```
 
-### Nginx 日志
+进行文件系统级备份前，先停止容器：
 
 ```bash
-# 访问日志
-sudo tail -f /var/log/nginx/access.log
-
-# 错误日志
-sudo tail -f /var/log/nginx/error.log
+sudo install -d -m 700 /var/backups
+docker stop potluck
+sudo tar -C /var/lib -czf "/var/backups/potluck-$(date +%Y%m%d-%H%M%S).tar.gz" potluck
+docker start potluck
 ```
 
-### 系统资源
+确认备份存在且可以读取目录：
 
 ```bash
-# CPU 和内存使用
-htop
-
-# 磁盘使用
-df -h
-
-# 网络连接
-netstat -tulpn | grep -E '3000|20129'
+sudo tar -tzf /var/backups/potluck-YYYYMMDD-HHMMSS.tar.gz | head
 ```
+
+更新基于镜像的安装时：
+
+1. 阅读发布说明。
+2. 备份 `/var/lib/potluck`。
+3. 拉取计划使用的镜像标签。
+4. 使用相同环境变量和数据挂载重新创建容器。
+5. 检查 `/api/health`、登录仪表盘，并测试一个提供商后再恢复正常流量。
+
+对于保存凭据并转发可能产生费用的请求的服务，不建议无人值守自动升级。
 
 ---
 
-## 🚨 故障排除
+## 故障排除
 
-### 应用无法启动
-
-```bash
-# 查看日志
-pm2 logs potluck
-
-# 检查端口是否被占用
-sudo lsof -i :3000
-sudo lsof -i :20129
-
-# 检查环境变量
-pm2 env potluck
-```
-
-### Nginx 502 Bad Gateway
+### Nginx 返回 502
 
 ```bash
-# 检查 百家饭 是否运行
-pm2 status
-
-# 查看 Nginx 错误日志
-sudo tail -f /var/log/nginx/error.log
-
-# 测试 Nginx 配置
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+curl http://127.0.0.1:21023/api/health
 sudo nginx -t
 ```
 
-### SSE 流式输出无法工作
+### 流式输出延迟
 
-确保 Nginx 配置中已设置 `proxy_buffering off` 以支持 SSE。
+确认生效的 Nginx `location` 中包含 `proxy_buffering off`，并配置了足够长的 `proxy_read_timeout`。
 
-### 权限被拒绝错误
+### 容器无法写入数据
 
 ```bash
-# 修复数据目录权限
-sudo chown -R $USER:$USER /var/lib/potluck
-chmod 755 /var/lib/potluck
+ls -ld /var/lib/potluck
+docker logs --tail 100 potluck
+```
+
+不要通过把数据目录设置为所有用户可读来解决权限问题。
+
+### 客户端收到 401
+
+确认客户端发送的是有效的 Potluck 端点 Key，而不是提供商 API Key：
+
+```http
+Authorization: Bearer YOUR_POTLUCK_KEY
 ```
 
 ---
 
-## 🔗 下一步
+## 下一步
 
-- [连接提供商](/providers/subscription.md)
-- [配置组合](/features/combos.md)
-- [集成工具](/integration/cursor.md)
+- [连接订阅提供商](../providers/subscription.md)
+- [创建组合](../features/combos.md)
+- [连接兼容客户端](../integration/other-tools.md)

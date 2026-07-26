@@ -4,6 +4,7 @@ import { clearPid } from "./pid.js";
 import { waitForHealth, probeUrlAlive } from "./healthCheck.js";
 import { WORKER_URL } from "./config.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
+import { APP_CONFIG } from "@/shared/constants/config";
 
 const svc = {
   cancelToken: { cancelled: false },
@@ -31,7 +32,7 @@ function throwIfCancelled(token) {
   if (token.cancelled) throw new Error("tunnel cancelled");
 }
 
-export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) || 20129) {
+export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) || APP_CONFIG.defaultPort) {
   console.log(`[Tunnel] enable start (port=${localPort})`);
 
   // Startup self-cleanup: kill any orphaned cloudflared from a previous app instance.

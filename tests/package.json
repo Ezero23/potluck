@@ -5,8 +5,11 @@
   "type": "module",
   "description": "Unit tests for Potluck embeddings endpoint",
   "scripts": {
-    "test": "vitest run --reporter=verbose",
-    "test:watch": "vitest --reporter=verbose"
+    "test": "cd .. && ./tests/node_modules/.bin/vitest run --config tests/vitest.config.js --exclude '**/*.real.test.js' --exclude '**/*.live.test.js' --reporter=verbose",
+    "test:all": "cd .. && ./tests/node_modules/.bin/vitest run --config tests/vitest.config.js --reporter=verbose",
+    "test:live": "cd .. && ./tests/node_modules/.bin/vitest run --config tests/vitest.config.js tests/unit/mimo-free.live.test.js --reporter=verbose",
+    "test:real": "cd .. && RUN_REAL=1 ./tests/node_modules/.bin/vitest run --config tests/vitest.config.js tests/translator/real --reporter=verbose",
+    "test:watch": "cd .. && ./tests/node_modules/.bin/vitest --config tests/vitest.config.js"
   },
   "devDependencies": {
     "vitest": "^4.0.0"

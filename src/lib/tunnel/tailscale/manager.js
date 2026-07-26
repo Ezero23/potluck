@@ -3,6 +3,7 @@ import { startFunnel, stopFunnel, isTailscaleRunning, isTailscaleRunningStrict, 
 import { waitForHealth } from "./healthCheck.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { getCachedPassword, loadEncryptedPassword, initDbHooks } from "@/mitm/manager";
+import { APP_CONFIG } from "@/shared/constants/config";
 
 initDbHooks(getSettings, updateSettings);
 
@@ -20,7 +21,7 @@ function throwIfCancelled(token) {
   if (token.cancelled) throw new Error("tailscale cancelled");
 }
 
-export async function enableTailscale(localPort = 20129) {
+export async function enableTailscale(localPort = parseInt(process.env.PORT, 10) || APP_CONFIG.defaultPort) {
   console.log(`[Tailscale] enable start (port=${localPort})`);
   svc.cancelToken = { cancelled: false };
   svc.activeLocalPort = localPort;
