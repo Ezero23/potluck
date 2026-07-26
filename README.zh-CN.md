@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./images/potluck.png?1" alt="百家饭 Dashboard" width="800"/>
+  
   
   # Potluck · 百家饭
   
