@@ -2,6 +2,7 @@ import os from "node:os";
 import { getAdapter } from "../db/driver.js";
 import { parseJson, stringifyJson } from "../db/helpers/jsonCol.js";
 import { statsEmitter } from "../db/repos/usageRepo.js";
+import { getProviderConnections } from "../db/repos/connectionsRepo.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 const DEFAULT_URL = "http://127.0.0.1:17321";
@@ -101,6 +102,90 @@ function addDayIntoPeriod(period, day) {
   }
 }
 
+function normalizeConnectionStatus(conn) {
+  if (conn.isActive === false) return "disabled";
+
+  const testStatus = String(conn.testStatus || "").trim().toLowerCase();
+  const errorCode = String(conn.errorCode || "").trim().toLowerCase();
+  const lastError = String(conn.lastError || "").trim();
+
+  if (testStatus === "ok") return "ok";
+  if (testStatus === "error" || lastError) {
+    if (/rate.?limit|429|too many/.test(errorCode + " " + lastError.toLowerCase())) {
+      return errorCode.includes("source") || lastError.toLowerCase().includes("source")
+        ? "sourceRateLimited"
+        : "rateLimited";
+    }
+    if (/auth|unauth|401|403|forbidden/.test(errorCode + " " + lastError.toLowerCase())) {
+      return "unauthorized";
+    }
+    if (/unavailable|503|502|500|timeout/.test(errorCode + " " + lastError.toLowerCase())) {
+      return "unavailable";
+    }
+    return "error";
+  }
+
+  // Active connection with no explicit test result yet: treat as ok so it appears in Monitor.
+  return "ok";
+}
+
+function providerRegion(providerId) {
+  const p = String(providerId || "").toLowerCase();
+  if (p.endsWith("-cn")) return "cn";
+  if (p === "qoder") return "cn";
+  return "en";
+}
+
+function providerDisplayLabel(providerId) {
+  const p = String(providerId || "").toLowerCase();
+  const known = {
+    "gemini-cli": "Gemini CLI",
+    "qoder-cn": "Qoder CN",
+    kimchi: "Kimi (kimchi)",
+    kimi: "Kimi",
+    "opencode-go": "OpenCode Go",
+    "brave-search": "Brave Search",
+    tavily: "Tavily",
+    nvidia: "NVIDIA",
+    codex: "Codex",
+    openrouter: "OpenRouter",
+    ollama: "Ollama",
+  };
+  return known[p] || p[0]?.toUpperCase() + p.slice(1);
+}
+
+async function buildProvidersPayload() {
+  try {
+    const connections = await getProviderConnections();
+    const providers = connections.map((conn) => {
+      const name = conn.name || conn.displayName || "";
+      const email = conn.email || "";
+      const label = name || providerDisplayLabel(conn.provider);
+      const status = normalizeConnectionStatus(conn);
+      return {
+        provider: conn.provider,
+        accountKey: conn.id,
+        accountLabel: label,
+        accountName: name,
+        accountEmail: email,
+        status,
+        source: conn.authType || "api",
+        sourceDetail: "web",
+        updatedAt: conn.updatedAt || new Date().toISOString(),
+        region: providerRegion(conn.provider),
+      };
+    });
+
+    return {
+      updatedAt: new Date().toISOString(),
+      providers,
+    };
+  } catch (e) {
+    console.error("[monitor] Failed to build providers payload:", e.message);
+    return { updatedAt: new Date().toISOString(), providers: [] };
+  }
+}
+
 async function buildDevicePayload() {
   const db = await getAdapter();
   const todayKey = getLocalDateKey();
@@ -126,6 +211,8 @@ async function buildDevicePayload() {
   for (const r of monthRows) add("month", parseJson(r.data, {}));
   for (const r of allRows) add("allTime", parseJson(r.data, {}));
 
+  const limits = await buildProvidersPayload();
+
   return {
     deviceId: process.env.POTLUCK_MONITOR_DEVICE_ID || DEFAULT_DEVICE_ID,
     hostname: os.hostname(),
@@ -137,6 +224,7 @@ async function buildDevicePayload() {
     clientStatus: { potluck: "active" },
     projectsEnabled: false,
     periods,
+    limits,
   };
 }
 
