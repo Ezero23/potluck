@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { canonicalizeUsage, extractUsage, mergeUsage } from "../../open-sse/utils/usageTracking.js";
+import { canonicalizeUsage, estimateUsage, extractUsage, mergeUsage } from "../../open-sse/utils/usageTracking.js";
 import { calculateCostFromTokens } from "../../open-sse/providers/pricing.js";
 import { toOpenAIUsage } from "../../open-sse/translator/concerns/usage.js";
 
@@ -87,6 +87,19 @@ describe("canonicalizeUsage", () => {
     expect(out.prompt_tokens).toBe(600); // 100 + 0 (no read) + 500
     expect(out.cached_tokens).toBe(0);
     expect(out.cache_creation_input_tokens).toBe(500);
+  });
+});
+
+describe("estimated usage", () => {
+  it("reports the estimate without adding hidden buffer tokens", () => {
+    const body = { messages: [{ role: "user", content: "hello" }] };
+    const usage = estimateUsage(body, 20);
+
+    expect(usage.prompt_tokens).toBe(Math.ceil(JSON.stringify(body).length / 4));
+    expect(usage.completion_tokens).toBe(5);
+    expect(usage.total_tokens).toBe(
+      usage.prompt_tokens + usage.completion_tokens,
+    );
   });
 });
 

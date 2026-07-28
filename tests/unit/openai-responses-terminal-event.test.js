@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { FORMATS } from "../../open-sse/translator/formats.js";
-import { createSSETransformStreamWithLogger } from "../../open-sse/utils/stream.js";
+import {
+  createPassthroughStreamWithLogger,
+  createSSETransformStreamWithLogger,
+} from "../../open-sse/utils/stream.js";
 
 async function runTransform(input) {
   const encoder = new TextEncoder();
@@ -35,6 +38,20 @@ async function runTransform(input) {
 
   text += decoder.decode();
   return text;
+}
+
+async function runPassthrough(input) {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(input));
+      controller.close();
+    },
+  });
+  const output = stream.pipeThrough(
+    createPassthroughStreamWithLogger("openai", null, "fake-chat"),
+  );
+  return new Response(output).text();
 }
 
 describe("OpenAI Responses streaming termination", () => {
@@ -92,5 +109,22 @@ describe("OpenAI Responses streaming termination", () => {
     expect(output.indexOf("event: response.failed")).toBeLessThan(output.indexOf("data: [DONE]"));
     expect(output.match(/data: \[DONE\]/g)).toHaveLength(1);
     expect(output).not.toContain("data: null");
+  });
+});
+
+describe("OpenAI-compatible passthrough termination", () => {
+  it("forwards exactly one DONE sentinel when upstream already sent one", async () => {
+    const output = await runPassthrough([
+      `data: ${JSON.stringify({
+        id: "chatcmpl-test",
+        object: "chat.completion.chunk",
+        choices: [{ index: 0, delta: { content: "hello" }, finish_reason: null }],
+      })}`,
+      "",
+      "data: [DONE]",
+      "",
+    ].join("\n"));
+
+    expect(output.match(/data: \[DONE\]/g)).toHaveLength(1);
   });
 });
