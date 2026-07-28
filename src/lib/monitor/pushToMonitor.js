@@ -358,6 +358,3 @@ export function stopMonitorPush() {
     pushTimer = null;
   }
 }
-
-// Self-start if this module is imported in a runtime context.
-startMonitorPush();

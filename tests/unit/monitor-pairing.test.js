@@ -22,7 +22,7 @@ beforeEach(() => {
   }
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-monitor-pairing-"));
   process.env.DATA_DIR = tempDir;
-  // Keep the self-starting push channel quiet (no network) during tests.
+  // Keep an explicitly started push channel quiet (no network) during tests.
   process.env.POTLUCK_MONITOR_ENABLED = "0";
   // The db adapter is cached on global (survives vi.resetModules) — drop it so
   // each test gets a fresh database in its own temp DATA_DIR.
@@ -40,9 +40,7 @@ afterEach(() => {
 });
 
 async function importPushModule() {
-  const mod = await import("@/lib/monitor/pushToMonitor.js");
-  mod.stopMonitorPush();
-  return mod;
+  return await import("@/lib/monitor/pushToMonitor.js");
 }
 
 async function seedSettings(updates) {
@@ -88,6 +86,29 @@ describe("ensureMonitorSecret", () => {
 
     expect(ensureMonitorSecret()).toBe("env-secret");
     expect(fs.existsSync(path.join(tempDir, "auth", "monitor-secret"))).toBe(false);
+  });
+});
+
+describe("monitor push lifecycle", () => {
+  it("does not register runtime listeners merely by being imported", async () => {
+    const { statsEmitter } = await import("@/lib/db/repos/usageRepo.js");
+    const listenerCountBefore = statsEmitter.listenerCount("update");
+
+    await importPushModule();
+
+    expect(statsEmitter.listenerCount("update")).toBe(listenerCountBefore);
+  });
+
+  it("registers only when explicitly started and can be stopped", async () => {
+    const { statsEmitter } = await import("@/lib/db/repos/usageRepo.js");
+    const listenerCountBefore = statsEmitter.listenerCount("update");
+    const { startMonitorPush, stopMonitorPush } = await importPushModule();
+
+    startMonitorPush();
+    expect(statsEmitter.listenerCount("update")).toBe(listenerCountBefore + 1);
+
+    stopMonitorPush();
+    expect(statsEmitter.listenerCount("update")).toBe(listenerCountBefore);
   });
 });
 

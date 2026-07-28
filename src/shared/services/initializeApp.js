@@ -17,8 +17,8 @@ import { getMitmStatus, startMitm, loadEncryptedPassword, initDbHooks, restoreTo
 import { startQuotaAutoPing } from "@/shared/services/quotaAutoPing";
 import { syncToJson as syncMitmAliasCache } from "@/lib/mitmAliasCache";
 import { ensureOutboundProxyInitialized } from "@/lib/network/initOutboundProxy";
+import { startMonitorPush } from "@/lib/monitor/pushToMonitor.js";
 import { APP_CONFIG } from "@/shared/constants/config";
-import "@/lib/monitor/pushToMonitor.js";
 
 // Inject correct paths and DB hooks into manager.js (CJS) from ESM context
 (function bootstrapMitm() {
@@ -50,6 +50,7 @@ const g = global.__appSingleton ??= {
 
 export async function initializeApp() {
   try {
+    startMonitorPush();
     await ensureOutboundProxyInitialized();
     await cleanupProviderConnections();
     const settings = await getSettings();
