@@ -1,5 +1,7 @@
 "use client";
 
+import { APP_CONFIG, GITHUB_CONFIG } from "@/shared/constants/config";
+
 export default function HeroSection() {
   return (
     <section className="relative pt-32 pb-20 px-6 min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
@@ -10,7 +12,7 @@ export default function HeroSection() {
         {/* Version badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-[#1f1f1f] bg-[#0a0a0a]/50 px-3 py-1 text-xs font-medium text-[#22d3ee]">
           <span className="flex h-2 w-2 rounded-full bg-[#22d3ee] animate-pulse"></span>
-          v1.0 is now live
+          v{APP_CONFIG.version}
         </div>
 
         {/* Main heading */}
@@ -26,12 +28,12 @@ export default function HeroSection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 w-full">
-          <button className="h-12 px-8 rounded-lg bg-[#22d3ee] hover:bg-[#06b6d4] text-[#000000] text-base font-bold transition-all shadow-[0_0_15px_rgba(34,211,238,0.4)] flex items-center gap-2">
+          <a href="#get-started" className="h-12 px-8 rounded-lg bg-[#22d3ee] hover:bg-[#06b6d4] text-[#000000] text-base font-bold transition-all shadow-[0_0_15px_rgba(34,211,238,0.4)] flex items-center gap-2">
             <span className="material-symbols-outlined">rocket_launch</span>
             Get Started
-          </button>
+          </a>
           <a 
-            href="https://github.com/decolua/potluck" 
+            href={GITHUB_CONFIG.repositoryUrl}
             target="_blank" 
             rel="noopener noreferrer"
             className="h-12 px-8 rounded-lg border border-[#1f1f1f] bg-[#0a0a0a] hover:bg-[#1f1f1f] text-white text-base font-bold transition-all flex items-center gap-2"
@@ -44,4 +46,3 @@ export default function HeroSection() {
     </section>
   );
 }
-

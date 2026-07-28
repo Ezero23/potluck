@@ -1,5 +1,7 @@
 "use client";
 
+import { GITHUB_CONFIG } from "@/shared/constants/config";
+
 export default function Footer() {
   return (
     <footer className="border-t border-[#1f1f1f] bg-[#120f0d] pt-16 pb-8 px-6">
@@ -17,7 +19,7 @@ export default function Footer() {
               The unified endpoint for AI generation. Connect, route, and manage your AI providers with ease.
             </p>
             <div className="flex gap-4">
-              <a className="text-gray-400 hover:text-white transition-colors" href="https://github.com/decolua/potluck" target="_blank" rel="noopener noreferrer">
+              <a className="text-gray-400 hover:text-white transition-colors" href={GITHUB_CONFIG.repositoryUrl} target="_blank" rel="noopener noreferrer">
                 <span className="material-symbols-outlined">code</span>
               </a>
             </div>
@@ -28,34 +30,33 @@ export default function Footer() {
             <h4 className="font-bold text-white">Product</h4>
             <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="#features">Features</a>
             <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="/dashboard">Dashboard</a>
-            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="https://github.com/decolua/potluck" target="_blank" rel="noopener noreferrer">Changelog</a>
+            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href={`${GITHUB_CONFIG.repositoryUrl}/blob/main/CHANGELOG.md`} target="_blank" rel="noopener noreferrer">Changelog</a>
           </div>
           
           {/* Resources */}
           <div className="flex flex-col gap-4">
             <h4 className="font-bold text-white">Resources</h4>
-            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="https://github.com/decolua/potluck#readme" target="_blank" rel="noopener noreferrer">Documentation</a>
-            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="https://github.com/decolua/potluck" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="https://www.npmjs.com/package/potluck" target="_blank" rel="noopener noreferrer">NPM</a>
+            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href={`${GITHUB_CONFIG.repositoryUrl}#readme`} target="_blank" rel="noopener noreferrer">Documentation</a>
+            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href={GITHUB_CONFIG.repositoryUrl} target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href={GITHUB_CONFIG.releasesUrl} target="_blank" rel="noopener noreferrer">Releases</a>
           </div>
           
           {/* Legal */}
           <div className="flex flex-col gap-4">
             <h4 className="font-bold text-white">Legal</h4>
-            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href="https://github.com/decolua/potluck/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+            <a className="text-gray-400 hover:text-[#22d3ee] text-sm transition-colors" href={`${GITHUB_CONFIG.repositoryUrl}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">MIT License</a>
           </div>
         </div>
         
         {/* Bottom */}
         <div className="border-t border-[#1f1f1f] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-600 text-sm">© 2025 Potluck. All rights reserved.</p>
+          <p className="text-gray-600 text-sm">© 2026 Potluck contributors.</p>
           <div className="flex gap-6">
-            <a className="text-gray-600 hover:text-white text-sm transition-colors" href="https://github.com/decolua/potluck" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a className="text-gray-600 hover:text-white text-sm transition-colors" href="https://www.npmjs.com/package/potluck" target="_blank" rel="noopener noreferrer">NPM</a>
+            <a className="text-gray-600 hover:text-white text-sm transition-colors" href={GITHUB_CONFIG.repositoryUrl} target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a className="text-gray-600 hover:text-white text-sm transition-colors" href={`${GITHUB_CONFIG.repositoryUrl}/issues`} target="_blank" rel="noopener noreferrer">Issues</a>
           </div>
         </div>
       </div>
     </footer>
   );
 }
-

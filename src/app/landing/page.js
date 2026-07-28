@@ -7,6 +7,7 @@ import HowItWorks from "./components/HowItWorks";
 import Features from "./components/Features";
 import GetStarted from "./components/GetStarted";
 import Footer from "./components/Footer";
+import { GITHUB_CONFIG } from "@/shared/constants/config";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function LandingPage() {
                 Start Free
               </button>
               <button 
-                onClick={() => window.open("https://github.com/decolua/potluck#readme", "_blank")}
+                onClick={() => window.open(`${GITHUB_CONFIG.repositoryUrl}#readme`, "_blank", "noopener,noreferrer")}
                 className="w-full sm:w-auto h-14 px-10 rounded-lg border border-[#1f1f1f] hover:bg-[#0a0a0a] text-white text-lg font-bold transition-all"
               >
                 Read Documentation
@@ -103,4 +104,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
