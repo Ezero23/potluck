@@ -80,6 +80,7 @@ function runNpmInstall({ cwd, pkgs, extraArgs = [], timeout = 180000 }) {
   const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
   const res = spawnSync(npmCmd, args, {
     cwd,
+    env: sanitizeNpmInstallEnv(process.env),
     stdio: ["ignore", "pipe", "pipe"],
     timeout,
     shell: process.platform === "win32",
@@ -88,9 +89,24 @@ function runNpmInstall({ cwd, pkgs, extraArgs = [], timeout = 180000 }) {
   return { ok: res.status === 0, code: res.status, stderr: res.stderr || "", stdout: res.stdout || "" };
 }
 
+function sanitizeNpmInstallEnv(baseEnv = process.env) {
+  const env = { ...baseEnv };
+  for (const key of Object.keys(env)) {
+    const normalized = key.toLowerCase();
+    if (
+      normalized === "npm_config_global"
+      || normalized === "npm_config_prefix"
+      || normalized === "npm_config_location"
+    ) {
+      delete env[key];
+    }
+  }
+  return env;
+}
+
 function npmInstall(pkgs, opts = {}) {
   const cwd = ensureRuntimeDir();
-  const extra = opts.optional ? ["--no-save"] : [];
+  const extra = opts.optional ? ["--save-optional", "--save-exact"] : ["--save-exact"];
   if (!opts.silent) console.log("⏳ Installing SQLite engine (first run)...");
   const res = runNpmInstall({ cwd, pkgs, extraArgs: extra, timeout: opts.timeout || 180000 });
   if (!res.ok && !opts.silent) {
@@ -152,5 +168,6 @@ module.exports = {
   getRuntimeDir,
   getRuntimeNodeModules,
   runNpmInstall,
+  sanitizeNpmInstallEnv,
   summarizeNpmError,
 };

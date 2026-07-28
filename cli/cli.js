@@ -9,13 +9,15 @@ const os = require("os");
 const pkg = require("./package.json");
 const args = process.argv.slice(2);
 const APP_NAME = pkg.name;
+const BIN_NAME = Object.keys(pkg.bin || {})[0] || "potluck";
 const INSTALL_CMD_LATEST = `npm i -g ${APP_NAME}@latest --prefer-online`;
 const DEFAULT_PORT = 21023;
-const DEFAULT_HOST = "0.0.0.0";
+const DEFAULT_HOST = "127.0.0.1";
+const WILDCARD_HOSTS = new Set(["0.0.0.0", "::"]);
 
 function printHelp() {
   console.log(`
-Usage: ${APP_NAME} [options]
+Usage: ${BIN_NAME} [options]
 
 Options:
   -p, --port <port>   Port to run the server (default: ${DEFAULT_PORT})
@@ -88,7 +90,7 @@ try { ensureSqliteRuntime({ silent: true }); } catch {}
 // Self-heal tray runtime (systray for macOS/Linux only). Windows skipped.
 try { ensureTrayRuntime({ silent: true }); } catch {}
 
-// First non-internal IPv4 — the address remote peers actually reach when bound to 0.0.0.0.
+// First non-internal IPv4 — the address remote peers reach on a wildcard bind.
 function getLanIp() {
   for (const ifaces of Object.values(os.networkInterfaces())) {
     for (const i of ifaces || []) {
@@ -98,9 +100,12 @@ function getLanIp() {
   return null;
 }
 
-// Local URL stays "localhost"; warn separately when bound to all interfaces (network-exposed).
+// Keep the browser URL friendly even when the socket binds to a numeric loopback
+// address or all interfaces. Network exposure is warned about separately.
 function getDisplayHost() {
-  return host === DEFAULT_HOST ? "localhost" : host;
+  return host === "127.0.0.1" || host === "::1" || WILDCARD_HOSTS.has(host)
+    ? "localhost"
+    : host;
 }
 const MAX_PORT_ATTEMPTS = 10;
 // Identifiers for killAllAppProcesses - only kill potluck specifically
@@ -567,8 +572,8 @@ const RESTART_RESET_MS = 30000; // Reset counter if alive > 30s
 function startServer(latestVersion) {
   const displayHost = getDisplayHost();
   const url = `http://${displayHost}:${port}/dashboard`;
-  // Surface real network exposure when bound to all interfaces (default 0.0.0.0).
-  if (host === DEFAULT_HOST) {
+  // Surface real network exposure when the user explicitly binds all interfaces.
+  if (WILDCARD_HOSTS.has(host)) {
     const lanIp = getLanIp();
     if (lanIp) console.log(`\x1b[33m⚠ Network-exposed: reachable at http://${lanIp}:${port} (bound 0.0.0.0). Use --host 127.0.0.1 for local-only.\x1b[0m`);
   }

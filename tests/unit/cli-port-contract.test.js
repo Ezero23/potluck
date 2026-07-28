@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const rootRequire = createRequire(new URL("../../package.json", import.meta.url));
 const api = require("../../cli/src/cli/api/client.js");
 const cliPackage = require("../../cli/package.json");
+const { sanitizeNpmInstallEnv } = require("../../cli/hooks/sqliteRuntime.js");
 const cliPath = new URL("../../cli/cli.js", import.meta.url);
 
 afterEach(() => {
@@ -22,6 +23,8 @@ afterEach(() => {
 describe("CLI main service port contract", () => {
   it.each([
     ["--help", "Port to run the server (default: 21023)"],
+    ["--help", "Host to bind (default: 127.0.0.1)"],
+    ["--help", "Usage: potluck [options]"],
     ["--version", cliPackage.version],
   ])("handles %s immediately without runtime installation", (arg, expected) => {
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "potluck-cli-info-"));
@@ -58,6 +61,50 @@ describe("CLI main service port contract", () => {
 
   it("uses the canonical Potluck port by default", () => {
     expect(api.getBaseUrl()).toBe("http://localhost:21023");
+  });
+
+  it("prevents nested runtime installs from inheriting global npm mode", () => {
+    const env = sanitizeNpmInstallEnv({
+      PATH: "/bin",
+      npm_config_global: "true",
+      NPM_CONFIG_PREFIX: "/global-prefix",
+      npm_config_location: "global",
+      npm_config_cache: "/cache",
+    });
+
+    expect(env).toEqual({
+      PATH: "/bin",
+      npm_config_cache: "/cache",
+    });
+  });
+
+  it("persists optional native and tray dependencies in the runtime project", () => {
+    const sqliteSource = fs.readFileSync(
+      new URL("../../cli/hooks/sqliteRuntime.js", import.meta.url),
+      "utf8",
+    );
+    const traySource = fs.readFileSync(
+      new URL("../../cli/hooks/trayRuntime.js", import.meta.url),
+      "utf8",
+    );
+
+    expect(sqliteSource).toContain('"--save-optional", "--save-exact"');
+    expect(traySource).toContain('"--save-optional", "--save-exact"');
+    expect(traySource).not.toContain('"--no-save"');
+  });
+
+  it("rejects traced runtime data and recursive builds from the CLI package", () => {
+    const buildSource = fs.readFileSync(
+      new URL("../../cli/scripts/build-cli.js", import.meta.url),
+      "utf8",
+    );
+
+    expect(buildSource).toContain("assertCleanCliBundle");
+    expect(buildSource).toContain('"jwt-secret"');
+    expect(buildSource).toContain('"machine-id"');
+    expect(buildSource).toContain('"data.sqlite"');
+    expect(buildSource).toContain('segments[0] === ".next"');
+    expect(buildSource).toContain('segments[0] === "cli"');
   });
 
   it("derives displayed and callback URLs from a custom CLI port", () => {

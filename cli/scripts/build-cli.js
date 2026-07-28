@@ -159,6 +159,24 @@ const standaloneNodeModules = path.join(standaloneRootToUse, "node_modules");
 if (standaloneApp !== standaloneRootToUse && fs.existsSync(standaloneNodeModules)) {
   copyRecursive(standaloneNodeModules, path.join(cliAppDir, "node_modules"));
 }
+
+// Workspace tracing can pull previous CLI builds and ignored local runtime data
+// back into the standalone tree. Remove those top-level copies before packaging;
+// the real Next output lives under .next-cli-build and is kept intact.
+const contaminatedTopLevelPaths = [
+  ".next",
+  "cli",
+  ".9router",
+  ".build-home",
+  path.join(buildDistDirName, "standalone"),
+];
+for (const relativePath of contaminatedTopLevelPaths) {
+  const target = path.join(cliAppDir, relativePath);
+  if (fs.existsSync(target)) {
+    fs.rmSync(target, { recursive: true, force: true });
+    console.log(`🧹 Removed traced build contamination: ${relativePath}`);
+  }
+}
 console.log("✅ Copied standalone build\n");
 
 // Step 3a: Copy custom server (injects real socket IP, strips spoofable XFF).
@@ -266,6 +284,43 @@ try {
   console.log("✅ MITM server build completed\n");
 } catch (error) {
   console.error("❌ MITM build failed");
+  process.exit(1);
+}
+
+function assertCleanCliBundle() {
+  const forbiddenSegments = new Set([".9router", ".build-home"]);
+  const forbiddenFiles = new Set(["jwt-secret", "machine-id", "data.sqlite", "db.json"]);
+  const pending = [cliAppDir];
+
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const fullPath = path.join(directory, entry.name);
+      const relativePath = path.relative(cliAppDir, fullPath);
+      const segments = relativePath.split(path.sep);
+
+      if (forbiddenSegments.has(entry.name) || forbiddenFiles.has(entry.name)) {
+        throw new Error(`Forbidden runtime data in CLI bundle: ${relativePath}`);
+      }
+      if (segments[0] === ".next" || segments[0] === "cli") {
+        throw new Error(`Nested build output in CLI bundle: ${relativePath}`);
+      }
+      if (
+        segments[0] === buildDistDirName
+        && segments[1] === "standalone"
+      ) {
+        throw new Error(`Recursive standalone output in CLI bundle: ${relativePath}`);
+      }
+      if (entry.isDirectory()) pending.push(fullPath);
+    }
+  }
+}
+
+try {
+  assertCleanCliBundle();
+  console.log("✅ CLI bundle contains no traced runtime data or recursive builds\n");
+} catch (error) {
+  console.error(`❌ ${error.message}`);
   process.exit(1);
 }
 
