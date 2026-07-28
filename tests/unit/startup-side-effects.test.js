@@ -58,6 +58,9 @@ describe("server startup side effects", () => {
 
     expect(source).not.toContain("initOutboundProxy");
     expect(source).not.toContain("shared/services/bootstrap");
+    expect(source).not.toContain("consoleLogBuffer");
+    expect(source).not.toContain("GoogleAnalytics");
+    expect(source).not.toContain("@next/third-parties");
   });
 
   it("loads initializeApp lazily after the build-phase guard", () => {
