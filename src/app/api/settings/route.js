@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
+import { writeDashboardPasswordPlain } from "@/lib/monitor/pairing";
+import { notifyMonitorContentChanged } from "@/lib/monitor/pushToMonitor.js";
 import { resetComboRotation } from "open-sse/services/combo.js";
 import { runQuotaAutoPingTick } from "@/shared/services/quotaAutoPing";
 import bcrypt from "bcryptjs";
@@ -43,6 +45,8 @@ export async function PATCH(request) {
     // Strip protected secrets before any internal handling sets them
     for (const key of PROTECTED_SETTING_KEYS) delete body[key];
 
+    let changedPassword = null;
+
     // If updating password, hash it
     if (body.newPassword) {
       const settings = await getSettings();
@@ -67,6 +71,7 @@ export async function PATCH(request) {
 
       const salt = await bcrypt.genSalt(10);
       body.password = await bcrypt.hash(body.newPassword, salt);
+      changedPassword = body.newPassword;
       delete body.newPassword;
       delete body.currentPassword;
     }
@@ -78,6 +83,13 @@ export async function PATCH(request) {
     }
 
     const settings = await updateSettings(body);
+
+    // Cache the plaintext locally (0600) so the loopback Monitor app can
+    // auto-fill the dashboard login, then push the fresh info immediately.
+    if (changedPassword) {
+      writeDashboardPasswordPlain(changedPassword);
+      notifyMonitorContentChanged();
+    }
 
     // Apply outbound proxy settings immediately (no restart required)
     if (

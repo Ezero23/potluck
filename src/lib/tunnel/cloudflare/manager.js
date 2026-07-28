@@ -4,6 +4,7 @@ import { clearPid } from "./pid.js";
 import { waitForHealth, probeUrlAlive } from "./healthCheck.js";
 import { WORKER_URL } from "./config.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
+import { notifyMonitorContentChanged } from "@/lib/monitor/pushToMonitor.js";
 import { APP_CONFIG } from "@/shared/constants/config";
 
 const svc = {
@@ -57,6 +58,7 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
         ]);
         if (directOk && publicOk) {
           console.log(`[Tunnel] already running, reuse: ${existing.tunnelUrl}`);
+          notifyMonitorContentChanged();
           return { success: true, tunnelUrl: existing.tunnelUrl, shortId: existing.shortId, publicUrl, alreadyRunning: true };
         }
         console.log(`[Tunnel] stale (direct=${directOk} public=${publicOk}), respawn`);
@@ -106,6 +108,7 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
 
     console.log("[Tunnel] enable success");
     registerGracefulShutdown();
+    notifyMonitorContentChanged();
     return { success: true, tunnelUrl, shortId, publicUrl };
   } catch (e) {
     // Suppress noise when spawn was deliberately killed (restart/disable superseded it)
@@ -134,6 +137,7 @@ export async function disableTunnel() {
   // Force-clear flags so a subsequent enable is not blocked by a stuck spawnInProgress
   svc.spawnInProgress = false;
   svc.activeLocalPort = null;
+  notifyMonitorContentChanged();
   return { success: true };
 }
 

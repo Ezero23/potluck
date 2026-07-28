@@ -3,10 +3,13 @@ import { getAdapter } from "../db/driver.js";
 import { parseJson, stringifyJson } from "../db/helpers/jsonCol.js";
 import { statsEmitter } from "../db/repos/usageRepo.js";
 import { getProviderConnections } from "../db/repos/connectionsRepo.js";
+import { loadState } from "../tunnel/shared/state.js";
+import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 const DEFAULT_URL = "http://127.0.0.1:17321";
 const DEFAULT_DEVICE_ID = "potluck";
+const DEFAULT_DASHBOARD_PASSWORD = "123456";
 const PUSH_DEBOUNCE_MS = 500;
 const FAILURE_COOLDOWN_MS = 30_000;
 
@@ -20,16 +23,23 @@ function isEnabled() {
   const env = process.env.POTLUCK_MONITOR_ENABLED;
   if (env === "0" || env === "false" || env === "no") return false;
   if (env === "1" || env === "true" || env === "yes") return true;
-  // Auto-enable if a monitor URL or secret is explicitly configured.
-  return Boolean(process.env.POTLUCK_MONITOR_URL || process.env.POTLUCK_MONITOR_SECRET);
+  // Zero-config local pairing: the monitor secret auto-provisions into
+  // DATA_DIR/auth/monitor-secret and the default target is loopback, so the
+  // push channel is on unless explicitly disabled.
+  return true;
 }
 
 function monitorUrl() {
   return (process.env.POTLUCK_MONITOR_URL || DEFAULT_URL).replace(/\/$/, "");
 }
 
-function monitorSecret() {
-  return (process.env.POTLUCK_MONITOR_SECRET || "").trim();
+function isLoopbackMonitorUrl() {
+  try {
+    const host = new URL(monitorUrl()).hostname.replace(/^\[|\]$/g, "").toLowerCase();
+    return host === "127.0.0.1" || host === "localhost" || host === "::1";
+  } catch {
+    return false;
+  }
 }
 
 function getLocalDateKey(timestamp) {
@@ -154,6 +164,21 @@ function providerDisplayLabel(providerId) {
   return known[p] || p[0]?.toUpperCase() + p.slice(1);
 }
 
+const MONITOR_COLLAPSIBLE_PROVIDERS = new Set([
+  "claude", "codex", "cursor", "openrouter", "mimo", "qoder", "kimi", "ollama",
+]);
+
+function stableAccountKey(conn) {
+  const provider = String(conn.provider || "").toLowerCase();
+  // For providers that Monitor may also track locally, use a stable identity
+  // (email or name) so aggregateLimits merges Potluck and local entries and
+  // the best status (usually ok from Potluck) wins.
+  if (MONITOR_COLLAPSIBLE_PROVIDERS.has(provider)) {
+    return conn.email || conn.name || conn.displayName || conn.id;
+  }
+  return conn.id;
+}
+
 async function buildProvidersPayload() {
   try {
     const connections = await getProviderConnections();
@@ -164,14 +189,16 @@ async function buildProvidersPayload() {
       const status = normalizeConnectionStatus(conn);
       return {
         provider: conn.provider,
-        accountKey: conn.id,
+        accountKey: stableAccountKey(conn),
         accountLabel: label,
         accountName: name,
         accountEmail: email,
         status,
         source: conn.authType || "api",
         sourceDetail: "web",
-        updatedAt: conn.updatedAt || new Date().toISOString(),
+        // Use the current push time as updatedAt: a live Potluck connection should
+        // win over a stale notConfigured local observation in aggregateLimits.
+        updatedAt: new Date().toISOString(),
         region: providerRegion(conn.provider),
       };
     });
@@ -186,7 +213,27 @@ async function buildProvidersPayload() {
   }
 }
 
-async function buildDevicePayload() {
+function buildTunnelInfo(settingsRaw) {
+  const state = loadState();
+  const shortId = state?.shortId || "";
+  return {
+    enabled: settingsRaw?.tunnelEnabled === true,
+    publicUrl: shortId ? `https://r${shortId}.abc-tunnel.us` : "",
+    tunnelUrl: state?.tunnelUrl || "",
+  };
+}
+
+// Only sent to loopback monitor targets — the plaintext never leaves the machine.
+function buildDashboardPasswordField(settingsRaw) {
+  const plain = readDashboardPasswordPlain();
+  if (plain) return { dashboardPassword: plain };
+  // No custom password hash → the default password is in effect.
+  if (!settingsRaw?.password) return { dashboardPassword: DEFAULT_DASHBOARD_PASSWORD };
+  // Custom password set but not cached locally yet → omit until the next change.
+  return {};
+}
+
+export async function buildDevicePayload() {
   const db = await getAdapter();
   const todayKey = getLocalDateKey();
   const weekStartKey = dateKeyBefore(6);
@@ -196,6 +243,8 @@ async function buildDevicePayload() {
   const weekRows = db.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ?`, [weekStartKey]);
   const monthRows = db.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ?`, [monthStartKey]);
   const allRows = db.all(`SELECT dateKey, data FROM usageDaily`);
+  const settingsRow = db.get(`SELECT data FROM settings WHERE id = 1`);
+  const settingsRaw = settingsRow ? parseJson(settingsRow.data, {}) : {};
 
   const periods = {
     today: emptyPeriod(),
@@ -225,6 +274,8 @@ async function buildDevicePayload() {
     projectsEnabled: false,
     periods,
     limits,
+    tunnel: buildTunnelInfo(settingsRaw),
+    ...(isLoopbackMonitorUrl() ? buildDashboardPasswordField(settingsRaw) : {}),
   };
 }
 
@@ -237,11 +288,11 @@ async function pushOnce() {
     return;
   }
 
-  const secret = monitorSecret();
+  const secret = ensureMonitorSecret();
   if (!secret) {
     if (!loggedMissingSecret) {
       loggedMissingSecret = true;
-      console.warn("[monitor] POTLUCK_MONITOR_SECRET is not set; cannot push to monitor.");
+      console.warn("[monitor] no monitor secret available; cannot push to monitor.");
     }
     return;
   }
@@ -281,6 +332,12 @@ function schedulePush() {
     pushOnce().catch(() => {});
   }, PUSH_DEBOUNCE_MS);
   pushTimer.unref?.();
+}
+
+// Trigger a debounced push from other modules (settings change, tunnel toggle, …)
+// so the Monitor sees fresh tunnel URL / dashboard password info immediately.
+export function notifyMonitorContentChanged() {
+  schedulePush();
 }
 
 let listenerInstalled = false;
