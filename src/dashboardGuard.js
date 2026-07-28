@@ -39,7 +39,6 @@ const ALWAYS_PROTECTED = [
   "/api/shutdown",
   "/api/settings/database",
   "/api/version/shutdown",
-  "/api/version/update",
   "/api/oauth/cursor/auto-import",
   "/api/oauth/kiro/auto-import",
 ];
