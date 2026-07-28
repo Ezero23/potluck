@@ -16,7 +16,7 @@ const FEATURES = [
   { 
     icon: "bolt", 
     title: "Easy Setup", 
-    desc: "Get up and running in minutes with npx command.", 
+    desc: "Install the CLI release and start one local service.",
     colors: {
       border: "hover:border-cyan-500/50",
       bg: "hover:bg-cyan-500/5",
@@ -62,9 +62,9 @@ const FEATURES = [
     }
   },
   { 
-    icon: "cloud_sync", 
-    title: "Cloud Sync", 
-    desc: "Sync your configurations across devices instantly.", 
+    icon: "lock",
+    title: "Local Control",
+    desc: "Keep provider credentials and routing data on your machine.",
     colors: {
       border: "hover:border-sky-500/50",
       bg: "hover:bg-sky-500/5",
@@ -130,4 +130,3 @@ export default function Features() {
     </section>
   );
 }
-

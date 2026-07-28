@@ -3,11 +3,9 @@
 Potluck is a self-hosted AI gateway that gives compatible clients one local endpoint
 and routes requests to the provider connections you configure.
 
-[![npm](https://img.shields.io/npm/v/potluck-cli.svg)](https://www.npmjs.com/package/potluck-cli)
-[![Downloads](https://img.shields.io/npm/dm/potluck-cli.svg)](https://www.npmjs.com/package/potluck-cli)
 [![Docker Pulls](https://img.shields.io/docker/pulls/ezero23/potluck.svg?logo=docker&label=Docker%20pulls)](https://hub.docker.com/r/ezero23/potluck)
 [![GHCR](https://img.shields.io/badge/GHCR-Ezero23%2Fpotluck-blue?logo=github)](https://github.com/Ezero23/potluck/pkgs/container/potluck)
-[![License](https://img.shields.io/npm/l/potluck-cli.svg)](https://github.com/Ezero23/potluck/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/Ezero23/potluck)](https://github.com/Ezero23/potluck/blob/main/LICENSE)
 
 [Project README](https://github.com/Ezero23/potluck#readme) ·
 [中文说明](https://github.com/Ezero23/potluck/blob/main/README.zh-CN.md)
@@ -29,16 +27,13 @@ configured sources are unavailable or credentials have expired.
 
 ## ⚡ Quick Start
 
-Requirements: Node.js 18 or newer and npm.
+Requirements: Node.js 22 and npm.
 
-**Option 1 — npm (recommended for desktop):**
+**Option 1 — CLI release (recommended for desktop):**
 
 ```bash
-npm install -g potluck-cli
+npm install -g https://github.com/Ezero23/potluck/releases/download/v0.5.19/potluck-cli-0.5.19.tgz
 potluck
-
-# Or run directly with npx
-npx potluck-cli
 ```
 
 **Option 2 — Docker (server/VPS):**

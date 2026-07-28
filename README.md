@@ -32,9 +32,9 @@ API, the client disconnects, or an unrecoverable error occurs.
 
 ## Project status
 
-Potluck is an early-stage fork under active hardening. The production build works, but
-the inherited test and lint baselines are still being repaired. Back up `DATA_DIR`
-before upgrading and review changes before exposing an instance to the internet.
+Potluck is an early-stage fork under active hardening. Its CI checks lint, automated
+tests, and the production build. Back up `DATA_DIR` before upgrading and review the
+security settings before exposing an instance to the internet.
 
 Provider availability, model names, pricing, quotas, and free tiers are controlled by
 third parties and may change without notice. Potluck does not promise that any provider
@@ -47,6 +47,15 @@ Requirements:
 
 - Node.js 22
 - npm
+
+Install the CLI release:
+
+```bash
+npm install -g https://github.com/Ezero23/potluck/releases/download/v0.5.19/potluck-cli-0.5.19.tgz
+potluck
+```
+
+For source development:
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git

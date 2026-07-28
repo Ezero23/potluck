@@ -24,8 +24,8 @@
 
 ## 项目状态
 
-百家饭目前是一个仍在持续加固的早期分支。生产构建可以运行，但继承下来的测试和 lint 基线还在
-修复。升级前请备份 `DATA_DIR`；如果要暴露到公网，请先检查安全配置和当前版本说明。
+百家饭目前是一个仍在持续加固的早期分支。CI 会检查 lint、自动化测试和生产构建。升级前请备份
+`DATA_DIR`；如果要暴露到公网，请先检查安全配置和当前版本说明。
 
 提供商是否可用、模型名称、价格、配额和免费额度都由第三方决定，可能随时变化。百家饭不承诺
 任何提供商或模型永久免费、无限量或永久可用。控制面板显示的成本是估算值，不是账单。
@@ -36,6 +36,15 @@
 
 - Node.js 22
 - npm
+
+安装 CLI 发布包：
+
+```bash
+npm install -g https://github.com/Ezero23/potluck/releases/download/v0.5.19/potluck-cli-0.5.19.tgz
+potluck
+```
+
+如果需要从源码开发：
 
 ```bash
 git clone https://github.com/Ezero23/potluck.git
