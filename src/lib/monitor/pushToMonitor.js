@@ -3,6 +3,7 @@ import { getAdapter } from "../db/driver.js";
 import { parseJson, stringifyJson } from "../db/helpers/jsonCol.js";
 import { statsEmitter } from "../db/repos/usageRepo.js";
 import { getProviderConnections } from "../db/repos/connectionsRepo.js";
+import { getApiKeys } from "../localDb.js";
 import { loadState } from "../tunnel/shared/state.js";
 import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
 import pkg from "../../../package.json" with { type: "json" };
@@ -233,6 +234,17 @@ function buildDashboardPasswordField(settingsRaw) {
   return {};
 }
 
+function buildApiKeyField() {
+  try {
+    const keys = getApiKeys();
+    const active = Array.isArray(keys) ? keys.find((k) => k.isActive !== false) : null;
+    if (active && active.key) return { apiKey: { key: active.key, name: active.name || "" } };
+  } catch (e) {
+    console.warn(`[monitor] could not read api key: ${e.message}`);
+  }
+  return {};
+}
+
 export async function buildDevicePayload() {
   const db = await getAdapter();
   const todayKey = getLocalDateKey();
@@ -276,6 +288,7 @@ export async function buildDevicePayload() {
     limits,
     tunnel: buildTunnelInfo(settingsRaw),
     ...(isLoopbackMonitorUrl() ? buildDashboardPasswordField(settingsRaw) : {}),
+    ...(isLoopbackMonitorUrl() ? buildApiKeyField() : {}),
   };
 }
 
