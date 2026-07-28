@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
@@ -48,5 +49,25 @@ describe("version route", () => {
     expect(body.latestVersion).toBeNull();
     expect(body.hasUpdate).toBe(false);
     expect(body.releaseUrl).toBe("https://github.com/Ezero23/potluck/releases");
+  });
+
+  it("does not expose the removed npm self-updater", () => {
+    const updateRoute = new URL("../../src/app/api/version/update/route.js", import.meta.url);
+    const detachedUpdater = new URL("../../src/lib/updater/updater.js", import.meta.url);
+    const appUpdater = fs.readFileSync(
+      new URL("../../src/lib/appUpdater.js", import.meta.url),
+      "utf8",
+    );
+    const config = fs.readFileSync(
+      new URL("../../src/shared/constants/config.js", import.meta.url),
+      "utf8",
+    );
+
+    expect(fs.existsSync(updateRoute)).toBe(false);
+    expect(fs.existsSync(detachedUpdater)).toBe(false);
+    expect(appUpdater).not.toContain("spawnUpdaterAndExit");
+    expect(appUpdater).not.toContain("UPDATER_PKG_NAME");
+    expect(config).not.toContain("npm i -g potluck");
+    expect(config).not.toContain('npmPackageName: "potluck"');
   });
 });

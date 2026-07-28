@@ -15,20 +15,8 @@ export const GITHUB_CONFIG = {
   changelogUrl: "https://raw.githubusercontent.com/Ezero23/potluck/refs/heads/main/CHANGELOG.md",
 };
 
-// Updater configuration
+// Internal loopback requests use the running app port.
 export const UPDATER_CONFIG = {
-  npmPackageName: "potluck",
-  installCmd: "npm i -g potluck",
-  installCmdLatest: "npm i -g potluck@latest --prefer-online",
-  shutdownCountdownSec: 3,
-  exitDelayMs: 500,
-  statusLogTailLines: 8,
-  installRetries: 3,
-  installRetryDelayMs: 5000,
-  lingerAfterDoneMs: 30000,
-  waitForExitMinMs: 5000,
-  waitForExitMaxMs: 20000,
-  waitForExitCheckMs: 500,
   appPort: APP_CONFIG.defaultPort,
 };
 
