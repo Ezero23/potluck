@@ -10,6 +10,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
+import ProviderIcon from "@/shared/components/ProviderIcon";
 
 // Force-stop FE animation if a provider stays active longer than this
 const FE_ACTIVE_TIMEOUT_MS = 60000;
@@ -27,7 +28,6 @@ function getProviderImageUrl(providerId) {
 // Custom provider node - rectangle with image + name
 function ProviderNode({ data }) {
   const { label, color, imageUrl, textIcon, active } = data;
-  const [imgError, setImgError] = useState(false);
   return (
     <div
       className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border-2 transition-all duration-300 bg-bg"
@@ -47,11 +47,14 @@ function ProviderNode({ data }) {
         className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
         style={{ backgroundColor: `${color}15` }}
       >
-        {!imgError ? (
-          <img src={imageUrl} alt={label} className="w-6 h-6 rounded-sm object-contain" onError={() => setImgError(true)} />
-        ) : (
-          <span className="text-sm font-bold" style={{ color }}>{textIcon}</span>
-        )}
+        <ProviderIcon
+          src={imageUrl}
+          alt={label}
+          size={24}
+          className="w-6 h-6 rounded-sm object-contain"
+          fallbackText={textIcon}
+          fallbackColor={color}
+        />
       </div>
 
       {/* Provider name */}
