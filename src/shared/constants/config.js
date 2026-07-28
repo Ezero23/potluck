@@ -8,10 +8,11 @@ export const APP_CONFIG = {
   defaultPort: 21023,
 };
 
-// GitHub configuration
+// Project links
 export const GITHUB_CONFIG = {
-  changelogUrl: "https://raw.githubusercontent.com/decolua/potluck/refs/heads/master/CHANGELOG.md",
-  donateUrl: "https://potluck.com/api/donate",
+  repositoryUrl: "https://github.com/Ezero23/potluck",
+  releasesUrl: "https://github.com/Ezero23/potluck/releases",
+  changelogUrl: "https://raw.githubusercontent.com/Ezero23/potluck/refs/heads/main/CHANGELOG.md",
 };
 
 // Updater configuration
@@ -35,22 +36,6 @@ export const UPDATER_CONFIG = {
 export const THEME_CONFIG = {
   storageKey: "theme",
   defaultTheme: "system", // "light" | "dark" | "system"
-};
-
-// Subscription
-export const SUBSCRIPTION_CONFIG = {
-  price: 1.0,
-  currency: "USD",
-  interval: "month",
-  planName: "Pro Plan",
-};
-
-// API endpoints
-export const API_ENDPOINTS = {
-  users: "/api/users",
-  providers: "/api/providers",
-  payments: "/api/payments",
-  auth: "/api/auth",
 };
 
 export const CONSOLE_LOG_CONFIG = {
