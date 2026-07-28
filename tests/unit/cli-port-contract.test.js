@@ -10,6 +10,11 @@ const rootRequire = createRequire(new URL("../../package.json", import.meta.url)
 const api = require("../../cli/src/cli/api/client.js");
 const cliPackage = require("../../cli/package.json");
 const { sanitizeNpmInstallEnv } = require("../../cli/hooks/sqliteRuntime.js");
+const {
+  RELEASE_API_URL,
+  getAvailableCliRelease,
+  getCliInstallCommand,
+} = require("../../cli/src/release.js");
 const cliPath = new URL("../../cli/cli.js", import.meta.url);
 
 afterEach(() => {
@@ -61,6 +66,46 @@ describe("CLI main service port contract", () => {
 
   it("uses the canonical Potluck port by default", () => {
     expect(api.getBaseUrl()).toBe("http://localhost:21023");
+  });
+
+  it("discovers installable CLI updates from GitHub Releases", () => {
+    const release = {
+      tag_name: "v0.5.19",
+      draft: false,
+      prerelease: false,
+      assets: [
+        {
+          name: "potluck-cli-0.5.19.tgz",
+          browser_download_url:
+            "https://github.com/Ezero23/potluck/releases/download/v0.5.19/potluck-cli-0.5.19.tgz",
+        },
+      ],
+    };
+
+    expect(RELEASE_API_URL).toBe(
+      "https://api.github.com/repos/Ezero23/potluck/releases/latest",
+    );
+    expect(getAvailableCliRelease(release, "0.5.18")).toEqual({
+      version: "0.5.19",
+      downloadUrl: release.assets[0].browser_download_url,
+    });
+    expect(getCliInstallCommand("0.5.19")).toBe(
+      "npm install -g https://github.com/Ezero23/potluck/releases/download/v0.5.19/potluck-cli-0.5.19.tgz",
+    );
+  });
+
+  it("does not offer a CLI release without its package asset", () => {
+    expect(
+      getAvailableCliRelease(
+        {
+          tag_name: "v0.5.19",
+          draft: false,
+          prerelease: false,
+          assets: [],
+        },
+        "0.5.18",
+      ),
+    ).toBeNull();
   });
 
   it("prevents nested runtime installs from inheriting global npm mode", () => {

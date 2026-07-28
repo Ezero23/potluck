@@ -7,10 +7,13 @@ const https = require("https");
 const os = require("os");
 
 const pkg = require("./package.json");
+const {
+  RELEASE_API_URL,
+  getAvailableCliRelease,
+  getCliInstallCommand,
+} = require("./src/release");
 const args = process.argv.slice(2);
-const APP_NAME = pkg.name;
 const BIN_NAME = Object.keys(pkg.bin || {})[0] || "potluck";
-const INSTALL_CMD_LATEST = `npm i -g ${APP_NAME}@latest --prefer-online`;
 const DEFAULT_PORT = 21023;
 const DEFAULT_HOST = "127.0.0.1";
 const WILDCARD_HOSTS = new Set(["0.0.0.0", "::"]);
@@ -148,17 +151,6 @@ if (skipUpdate && !trayMode && !process.stdin.isTTY) {
 
 // Always use Node.js runtime with absolute path
 const RUNTIME = process.execPath;
-
-// Compare semver versions: returns 1 if a > b, -1 if a < b, 0 if equal
-function compareVersions(a, b) {
-  const partsA = a.split(".").map(Number);
-  const partsB = b.split(".").map(Number);
-  for (let i = 0; i < 3; i++) {
-    if (partsA[i] > partsB[i]) return 1;
-    if (partsA[i] < partsB[i]) return -1;
-  }
-  return 0;
-}
 
 // Get app data dir (matches app/src/lib/dataDir.js convention)
 function getAppDataDir() {
@@ -456,17 +448,19 @@ function checkForUpdate() {
       resolve(version);
     };
 
-    const req = https.get(`https://registry.npmjs.org/${pkg.name}/latest`, { timeout: 3000 }, (res) => {
+    const req = https.get(RELEASE_API_URL, {
+      timeout: 3000,
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": `potluck-cli/${pkg.version}`,
+      },
+    }, (res) => {
       let data = "";
       res.on("data", chunk => data += chunk);
       res.on("end", () => {
         try {
-          const latest = JSON.parse(data);
-          if (latest.version && compareVersions(latest.version, pkg.version) > 0) {
-            done(latest.version);
-          } else {
-            done(null);
-          }
+          const latest = getAvailableCliRelease(JSON.parse(data), pkg.version);
+          done(latest?.version || null);
         } catch (e) {
           done(null);
         }
@@ -714,7 +708,7 @@ function startServer(latestVersion) {
           clearScreen();
           console.log(`\n⬆  Update v${pkg.version} → v${latestVersion}\n`);
           console.log(`Run this after exit:\n`);
-          console.log(`   \x1b[33m${INSTALL_CMD_LATEST}\x1b[0m\n`);
+          console.log(`   \x1b[33m${getCliInstallCommand(latestVersion)}\x1b[0m\n`);
           cleanup();
           await killAllAppProcesses(port);
           await killProcessOnPort(port);
