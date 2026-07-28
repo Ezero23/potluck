@@ -27,12 +27,18 @@ const SPECIALIZED = new Set([
 function sanitize(headers) {
   const out = {};
   for (const [k, v] of Object.entries(headers)) {
-    out[k] = typeof v === "string"
-      ? v.replace(/Bearer .+/, "Bearer <TOK>")
-          .replace(/sk-test-APIKEY|tok-test-ACCESS/g, "<CRED>")
-          .replace(/kimi-\d{10,}/g, "kimi-<TS>")
-          .replace(/^v\d+\.\d+\.\d+$/, "<NODE_VERSION>")
-      : v;
+    if (k === "X-PLATFORM") {
+      out[k] = "<PLATFORM>";
+    } else if (k === "X-Msh-Device-Model") {
+      out[k] = "<PLATFORM> <ARCH>";
+    } else {
+      out[k] = typeof v === "string"
+        ? v.replace(/Bearer .+/, "Bearer <TOK>")
+            .replace(/sk-test-APIKEY|tok-test-ACCESS/g, "<CRED>")
+            .replace(/kimi-\d{10,}/g, "kimi-<TS>")
+            .replace(/^v\d+\.\d+\.\d+$/, "<NODE_VERSION>")
+        : v;
+    }
   }
   return out;
 }
