@@ -51,7 +51,7 @@ Requirements:
 Install the CLI release:
 
 ```bash
-npm install -g https://github.com/Ezero23/potluck/releases/download/v0.5.20/potluck-cli-0.5.20.tgz
+npm install -g https://github.com/Ezero23/potluck/releases/download/v0.1.10/potluck-cli-0.1.10.tgz
 potluck
 ```
 

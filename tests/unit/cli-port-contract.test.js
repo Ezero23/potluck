@@ -70,14 +70,14 @@ describe("CLI main service port contract", () => {
 
   it("discovers installable CLI updates from GitHub Releases", () => {
     const release = {
-      tag_name: "v0.5.20",
+      tag_name: "v0.1.10",
       draft: false,
       prerelease: false,
       assets: [
         {
-          name: "potluck-cli-0.5.20.tgz",
+          name: "potluck-cli-0.1.10.tgz",
           browser_download_url:
-            "https://github.com/Ezero23/potluck/releases/download/v0.5.20/potluck-cli-0.5.20.tgz",
+            "https://github.com/Ezero23/potluck/releases/download/v0.1.10/potluck-cli-0.1.10.tgz",
         },
       ],
     };
@@ -85,12 +85,12 @@ describe("CLI main service port contract", () => {
     expect(RELEASE_API_URL).toBe(
       "https://api.github.com/repos/Ezero23/potluck/releases/latest",
     );
-    expect(getAvailableCliRelease(release, "0.5.19")).toEqual({
-      version: "0.5.20",
+    expect(getAvailableCliRelease(release, "0.1.9")).toEqual({
+      version: "0.1.10",
       downloadUrl: release.assets[0].browser_download_url,
     });
-    expect(getCliInstallCommand("0.5.20")).toBe(
-      "npm install -g https://github.com/Ezero23/potluck/releases/download/v0.5.20/potluck-cli-0.5.20.tgz",
+    expect(getCliInstallCommand("0.1.10")).toBe(
+      "npm install -g https://github.com/Ezero23/potluck/releases/download/v0.1.10/potluck-cli-0.1.10.tgz",
     );
   });
 
@@ -98,12 +98,12 @@ describe("CLI main service port contract", () => {
     expect(
       getAvailableCliRelease(
         {
-          tag_name: "v0.5.20",
+          tag_name: "v0.1.10",
           draft: false,
           prerelease: false,
           assets: [],
         },
-        "0.5.19",
+        "0.1.9",
       ),
     ).toBeNull();
   });
