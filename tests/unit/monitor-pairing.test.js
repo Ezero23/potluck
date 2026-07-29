@@ -48,6 +48,15 @@ async function seedSettings(updates) {
   await updateSettings(updates);
 }
 
+async function seedApiKey({ key = "sk-potluck-monitor", name = "Monitor", isActive = true } = {}) {
+  const { getAdapter } = await import("@/lib/db/driver.js");
+  const db = await getAdapter();
+  db.run(
+    `INSERT INTO apiKeys(id, key, name, machineId, isActive, createdAt) VALUES(?, ?, ?, ?, ?, ?)`,
+    ["monitor-key", key, name, "test-machine", isActive ? 1 : 0, new Date().toISOString()]
+  );
+}
+
 function writeTunnelState(state) {
   const tunnelDir = path.join(tempDir, "tunnel");
   fs.mkdirSync(tunnelDir, { recursive: true });
@@ -166,5 +175,24 @@ describe("buildDevicePayload monitor fields", () => {
     const payload = await buildDevicePayload();
 
     expect("dashboardPassword" in payload).toBe(false);
+  });
+
+  it("includes the first active API key for loopback monitor URLs", async () => {
+    await seedApiKey({ key: "sk-active", name: "Local monitor" });
+
+    const { buildDevicePayload } = await importPushModule();
+    const payload = await buildDevicePayload();
+
+    expect(payload.apiKey).toEqual({ key: "sk-active", name: "Local monitor" });
+  });
+
+  it("does not expose API keys to non-loopback monitor URLs", async () => {
+    process.env.POTLUCK_MONITOR_URL = "https://monitor.example.com";
+    await seedApiKey({ key: "sk-must-stay-local" });
+
+    const { buildDevicePayload } = await importPushModule();
+    const payload = await buildDevicePayload();
+
+    expect("apiKey" in payload).toBe(false);
   });
 });

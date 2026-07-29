@@ -234,9 +234,9 @@ function buildDashboardPasswordField(settingsRaw) {
   return {};
 }
 
-function buildApiKeyField() {
+async function buildApiKeyField() {
   try {
-    const keys = getApiKeys();
+    const keys = await getApiKeys();
     const active = Array.isArray(keys) ? keys.find((k) => k.isActive !== false) : null;
     if (active && active.key) return { apiKey: { key: active.key, name: active.name || "" } };
   } catch (e) {
@@ -288,7 +288,7 @@ export async function buildDevicePayload() {
     limits,
     tunnel: buildTunnelInfo(settingsRaw),
     ...(isLoopbackMonitorUrl() ? buildDashboardPasswordField(settingsRaw) : {}),
-    ...(isLoopbackMonitorUrl() ? buildApiKeyField() : {}),
+    ...(isLoopbackMonitorUrl() ? await buildApiKeyField() : {}),
   };
 }
 
