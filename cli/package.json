@@ -1,6 +1,6 @@
 {
   "name": "potluck-cli",
-  "version": "0.5.19",
+  "version": "0.5.20",
   "description": "Potluck CLI - Start and manage the Potluck model-supply server",
   "bin": {
     "potluck": "./cli.js"
