@@ -245,6 +245,32 @@ async function buildApiKeyField() {
   return {};
 }
 
+// Today's per-hour token/cost buckets (local hours 0-23), derived from the
+// per-request usageHistory rows so the Monitor can render an hourly view for
+// the DAY tab instead of a single degenerate day cell.
+function buildTodayHours(db) {
+  const hours = {};
+  try {
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    const rows = db.all(
+      `SELECT timestamp, promptTokens, completionTokens, cost FROM usageHistory WHERE timestamp >= ? AND status = 'ok'`,
+      [midnight.toISOString()]
+    );
+    for (const row of rows) {
+      const ms = Date.parse(row.timestamp || "");
+      if (!Number.isFinite(ms)) continue;
+      const h = new Date(ms).getHours();
+      if (!hours[h]) hours[h] = { tokens: 0, costUsd: 0 };
+      hours[h].tokens += Math.max(0, Math.round(Number(row.promptTokens || 0) + Number(row.completionTokens || 0)));
+      hours[h].costUsd += Number(row.cost || 0);
+    }
+  } catch (e) {
+    console.warn(`[monitor] could not build today hours: ${e.message}`);
+  }
+  return { date: getLocalDateKey(), hours };
+}
+
 export async function buildDevicePayload() {
   const db = await getAdapter();
   const todayKey = getLocalDateKey();
@@ -287,6 +313,7 @@ export async function buildDevicePayload() {
     periods,
     limits,
     tunnel: buildTunnelInfo(settingsRaw),
+    todayHours: buildTodayHours(db),
     ...(isLoopbackMonitorUrl() ? buildDashboardPasswordField(settingsRaw) : {}),
     ...(isLoopbackMonitorUrl() ? await buildApiKeyField() : {}),
   };
