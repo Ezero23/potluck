@@ -1,0 +1,137 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:T11b6,# 配额与用量
+
+Potluck 提供两个相关但不同的视图：
+
+- **Quota**：向受支持的第三方提供商查询账户额度信息。
+- **Usage**：汇总当前 Potluck 实例在本地记录的请求。
+
+它们可以提供运行参考，但都不能替代第三方自己的用量和账单后台。
+
+## 提供商配额
+
+打开 `http://localhost:21023/dashboard/quota`。对于已经实现用量查询适配器
+的提供商，Potluck 会为已连接账户请求配额信息。
+
+根据第三方返回的数据，卡片可能显示：
+
+- 一个或多个配额窗口；
+- 已用、总量或剩余量；
+- 重置或过期时间；
+- 提供商消息或授权错误；
+- 账户与连接状态。
+
+支持情况因提供商而异。一些 API Key 提供商不会开放配额数据，第三方响应结构也可能随时变化。
+卡片缺失、显示零或未知值，并不代表账户没有配额或没有产生费用。
+
+为了方便查看，部分配额结果会缓存在浏览器中。做重要容量判断前应重新刷新第三方数据。
+
+## 本地用量
+
+打开 `http://localhost:21023/dashboard/usage`。Overview 支持：
+
+- 今天
+- 24 小时
+- 7 天
+- 30 天
+- 60 天
+
+页面会汇总本地记录的请求数、输入 Token、输出 Token、缓存 Token 和估算成本。如果记录中包含
+相应字段，还可以按提供商、模型、连接、Potluck API Key 和接口查看。
+
+Details 视图可以检查单条请求记录，并按提供商、状态、模型和时间筛选。请求详情的保留范围和
+内容取决于当前实例的日志设置。
+
+## 成本估算
+
+Potluck 根据记录到的 Token 字段和本地配置的提供商/模型价格计算成本。以下情况可能造成估算
+为零或不完整：
+
+- 提供商没有返回用量字段；
+- 对应模型没有最新的本地价格；
+- 缓存、推理、媒体或工具用量采用不同计费方式；
+- 第三方调整了价格；
+- 订阅或赠送额度在 Potluck 外部抵扣；
+- 请求在记录用量前失败。
+
+这些数据适合比较本地流量，不适合直接核对账单。实际费用应以第三方账单为准；条件允许时，
+应在第三方后台设置消费上限。
+
+## 仪表盘内部接口
+
+当前仪表盘使用的接口包括：
+
+```text
+GET /api/usage/{connectionId}
+GET /api/usage/stats?period=7d
+GET /api/usage/chart?period=7d
+GET /api/usage/request-details
+GET /api/usage/providers
+```
+
+这些属于 Potluck 仪表盘接口，不是 OpenAI 兼容 `/v1` 客户端契约的一部分。返回结构可能随
+仪表盘变化，并且可能需要仪表盘认证 Cookie。没有固定并测试 Potluck 版本时，不应把外部集成
+建立在这些内部接口上。
+
+当前应用不存在通用的 `/api/quota`，也不存在 `/api/usage?period=...` 接口。
+
+## Potluck 当前不承诺的能力
+
+当前仪表盘没有旧文档所描述的告警和预算系统，不能依赖 Potluck 提供：
+
+- 邮件或 Webhook 配额告警；
+- 消费异常检测告警；
+- 月度报告；
+- 支出预测；
+- 每日或每月预算强制执行；
+- 达到消费阈值后自动切换所谓免费提供商；
+- 对所有第三方提供商进行通用、实时的配额跟踪。
+
+财务安全措施应使用第三方提供商自己的告警和消费控制。
+
+## 数据与隐私
+
+用量历史存储在 `DATA_DIR` 下的本地 SQLite 数据库中。根据日志设置，请求详情、API Key 标签、
+提示词、转换后的第三方请求或响应都可能包含敏感信息。
+
+- 保护 `DATA_DIR` 及其备份。
+- 不要公开数据库文件或请求日志。
+- 除非确有需要，否则关闭请求正文日志。
+- 敏感调试数据应采用较短保留时间。
+- 把 Potluck 暴露到网络前限制仪表盘访问。
+
+## 故障排除
+
+### 无法读取配额
+
+- 确认连接处于活动状态。
+- 重新连接已经过期的 OAuth 凭据。
+- 确认该提供商集成是否支持用量查询。
+- 检查第三方服务状态和账户资格。
+- 遇到第三方限流后稍后重试。
+
+### Token 汇总不完整
+
+- 确认提供商返回了 Token 用量。
+- 确认请求经过当前 Potluck 实例。
+- 选择正确的时间范围。
+- 检查单条请求详情。
+
+### 估算成本不正确
+
+- 打开仪表盘价格设置。
+- 核对准确的提供商/模型条目。
+- 对照第三方的输入、输出、缓存及其他计费类别。
+- 以第三方账单为准。
+
+## 相关指南
+
+- [模型组合](./combos.md)
+- [快速开始](../getting-started/quick-start.md)
+- [故障排除](../troubleshooting.md)
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"提供商配额","id":"提供商配额"},{"level":2,"text":"本地用量","id":"本地用量"},{"level":2,"text":"成本估算","id":"成本估算"},{"level":2,"text":"仪表盘内部接口","id":"仪表盘内部接口"},{"level":2,"text":"Potluck 当前不承诺的能力","id":"potluck-当前不承诺的能力"},{"level":2,"text":"数据与隐私","id":"数据与隐私"},{"level":2,"text":"故障排除","id":"故障排除"},{"level":3,"text":"无法读取配额","id":"无法读取配额"},{"level":3,"text":"Token 汇总不完整","id":"token-汇总不完整"},{"level":3,"text":"估算成本不正确","id":"估算成本不正确"},{"level":2,"text":"相关指南","id":"相关指南"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

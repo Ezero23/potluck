@@ -1,0 +1,87 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:T97a,# Roo Code
+
+Roo Code can connect to Potluck through its **OpenAI Compatible** provider.
+Do not select Ollama unless you are actually connecting Roo to Ollama.
+
+## Before you start
+
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Add and test at least one provider.
+3. Open **Endpoint**, create an API key, and copy it.
+4. Install the Roo Code VS Code extension.
+
+## Find a suitable model
+
+List models available to your Potluck key:
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Roo Code uses native OpenAI-compatible tool calling. Choose a returned model
+that supports tools; a text-only model may answer chat messages but cannot
+operate Roo's coding tools correctly.
+
+## Configure Roo Code
+
+1. Open Roo Code in VS Code.
+2. Select the settings icon.
+3. Set **API Provider** to **OpenAI Compatible**.
+4. Enter:
+
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
+```
+
+5. Save the provider profile and start a new Roo task.
+
+Do not copy a fixed model name from a guide. Use an exact `data[].id` returned
+by your Potluck instance.
+
+## Verify the connection
+
+Check Potluck independently:
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+Then ask Roo to perform a small read-only task, such as listing the files in
+the current workspace. Confirm the request appears on Potluck's **Usage** page
+before allowing file modifications.
+
+## Remote deployment
+
+Use the HTTPS address of the remote instance:
+
+```text
+Base URL: https://potluck.example.com/v1
+```
+
+Enable endpoint API-key authentication under **Dashboard → Endpoint** before
+exposing Potluck publicly. `localhost` refers to the computer running VS Code.
+
+## Troubleshooting
+
+- **Connection refused:** confirm Potluck is running on `21023`.
+- **401 response:** use a Potluck API key, not an upstream provider key.
+- **404 response:** confirm the Base URL ends with `/v1`.
+- **Model not found:** copy an exact ID from `/v1/models`.
+- **Roo responds but cannot use tools:** select a model with native
+  OpenAI-compatible tool-calling support.
+- **Settings appear unchanged:** save the Roo provider profile, reload VS Code,
+  and start a new task.
+
+See Roo Code's
+[OpenAI Compatible provider documentation](https://roocodeinc.github.io/Roo-Code/providers/openai-compatible/)
+for its current configuration fields and tool-calling requirements.
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"Before you start","id":"before-you-start"},{"level":2,"text":"Find a suitable model","id":"find-a-suitable-model"},{"level":2,"text":"Configure Roo Code","id":"configure-roo-code"},{"level":2,"text":"Verify the connection","id":"verify-the-connection"},{"level":2,"text":"Remote deployment","id":"remote-deployment"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"}],"lang":"en","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

@@ -1,0 +1,76 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","en",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T861,# Potluck documentation
+
+Potluck is a self-hosted router for distributing requests across multiple configured
+sources that can serve the same model family.
+
+Its Potluck-specific routing work focuses on:
+
+- rotation across healthy sources;
+- automatic aggregation of matching model sources;
+- concurrency-aware source selection;
+- fallback to another eligible source within a request;
+- inspection of resolved routing pools and source health.
+
+Fallback improves availability but does not guarantee uninterrupted service. Requests
+can fail when all candidates are unavailable or when a client, credential, network, or
+provider fails in a way that cannot be recovered.
+
+## Quick start
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+Open `http://localhost:21023/dashboard`, connect a provider, create an API key, and point
+an OpenAI-compatible client at:
+
+```text
+Base URL: http://localhost:21023/v1
+API key:  [key created in Dashboard → Endpoint]
+Model:    [an identifier returned by GET /v1/models]
+```
+
+The initial dashboard password is `123456` when no saved password exists. Change it
+before exposing the service to other machines.
+
+## Third-party services
+
+Providers control their own model catalogs, prices, quotas, authentication methods, and
+free tiers. These may change without notice. Potluck does not guarantee that a provider
+or model is free, unlimited, or permanently available.
+
+The remaining provider and feature guides are being audited against the current code.
+Treat time-sensitive pricing and quota information as illustrative until it has a cited
+source and review date.
+
+## Project lineage
+
+Potluck is based on [9router](https://github.com/decolua/9router) and retains its MIT
+license and upstream copyright notice.
+
+[OmniRoute](https://github.com/diegosouzapw/OmniRoute) is a related project also derived
+from 9router. It is not a fork of Potluck.
+
+See the repository [README](https://github.com/Ezero23/potluck) and
+[NOTICE](https://github.com/Ezero23/potluck/blob/main/NOTICE.md) for verified features,
+deployment guidance, and detailed acknowledgments.
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Quick start","id":"quick-start"},{"level":2,"text":"Third-party services","id":"third-party-services"},{"level":2,"text":"Project lineage","id":"project-lineage"}],"lang":"en","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

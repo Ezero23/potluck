@@ -1,0 +1,113 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:Tbce,# OpenAI Codex CLI
+
+Potluck 通过 OpenAI 兼容的 Responses API 为 Codex 提供服务。推荐直接使用
+Potluck 仪表盘完成配置，不需要新手手动修改 Codex 配置文件。
+
+## 开始前
+
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 按照 [Codex 官方安装文档](https://developers.openai.com/codex/cli)
+   安装 Codex CLI。
+
+不要照抄本文中的固定模型名。实际可用模型由你的提供商连接和模型别名决定。
+
+## 自动配置
+
+1. 打开 `http://localhost:21023/dashboard/cli-tools`。
+2. 展开 **OpenAI Codex CLI**。
+3. 选择本地端点、API Key 和模型。
+4. 点击 **Apply settings**。
+
+Potluck 会把自己的提供商配置合并到 `~/.codex/config.toml`，并把所选密钥
+写入 `~/.codex/auth.json`；其他无关的 Codex 设置会保留。
+
+进入项目目录后启动 Codex：
+
+```bash
+cd /你的/项目路径
+codex
+```
+
+## 手动配置
+
+仅当 Potluck 和 Codex 不在同一台机器，或仪表盘无法访问 Codex 配置目录时，
+才需要手动配置。
+
+将以下内容加入 `~/.codex/config.toml`。把 `MODEL_ID` 替换成 Potluck
+实际返回的模型 ID：
+
+```toml
+model = "MODEL_ID"
+model_provider = "potluck"
+
+[model_providers.potluck]
+name = "Potluck"
+base_url = "http://localhost:21023/v1"
+wire_api = "responses"
+```
+
+Codex 从 `~/.codex/auth.json` 读取 API Key。如果该文件已经存在，请合并
+下面两个字段，不要覆盖整个文件：
+
+```json
+{
+  "auth_mode": "apikey",
+  "OPENAI_API_KEY": "YOUR_POTLUCK_API_KEY"
+}
+```
+
+以上格式与 Potluck 内置的 Codex 配置器以及 Codex 当前的
+`config.toml` 提供商格式一致。
+
+## 验证连接
+
+先检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+再查看当前 API Key 可用的模型：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+使用返回列表中的模型 ID：
+
+```bash
+codex --model MODEL_ID "解释这个项目"
+```
+
+## 远程部署
+
+将 `http://localhost:21023/v1` 换成 Potluck 的 HTTPS 公网地址，并保留
+末尾的 `/v1`，例如：
+
+```toml
+base_url = "https://potluck.example.com/v1"
+```
+
+不要在未启用 API Key 验证的情况下暴露公网实例。请在
+**Dashboard → Endpoint** 中开启端点认证。
+
+## 故障排查
+
+- **连接被拒绝：**确认 Potluck 正在运行，并检查配置是否使用 `21023`。
+- **返回 401：**在 **Dashboard → CLI Tools** 选择现有密钥，或更新
+  `~/.codex/auth.json` 中的 `OPENAI_API_KEY`。
+- **模型不存在：**查询 `/v1/models`，使用返回的完整模型 ID。
+- **Codex 仍直接访问 OpenAI：**确认 `model_provider = "potluck"` 位于
+  `~/.codex/config.toml` 顶层。
+- **远程连接失败：**使用 HTTPS，并确认公网地址指向同一个 Potluck 服务；
+  `localhost` 始终表示运行 Codex 的那台机器。
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"开始前","id":"开始前"},{"level":2,"text":"自动配置","id":"自动配置"},{"level":2,"text":"手动配置","id":"手动配置"},{"level":2,"text":"验证连接","id":"验证连接"},{"level":2,"text":"远程部署","id":"远程部署"},{"level":2,"text":"故障排查","id":"故障排查"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

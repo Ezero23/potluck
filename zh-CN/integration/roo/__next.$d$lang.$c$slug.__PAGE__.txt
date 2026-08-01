@@ -1,0 +1,82 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:T939,# Roo Code
+
+Roo Code 可以通过 **OpenAI Compatible** 提供商连接 Potluck。只有真正连接
+Ollama 时才应选择 Ollama，不要把它当成通用兼容类型。
+
+## 开始前
+
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 安装 Roo Code VS Code 扩展。
+
+## 选择合适的模型
+
+查询当前 Potluck 密钥可用的模型：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Roo Code 使用 OpenAI 兼容的原生工具调用。应选择返回列表中明确支持工具调用
+的模型；纯文本模型可能可以回答消息，但无法正确执行 Roo 的编码工具。
+
+## 配置 Roo Code
+
+1. 在 VS Code 中打开 Roo Code。
+2. 点击设置图标。
+3. 将 **API Provider** 设为 **OpenAI Compatible**。
+4. 填写：
+
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
+```
+
+5. 保存提供商配置，并新建一个 Roo 任务。
+
+不要从教程复制固定模型名。必须使用当前 Potluck 实例返回的完整
+`data[].id`。
+
+## 验证连接
+
+先独立检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+然后让 Roo 执行一个小型只读任务，例如列出当前工作区文件。确认请求出现在
+Potluck 的 **Usage（用量）** 页面后，再允许它修改文件。
+
+## 远程部署
+
+远程实例使用 HTTPS 地址：
+
+```text
+Base URL: https://potluck.example.com/v1
+```
+
+暴露公网前，请在 **Dashboard → Endpoint** 开启端点 API Key 验证。
+`localhost` 表示运行 VS Code 的电脑。
+
+## 故障排查
+
+- **连接被拒绝：**确认 Potluck 正在 `21023` 运行。
+- **返回 401：**使用 Potluck API Key，不要填写上游提供商密钥。
+- **返回 404：**确认 Base URL 以 `/v1` 结尾。
+- **模型不存在：**复制 `/v1/models` 返回的完整 ID。
+- **能回复但不能调用工具：**换成支持 OpenAI 原生工具调用的模型。
+- **设置没有变化：**保存 Roo 提供商配置，重新加载 VS Code，并新建任务。
+
+Roo Code 当前配置字段和工具调用要求请参考
+[OpenAI Compatible 官方文档](https://roocodeinc.github.io/Roo-Code/providers/openai-compatible/)。
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"开始前","id":"开始前"},{"level":2,"text":"选择合适的模型","id":"选择合适的模型"},{"level":2,"text":"配置 Roo Code","id":"配置-roo-code"},{"level":2,"text":"验证连接","id":"验证连接"},{"level":2,"text":"远程部署","id":"远程部署"},{"level":2,"text":"故障排查","id":"故障排查"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

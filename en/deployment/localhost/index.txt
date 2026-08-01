@@ -1,0 +1,174 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","en","deployment","localhost",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","deployment/localhost","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:Tbcd,# Local Deployment
+
+Use this path for development, evaluation, and personal use on one computer.
+This page covers a source checkout. For the packaged desktop command, install
+`potluck-cli` as described in the project README.
+
+---
+
+## Install
+
+Requirements:
+
+- Node.js 22
+- npm
+- Git
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
+```
+
+---
+
+## Start development mode
+
+```bash
+npm run dev
+```
+
+Open the dashboard manually:
+
+```text
+http://localhost:21023/dashboard
+```
+
+Client base URL:
+
+```text
+http://localhost:21023/v1
+```
+
+Health check:
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+Expected response:
+
+```json
+{"ok":true}
+```
+
+The development script explicitly uses the project default port `21023`.
+
+---
+
+## Configure a provider and client
+
+1. Sign in with the initial password `123456`, unless `INITIAL_PASSWORD` was
+   set before the first start.
+2. Change the password from the application settings.
+3. Open **Dashboard → Providers**, add a connection, and run its test.
+4. Open **Dashboard → Endpoint** to create a Potluck key if endpoint API-key
+   enforcement is enabled.
+5. Configure a compatible client with the local `/v1` base URL and an available
+   model or combo name.
+
+Provider access, quota, and billing remain the provider's responsibility.
+
+---
+
+## Stop and restart
+
+Press `Ctrl+C` in the terminal running `npm run dev`. Start it again with the
+same command.
+
+Application data remains in `DATA_DIR`; stopping the server does not remove it.
+
+---
+
+## Data and backups
+
+When `DATA_DIR` is unset:
+
+- macOS/Linux: `~/.potluck`
+- Windows: `%APPDATA%\potluck`
+
+Current storage:
+
+```text
+${DATA_DIR}/
+└── db/
+    ├── data.sqlite
+    └── backups/
+```
+
+Legacy JSON files may remain after an upgrade because they are retained as
+migration inputs. They are not the active database.
+
+Before upgrading, stop Potluck and back up the complete `DATA_DIR`.
+
+---
+
+## Update the source checkout
+
+Review the release notes and back up `DATA_DIR` first. Then:
+
+```bash
+git pull --ff-only
+npm ci
+npm run build
+```
+
+Run `npm run dev` again after the build succeeds.
+
+---
+
+## Troubleshooting
+
+### Port `21023` is occupied
+
+On macOS or Linux:
+
+```bash
+lsof -i :21023
+```
+
+Stop the owning process gracefully. Avoid `kill -9` unless normal termination
+has already failed.
+
+### Data directory is not writable
+
+Check the directory selected by `DATA_DIR`. On macOS or Linux:
+
+```bash
+ls -ld "$HOME/.potluck"
+```
+
+Do not make credential-containing data world-readable.
+
+### A client cannot connect
+
+- Confirm `curl http://localhost:21023/api/health` succeeds.
+- Confirm the client base URL ends in `/v1` where required.
+- Confirm the model ID is returned by this Potluck instance.
+- If endpoint-key enforcement is enabled, supply an active Potluck endpoint
+  key.
+
+---
+
+## Next steps
+
+- [Connect subscription providers](../providers/subscription.md)
+- [Create combos](../features/combos.md)
+- [Connect a compatible client](../integration/other-tools.md)
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Install","id":"install"},{"level":2,"text":"Start development mode","id":"start-development-mode"},{"level":2,"text":"Configure a provider and client","id":"configure-a-provider-and-client"},{"level":2,"text":"Stop and restart","id":"stop-and-restart"},{"level":2,"text":"Data and backups","id":"data-and-backups"},{"level":2,"text":"Update the source checkout","id":"update-the-source-checkout"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"},{"level":3,"text":"Port `21023` is occupied","id":"port-21023-is-occupied"},{"level":3,"text":"Data directory is not writable","id":"data-directory-is-not-writable"},{"level":3,"text":"A client cannot connect","id":"a-client-cannot-connect"},{"level":2,"text":"Next steps","id":"next-steps"}],"lang":"en","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

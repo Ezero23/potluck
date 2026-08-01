@@ -1,0 +1,135 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","en","integration","continue",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","integration/continue","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:Td35,# Continue
+
+Continue can use Potluck as an OpenAI-compatible model provider. Current
+Continue releases prefer `config.yaml`; `config.json` is deprecated.
+
+## Before you start
+
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Add and test at least one provider.
+3. Open **Endpoint**, create an API key, and copy it.
+4. Install the Continue extension from its
+   [official documentation](https://docs.continue.dev/getting-started/install).
+
+## Find a valid model ID
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Choose one exact `data[].id` value. The examples below use `MODEL_ID` as a
+placeholder because each Potluck installation has a different model catalog.
+
+## Store the API key
+
+Create or edit `~/.continue/.env`:
+
+```dotenv
+POTLUCK_API_KEY=YOUR_POTLUCK_API_KEY
+```
+
+Do not commit this file. Continue's IDE extension does not reliably inherit
+variables exported only in your shell, so the `.env` file is the supported
+local secret source.
+
+## Configure Continue
+
+Open Continue's config selector, select the gear icon, and edit the local
+`config.yaml`. The default global location is `~/.continue/config.yaml`.
+
+Add a Potluck model:
+
+```yaml
+name: Potluck
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Potluck
+    provider: openai
+    model: MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply
+```
+
+If you already have a config, merge the model entry into its existing
+`models` list instead of replacing the whole file. Restart or reload the IDE
+after changing `~/.continue/.env`.
+
+## Add more models
+
+Add another item under `models` and give it a unique `name`:
+
+```yaml
+  - name: Potluck secondary
+    provider: openai
+    model: ANOTHER_MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+```
+
+Only use model IDs returned by your Potluck instance. Do not copy fixed model
+lists from old guides.
+
+## Verify the connection
+
+Check Potluck:
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+Open Continue Chat, select the configured Potluck model, and send a short
+message. If Agent mode needs tool calls, choose a model that actually supports
+tool use.
+
+## Remote deployment
+
+Change `apiBase` to your HTTPS endpoint:
+
+```yaml
+apiBase: https://potluck.example.com/v1
+```
+
+Enable endpoint API-key authentication under **Dashboard → Endpoint** before
+exposing Potluck publicly. `localhost` always refers to the machine running
+the Continue extension.
+
+## Troubleshooting
+
+- **Config is ignored:** use `config.yaml`, not the deprecated `config.json`,
+  and make sure `name`, `version`, and `schema` are present.
+- **Secret is missing:** place `POTLUCK_API_KEY=...` in
+  `~/.continue/.env`, then reload the IDE.
+- **401 response:** verify the Potluck key, not an upstream provider key.
+- **404 response:** confirm `apiBase` ends with `/v1`.
+- **Model not found:** copy an exact ID from `/v1/models`.
+- **Agent tools are unavailable:** select a tool-capable model; optionally add
+  `capabilities: [tool_use]` only after confirming the model supports it.
+
+See Continue's current
+[`config.yaml` reference](https://docs.continue.dev/reference) and
+[OpenAI-compatible provider guide](https://docs.continue.dev/customize/model-providers/top-level/openai).
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Before you start","id":"before-you-start"},{"level":2,"text":"Find a valid model ID","id":"find-a-valid-model-id"},{"level":2,"text":"Store the API key","id":"store-the-api-key"},{"level":2,"text":"Configure Continue","id":"configure-continue"},{"level":2,"text":"Add more models","id":"add-more-models"},{"level":2,"text":"Verify the connection","id":"verify-the-connection"},{"level":2,"text":"Remote deployment","id":"remote-deployment"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"}],"lang":"en","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

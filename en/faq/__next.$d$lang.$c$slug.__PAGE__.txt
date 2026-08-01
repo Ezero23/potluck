@@ -1,0 +1,201 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T1a90,# Frequently asked questions
+
+## What is Potluck?
+
+Potluck is a self-hosted router for model sources that you configure. It exposes
+OpenAI-compatible endpoints, translates supported request formats, and can distribute
+requests across provider accounts and API endpoints.
+
+Its routing features include model combos, rotation-first routing profiles,
+same-model aggregation, concurrency-aware source selection, and best-effort fallback.
+Support varies by provider, model, endpoint, and request type.
+
+## Is Potluck free?
+
+The Potluck source code is available under the MIT license. Running it can still incur
+costs for infrastructure, provider subscriptions, API usage, domains, proxies, or
+other third-party services.
+
+Potluck does not provide free model quota and does not promise that a third-party
+trial, promotion, subscription allowance, or model remains free or unlimited. Check
+the provider's current terms and billing page.
+
+## Which providers and models are supported?
+
+The list changes as provider integrations and upstream services evolve. The current
+dashboard is the source of truth for connection types supported by your Potluck
+version. After connecting an account, use the model selector or:
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+A listed model may still have account, region, quota, or feature restrictions. Test
+the exact combination you need, especially for tools, images, PDFs, audio, reasoning,
+streaming, and structured output.
+
+## Can Potluck use multiple sources?
+
+Yes. A combo groups model identifiers under one name and can use Fallback, Round
+Robin, or Fusion. Routing profiles can also aggregate configured sources that match a
+model family.
+
+Fallback only continues for eligible failures. It cannot create quota or guarantee
+zero downtime, and a request can fail when all candidates are unavailable or
+incompatible. See [Model combos](./features/combos.md).
+
+## What is the difference between Quota and Usage?
+
+**Quota** asks supported providers for account-limit information. It is available only
+where the provider integration implements a usage lookup, and the returned fields are
+controlled by that provider.
+
+**Usage** summarizes requests recorded locally by Potluck, including available token
+counts and estimated cost. Estimates depend on provider usage fields and local pricing;
+they are not invoices. See [Quota and usage](./features/quota-tracking.md).
+
+## Does Potluck enforce budgets or send quota alerts?
+
+No. The current project does not provide universal email/Webhook quota alerts,
+spending forecasts, or daily/monthly budget enforcement. It also does not
+automatically move traffic to a no-cost provider after a spending threshold.
+
+Use provider-side spending limits, billing alerts, and account controls for financial
+safeguards.
+
+## Which port should I use?
+
+Development, production, Docker, and the CLI use port `21023` by default:
+
+```bash
+npm run dev
+```
+
+Configure clients with the port on which your instance is actually listening:
+
+```text
+Dashboard: http://localhost:21023/dashboard
+API:       http://localhost:21023/v1
+```
+
+## Which clients can connect to Potluck?
+
+Use an OpenAI-compatible base URL where the client officially supports one. Potluck
+does not currently claim a verified Cursor editor integration because Cursor does not
+document arbitrary OpenAI-compatible Base URLs as a stable contract. Client behavior
+changes over time, so use a maintained integration guide and test the current client
+release:
+
+- [Claude Code](./integration/claude-code.md)
+- [Codex](./integration/codex.md)
+- [Cline](./integration/cline.md)
+- [Continue](./integration/continue.md)
+- [Roo Code](./integration/roo.md)
+- [Other tools](./integration/other-tools.md)
+
+## Can I self-host Potluck?
+
+Yes. You can run a production build directly or use the repository's Dockerfile:
+
+```bash
+npm ci
+npm run build
+PORT=21023 HOSTNAME=0.0.0.0 NODE_ENV=production npm start
+```
+
+```bash
+docker build -t potluck .
+docker run -d --name potluck \
+  -p 21023:21023 \
+  -v "$HOME/.potluck:/app/data" \
+  -e DATA_DIR=/app/data \
+  potluck
+```
+
+Use a persistent data volume. For a network-facing deployment, set a non-default
+dashboard password, require API keys, terminate HTTPS at a trusted reverse proxy, and
+protect `DATA_DIR`.
+
+## What is the initial dashboard password?
+
+When no password hash or `INITIAL_PASSWORD` has been configured, the initial password
+is `123456`. You can change it later in the dashboard.
+
+Do not expose an instance using the default password to the internet. Enable endpoint
+API-key enforcement in **Dashboard → Endpoint** and, when HTTPS is configured, set:
+
+```env
+AUTH_COOKIE_SECURE=true
+```
+
+`AUTH_COOKIE_SECURE=true` requires HTTPS.
+
+## Where is data stored?
+
+By default, application data is stored under `~/.potluck`; a different directory can
+be selected with `DATA_DIR`.
+
+Important paths include:
+
+```text
+${DATA_DIR}/db/data.sqlite
+${DATA_DIR}/db/backups/
+${DATA_DIR}/routing.json
+```
+
+Treat the entire directory as sensitive. It can contain provider credentials,
+settings, API keys, usage history, and request details.
+
+## Does Potluck store prompts or responses?
+
+It can. Usage records and request-detail logging can contain client requests,
+translated provider payloads, responses, errors, or related metadata depending on the
+enabled settings and request path.
+
+Do not rely on older claims that Potluck never stores prompt or response content.
+Disable request-body logging unless needed, review the Usage/Details views, protect
+database backups, and avoid sending secrets in prompts.
+
+## Does Potluck send requests anywhere other than the selected provider?
+
+Model requests are sent to the provider or endpoint selected by routing. Optional
+features—such as tunnels, update checks, OAuth flows, proxy pools, Headroom, or other
+integrations—can contact additional services when configured or invoked.
+
+Review the configuration and code for the features you enable. Self-hosting does not
+mean that model requests remain on the local machine.
+
+## How should I update?
+
+Back up `DATA_DIR` first. For a source installation:
+
+```bash
+git pull --ff-only
+npm ci
+npm run build
+PORT=21023 HOSTNAME=0.0.0.0 NODE_ENV=production npm start
+```
+
+Review release changes before upgrading. If you build containers locally, rebuild the
+image and replace the container while preserving the data volume.
+
+## Where do I report a problem?
+
+- [GitHub repository](https://github.com/Ezero23/potluck)
+- [Issue tracker](https://github.com/Ezero23/potluck/issues)
+- [Troubleshooting](./troubleshooting.md)
+
+Include the Potluck version, installation method, endpoint, provider type, response
+status, and sanitized logs. Remove credentials, tokens, prompts, and personal data
+before posting.
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"What is Potluck?","id":"what-is-potluck"},{"level":2,"text":"Is Potluck free?","id":"is-potluck-free"},{"level":2,"text":"Which providers and models are supported?","id":"which-providers-and-models-are-supported"},{"level":2,"text":"Can Potluck use multiple sources?","id":"can-potluck-use-multiple-sources"},{"level":2,"text":"What is the difference between Quota and Usage?","id":"what-is-the-difference-between-quota-and-usage"},{"level":2,"text":"Does Potluck enforce budgets or send quota alerts?","id":"does-potluck-enforce-budgets-or-send-quota-alerts"},{"level":2,"text":"Which port should I use?","id":"which-port-should-i-use"},{"level":2,"text":"Which clients can connect to Potluck?","id":"which-clients-can-connect-to-potluck"},{"level":2,"text":"Can I self-host Potluck?","id":"can-i-self-host-potluck"},{"level":2,"text":"What is the initial dashboard password?","id":"what-is-the-initial-dashboard-password"},{"level":2,"text":"Where is data stored?","id":"where-is-data-stored"},{"level":2,"text":"Does Potluck store prompts or responses?","id":"does-potluck-store-prompts-or-responses"},{"level":2,"text":"Does Potluck send requests anywhere other than the selected provider?","id":"does-potluck-send-requests-anywhere-other-than-the-selected-provider"},{"level":2,"text":"How should I update?","id":"how-should-i-update"},{"level":2,"text":"Where do I report a problem?","id":"where-do-i-report-a-problem"}],"lang":"en","children":["$","$L3",null,{"content":"$4"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

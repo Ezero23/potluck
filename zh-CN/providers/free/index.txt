@@ -1,0 +1,120 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN","providers","free",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","providers/free","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:Tff2,# 免费或促销提供商访问
+
+一些第三方提供商可能提供试用额度、促销额度、订阅内权益，或暂时不按请求直接收费的访问方式。
+Potluck 可以连接受支持的服务，但这些权益并非由 Potluck 提供或控制。
+
+## 不承诺永久免费
+
+不要假设某个提供商、模型、配额或认证入口永久免费或无限量。第三方随时可能调整：
+
+- 账户资格和地区可用性；
+- 可接受使用方式和自动化政策；
+- 模型名称和能力；
+- 每日、每月、滚动周期或并发限制；
+- 促销期限和订阅权益；
+- 价格、优先级和速率限制；
+- OAuth、设备码和 API 行为。
+
+Potluck 仪表盘可以显示用量和估算成本，但这些数据不是账单，也可能无法覆盖第三方的全部计费
+规则。发送大量请求前，请检查提供商最新的服务条款、账户后台和账单页面。
+
+## 连接符合条件的账户
+
+1. 打开 **仪表盘 → 提供商**。
+2. 选择你有权使用的提供商。
+3. 按 Potluck 显示的流程完成 API Key、OAuth 或设备码认证。
+4. 确认连接状态。
+5. 使用仪表盘模型选择器或查询 `/v1/models`。
+6. 发送一个不含敏感信息的小型测试请求。
+7. 检查提供商自己的用量或账单页面。
+
+具体提供商列表和模型标识可能随 Potluck 版本及账户权限变化。不要照抄旧文档中的模型 ID：
+
+```bash
+curl http://localhost:20127/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+## 在路由中使用
+
+免费或促销来源可以像其他合格来源一样加入组合或路由配置。加入前应当：
+
+- 单独验证该来源能够正常请求；
+- 确认模型适合目标请求类型；
+- 明确哪些失败条件允许切换；
+- 不要假设名称相近的模型具有完全相同的行为；
+- 部署后继续观察第三方的额度和账单。
+
+故障切换可以提高可用性，但不能创造额度、绕过第三方限制或保证请求一定成功。
+
+## 运行注意事项
+
+### 服务条款与账户安全
+
+仅使用你有权使用的账户和凭据。Potluck 不会让原本违反服务条款的用法变得合规。高强度自动化
+可能根据第三方规则触发限流、凭据撤销或账户封禁。
+
+### 隐私
+
+请求会发送给实际选中的第三方提供商。发送源代码、个人数据、凭据或机密资料前，应审查对方的
+数据处理条款。除非确有调试需要，否则不要启用请求正文日志，并妥善保护 Potluck 数据目录和
+备份。
+
+### 可靠性
+
+免费或促销访问可能优先级较低、限制更小，也可能发生模型变更或服务中断。请只用于可靠性要求
+与之匹配的工作负载。重要工作负载应配置多个经过独立验证的来源，并保留直接恢复路径。
+
+### 成本
+
+“目前没有观察到收费”不等于“保证免费”。提供商可能开始收费、把部分用量移出订阅权益，或对
+输入、输出、缓存、工具、图片等能力采用不同计费方式。条件允许时，应在第三方后台设置消费
+上限和告警。
+
+## 故障排除
+
+### 授权失败
+
+- 在同一浏览器会话中完成授权流程。
+- 确认账户和所在地区符合使用条件。
+- 检查系统时间和网络连接。
+- 删除失败连接后重试一次。
+- 查看提供商当前状态和最新授权文档。
+
+### 找不到文档中出现过的模型
+
+- 刷新提供商连接和模型列表。
+- 查询 `/v1/models`。
+- 确认该模型是否对当前账户开放。
+- 使用当前实例返回的标识，不要继续使用旧示例。
+
+### 请求被限流或拒绝
+
+- 检查响应状态和 Potluck 用量日志。
+- 查看提供商自己的额度和账单后台。
+- 降低并发量或请求速率。
+- 在服务条款允许时切换到另一个经过独立验证的来源。
+
+## 相关指南
+
+- [订阅型提供商](./subscription.md)
+- [低成本提供商](./cheap.md)
+- [组合](../features/combos.md)
+- [额度追踪](../features/quota-tracking.md)
+- [故障排除](../troubleshooting.md)
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"不承诺永久免费","id":"不承诺永久免费"},{"level":2,"text":"连接符合条件的账户","id":"连接符合条件的账户"},{"level":2,"text":"在路由中使用","id":"在路由中使用"},{"level":2,"text":"运行注意事项","id":"运行注意事项"},{"level":3,"text":"服务条款与账户安全","id":"服务条款与账户安全"},{"level":3,"text":"隐私","id":"隐私"},{"level":3,"text":"可靠性","id":"可靠性"},{"level":3,"text":"成本","id":"成本"},{"level":2,"text":"故障排除","id":"故障排除"},{"level":3,"text":"授权失败","id":"授权失败"},{"level":3,"text":"找不到文档中出现过的模型","id":"找不到文档中出现过的模型"},{"level":3,"text":"请求被限流或拒绝","id":"请求被限流或拒绝"},{"level":2,"text":"相关指南","id":"相关指南"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

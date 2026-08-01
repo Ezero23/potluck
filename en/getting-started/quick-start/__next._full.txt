@@ -1,0 +1,152 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","en","getting-started","quick-start",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","getting-started/quick-start","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T10f3,# Quick start
+
+This guide starts a local Potluck development instance and sends one request through
+its OpenAI-compatible API.
+
+## Requirements
+
+- Node.js 22
+- npm
+- Credentials for at least one supported provider
+
+For production and platform-specific notes, see
+[Installation](./installation.md).
+
+## 1. Install
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
+```
+
+Do not commit `.env`, the Potluck data directory, database backups, provider
+credentials, or request logs.
+
+## 2. Start the development server
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:21023/dashboard`.
+
+The initial dashboard password is `123456` when no password hash has been configured.
+You can change it later in the dashboard or set `INITIAL_PASSWORD` before the first
+start.
+
+Development, production, Docker, and the CLI all use `21023` by default. If you
+explicitly select another port, use that same value in the dashboard and client URLs.
+
+## 3. Connect a provider
+
+Open **Dashboard → Providers** and select a provider supported by your account.
+Depending on the provider, Potluck may ask for an API key, OAuth authorization, or a
+device-code login.
+
+Provider model names, quotas, prices, and login flows are controlled by third parties
+and can change. Treat the provider cards and model selector in your running Potluck
+instance as the current source of truth.
+
+Before adding a provider:
+
+- confirm that your use complies with the provider's terms;
+- understand whether the account is billed, subscription-backed, or quota-limited;
+- use a dedicated credential where practical;
+- test a non-sensitive prompt before relying on the connection.
+
+## 4. Create an API key
+
+Open **Dashboard → Endpoint**, create or copy a Potluck API key, and keep it separate
+from the upstream provider credential.
+
+When endpoint-key enforcement is enabled in **Dashboard → Endpoint**, clients must
+send this key as a bearer token. Requiring an API key is strongly recommended for any
+instance reachable by another machine.
+
+## 5. Discover available models
+
+Model identifiers depend on the providers currently connected to your instance:
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Use an identifier returned by this endpoint or selected in the dashboard. A direct
+`provider/model` identifier targets that source. A configured routing profile can be
+used as `profile:PROFILE_NAME`.
+
+## 6. Send a test request
+
+Replace `provider/model-id` with a model returned by `/v1/models`:
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "provider/model-id",
+    "messages": [
+      {"role": "user", "content": "Reply with: Potluck is connected."}
+    ],
+    "stream": false
+  }'
+```
+
+A successful response confirms that the client reached Potluck and that the selected
+provider accepted the request. It does not guarantee that every endpoint, tool call,
+streaming mode, or media input is supported by that provider.
+
+## 7. Connect a client
+
+For an OpenAI-compatible client, use:
+
+```text
+Base URL: http://localhost:21023/v1
+API key:  YOUR_POTLUCK_API_KEY
+Model:    provider/model-id
+```
+
+Client configuration differs, especially for Anthropic-compatible tools. Use the
+matching integration guide:
+
+- [Claude Code](../integration/claude-code.md)
+- [Codex](../integration/codex.md)
+- [Cline](../integration/cline.md)
+- [Continue](../integration/continue.md)
+- [Roo Code](../integration/roo.md)
+- [Other tools](../integration/other-tools.md)
+
+## Optional: configure fallback
+
+Combos and routing profiles can try other eligible sources when a request encounters a
+configured retryable failure. Verify each member independently before combining them.
+
+Fallback is best effort, not a zero-downtime guarantee. A request can still fail when
+credentials expire, every candidate is unavailable, a provider changes its API, the
+client disconnects, or the error is not retryable.
+
+## Next steps
+
+- Review [Subscription providers](../providers/subscription.md).
+- Review the caveats for [no-cost and promotional access](../providers/free.md).
+- Read about [combos](../features/combos.md).
+- Use [Troubleshooting](../troubleshooting.md) if the first request fails.
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Requirements","id":"requirements"},{"level":2,"text":"1. Install","id":"1-install"},{"level":2,"text":"2. Start the development server","id":"2-start-the-development-server"},{"level":2,"text":"3. Connect a provider","id":"3-connect-a-provider"},{"level":2,"text":"4. Create an API key","id":"4-create-an-api-key"},{"level":2,"text":"5. Discover available models","id":"5-discover-available-models"},{"level":2,"text":"6. Send a test request","id":"6-send-a-test-request"},{"level":2,"text":"7. Connect a client","id":"7-connect-a-client"},{"level":2,"text":"Optional: configure fallback","id":"optional-configure-fallback"},{"level":2,"text":"Next steps","id":"next-steps"}],"lang":"en","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

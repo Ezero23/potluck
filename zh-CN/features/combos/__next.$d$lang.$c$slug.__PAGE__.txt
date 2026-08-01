@@ -1,0 +1,128 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:T12ce,# 模型组合
+
+组合会把多个已配置的模型来源归到同一个名称下。客户端把组合名称作为请求中的 `model`，
+Potluck 再按照为该组合选择的策略处理请求。
+
+组合不会创建第三方账户、增加配额，也不会让不同模型自动变得完全兼容。依赖组合之前，应先
+单独连接并测试每一个成员。
+
+## 创建组合
+
+1. 打开 `http://localhost:21023/dashboard/combos`。
+2. 选择 **Create Combo**。
+3. 输入仅包含字母、数字、`-` 或 `_` 的名称。
+4. 从已连接的提供商中加入模型。
+5. 拖动模型，调整到需要的顺序。
+6. 保存组合并复制组合名称。
+
+开发、生产、容器和 CLI 默认统一使用 Potluck 的单一端口 `21023`。如果你明确覆盖了
+`PORT`，则使用自行配置的端口。
+
+请求时把组合名称作为 `model`：
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "my-combo",
+    "messages": [
+      {"role": "user", "content": "请回复本次使用的提供商和模型。"}
+    ],
+    "stream": false
+  }'
+```
+
+组合至少需要一个可用模型。模型标识应以当前仪表盘或 `/v1/models` 的返回结果为准，旧示例
+中的标识可能已经失效。
+
+## 策略
+
+### Fallback
+
+Fallback 是默认策略。Potluck 从第一个模型开始，仅当本次尝试产生被判定为允许故障切换的
+错误时，才会继续尝试下一个成员。
+
+并非所有错误都会触发切换。无效请求和其他不可重试响应可能直接返回；所有成员都失败时，
+整个请求仍然会失败。
+
+组合成员应能够接受相同的请求形式。模型名称相似，不代表上下文长度、工具调用、图片支持或
+输出质量完全一致。
+
+### Round Robin
+
+Round Robin 会在不同请求之间改变起始成员，从而把流量分散到组合内。起始成员遇到符合条件的
+错误时，仍可继续尝试其他成员。
+
+轮询状态保存在当前运行进程中，应用重启后会重新开始。多个应用进程之间不会共享同一个轮询
+计数器。
+
+### Fusion
+
+Fusion 会并行请求面板模型，再由 Judge 模型综合成一个答案。没有单独指定 Judge 时，默认
+使用组合中的第一个成员。
+
+Fusion 的成本和延迟会明显高于单次请求，因为它可能调用所有面板成员，再额外调用一次 Judge。
+只有在多模型比较确实值得额外延迟、数据暴露和费用时才应启用。
+
+## 能力感知排序
+
+如果请求包含某项能力需求，例如受支持的媒体输入，Potluck 可以把声明支持该能力的组合成员
+移动到前面。这个判断来自本地能力元数据，并不保证第三方一定接受所有请求载荷。
+
+如果工作流依赖文本、工具调用、图片、PDF、音频、流式响应或结构化输出，应分别测试。
+
+## 安全配置建议
+
+- 先从两个经过独立测试的成员开始。
+- 按实际可靠性或质量目标排列成员。
+- 分别检查每个第三方的服务条款、限制和账单。
+- 不要把试用或订阅权益描述成永久免费。
+- 测试后检查 Usage 和 Quota 页面。
+- 保留一个直接模型标识，便于排查组合问题。
+- 除非所有可能收到请求的提供商都经过批准，否则不要通过组合发送敏感数据。
+
+仪表盘成本是基于本地价格配置的估算值，不是第三方账单。Potluck 当前不会强制执行组合级每日
+或每月预算，不会在达到消费阈值后自动切换所谓“免费层”，也不保证持续可用。
+
+## 故障排除
+
+### 找不到组合
+
+- 确认组合已保存并至少包含一个成员。
+- 使用准确的组合名称；组合名称中不包含 `/`。
+- 刷新客户端模型列表或查询 `/v1/models`。
+- 确认客户端连接到了预期的 Potluck 实例。
+
+### 请求总是从同一个成员开始
+
+- 确认策略选择的是 **Round Robin**，而不是 **Fallback**。
+- 应用进程重启后，轮询会从头开始。
+- 检查能力感知排序是否把兼容成员移动到了前面。
+
+### 没有发生故障切换
+
+- 检查返回状态和本地 Usage/请求详情。
+- 确认其他成员处于可用状态，并能接受相同请求。
+- 当前错误可能没有被判定为可重试。
+- 客户端断开或请求格式错误也可能阻止后续尝试。
+
+### Fusion 费用高于预期
+
+- 计算面板成员数量和 Judge 调用。
+- 检查本地模型价格配置。
+- 查看第三方实际账单。
+- 如果一个答案已经足够，改用 Fallback 或 Round Robin。
+
+## 相关指南
+
+- [配额与用量](./quota-tracking.md)
+- [快速开始](../getting-started/quick-start.md)
+- [故障排除](../troubleshooting.md)
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"创建组合","id":"创建组合"},{"level":2,"text":"策略","id":"策略"},{"level":3,"text":"Fallback","id":"fallback"},{"level":3,"text":"Round Robin","id":"round-robin"},{"level":3,"text":"Fusion","id":"fusion"},{"level":2,"text":"能力感知排序","id":"能力感知排序"},{"level":2,"text":"安全配置建议","id":"安全配置建议"},{"level":2,"text":"故障排除","id":"故障排除"},{"level":3,"text":"找不到组合","id":"找不到组合"},{"level":3,"text":"请求总是从同一个成员开始","id":"请求总是从同一个成员开始"},{"level":3,"text":"没有发生故障切换","id":"没有发生故障切换"},{"level":3,"text":"Fusion 费用高于预期","id":"fusion-费用高于预期"},{"level":2,"text":"相关指南","id":"相关指南"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

@@ -1,0 +1,155 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","en","providers","cheap",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","providers/cheap","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T1265,# API-Key Providers
+
+Potluck can route requests to several providers that authenticate with an API
+key. Some may be less expensive than other options for a particular model or
+region, but Potluck does not sell provider access and cannot guarantee pricing,
+quota, availability, or model capabilities.
+
+Always check the provider's current terms before sending production traffic.
+
+---
+
+## Supported provider entries
+
+The current registry includes these related entries:
+
+| Potluck provider | Region or endpoint | Example registered models |
+|---|---|---|
+| `glm` | GLM international coding endpoint | `glm-5.2`, `glm-5.1`, `glm-5`, `glm-4.7`, `glm-4.6v` |
+| `glm-cn` | GLM China coding endpoint | `glm-5.2`, `glm-5.1`, `glm-5`, `glm-4.7`, `glm-4.6`, `glm-4.5-air` |
+| `minimax` | MiniMax international endpoint | `MiniMax-M3`, `MiniMax-M2.7`, `MiniMax-M2.5`, `MiniMax-M2.1` |
+| `minimax-cn` | MiniMax China endpoint | `MiniMax-M3`, `MiniMax-M2.7`, `MiniMax-M2.5`, `MiniMax-M2.1` |
+| `kimi` | Kimi coding endpoint | `kimi-k2.6`, `kimi-k2.5`, `kimi-k2.5-thinking`, `kimi-latest` |
+
+This table describes the provider registry shipped with this version of
+Potluck. It is not a promise that every listed model is enabled for your
+account. Providers can change model names and account entitlements without a
+Potluck release.
+
+---
+
+## Add a connection
+
+1. Create an account with the provider and obtain credentials under its terms.
+2. Open **Dashboard → Providers**.
+3. Select the matching regional provider entry.
+4. Add the API key and run the connection test.
+5. Refresh the model list and verify the exact model you intend to use.
+
+Do not assume that credentials for an international endpoint also work with the
+China endpoint, or the reverse.
+
+---
+
+## Call the local development endpoint
+
+When Potluck is running with `npm run dev`, use:
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_POTLUCK_KEY" \
+  -d '{
+    "model": "glm/glm-4.7",
+    "messages": [{"role": "user", "content": "Reply with OK"}]
+  }'
+```
+
+Replace the model with one returned by your instance. If endpoint API-key
+enforcement is disabled, a Potluck key is not required for local calls. Enable
+authentication before exposing an instance to other machines.
+
+For Docker or production, use that deployment's configured host and port
+instead of `localhost:21023`.
+
+---
+
+## Use a combo for fallback
+
+A combo can try configured models in order when a request cannot be completed.
+For example:
+
+```text
+Dashboard → Combos → Create
+
+Name: api-key-fallback
+Models:
+  1. glm/glm-4.7
+  2. minimax/MiniMax-M2.7
+  3. kimi/kimi-latest
+```
+
+Only include models that are available to your accounts and compatible with
+the request type. Fallback can improve resilience, but it does not make model
+behavior, context limits, output quality, or billing identical.
+
+---
+
+## Cost and quota guidance
+
+Provider prices and subscription quotas change frequently. Potluck's recorded
+cost is an estimate based on the pricing data configured for a model; the
+provider's invoice and quota dashboard are authoritative.
+
+Before relying on a provider:
+
+1. Check its official pricing and subscription pages.
+2. Confirm whether prices distinguish input, output, cached, image, audio, or
+   search usage.
+3. Confirm the billing currency, region, taxes, and account tier.
+4. Send a small test request and compare Potluck's recorded usage with the
+   provider dashboard.
+5. Set external billing alerts with the provider when available.
+
+Potluck does not currently promise automatic budget cutoffs or automatic
+switching based on a monetary limit. A combo follows its configured routing
+and failure rules; it is not a billing controller.
+
+---
+
+## Troubleshooting
+
+### The connection test fails
+
+- Confirm that the regional provider entry matches the issued credential.
+- Check whether the account has API access and available credit or quota.
+- Regenerate the key if it may have been revoked or exposed.
+- Check the provider's own service status.
+
+### A model is unavailable
+
+- Refresh the provider's models in the dashboard.
+- Use the exact model ID returned by your instance.
+- Confirm that the model is enabled for the account and region.
+- Remove unavailable models from combos.
+
+### Recorded cost differs from the invoice
+
+- Treat the provider invoice as authoritative.
+- Check whether local pricing metadata is current.
+- Check for cached-token, media, tool, or regional charges not represented by a
+  simple input/output token rate.
+
+---
+
+## Next steps
+
+- [Free provider connections](./free.md)
+- [Subscription provider connections](./subscription.md)
+- [Combos](../features/combos.md)
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Supported provider entries","id":"supported-provider-entries"},{"level":2,"text":"Add a connection","id":"add-a-connection"},{"level":2,"text":"Call the local development endpoint","id":"call-the-local-development-endpoint"},{"level":2,"text":"Use a combo for fallback","id":"use-a-combo-for-fallback"},{"level":2,"text":"Cost and quota guidance","id":"cost-and-quota-guidance"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"},{"level":3,"text":"The connection test fails","id":"the-connection-test-fails"},{"level":3,"text":"A model is unavailable","id":"a-model-is-unavailable"},{"level":3,"text":"Recorded cost differs from the invoice","id":"recorded-cost-differs-from-the-invoice"},{"level":2,"text":"Next steps","id":"next-steps"}],"lang":"en","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

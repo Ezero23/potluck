@@ -1,0 +1,106 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN","integration","cline",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","integration/cline","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:Tbb9,# Cline
+
+Cline 可以通过 Potluck 的 OpenAI 兼容 API 使用 Potluck。手动配置时应选择
+Cline 的 **OpenAI Compatible**；旧文档使用 Ollama 的做法已经不符合当前
+Cline 界面。
+
+## 开始前
+
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 从 [Cline 官方安装页面](https://docs.cline.bot/getting-started/installing-cline)
+   安装 Cline。
+
+模型 ID 必须来自你自己的 Potluck 实例。Potluck 不保证固定上游模型一定存在。
+
+## 自动配置
+
+当 Cline 和 Potluck 运行在同一个桌面用户下时：
+
+1. 打开 `http://localhost:21023/dashboard/cli-tools`。
+2. 展开 **Cline**。
+3. 选择本地端点、API Key 和模型。
+4. 点击 **Apply**。
+5. 如果 VS Code 已经打开，请重新加载窗口。
+
+Potluck 只更新自己的 Cline 提供商字段。需要撤销时，可在同一张卡片点击
+**Reset**。
+
+## 手动配置
+
+当 Cline 位于另一台机器，或自动配置无法检测 Cline 时使用：
+
+1. 在 VS Code 中打开 Cline，点击设置图标。
+2. 将 **API Provider** 设为 **OpenAI Compatible**。
+3. 填写：
+
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model ID: MODEL_ID_FROM_POTLUCK
+```
+
+Base URL 末尾必须保留 `/v1`。不要为了连接 Potluck 而选择 Ollama；Cline
+已经提供专门的 OpenAI 兼容选项。
+
+## 获取有效模型 ID
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+从响应中复制一个完整的 `data[].id` 到 Cline 的 **Model ID** 字段。不要根据
+提供商的宣传名称猜测模型 ID。
+
+## 验证连接
+
+先独立检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+然后使用 Cline 的提供商验证功能，或新建一个 Cline 任务并发送简短消息。
+可在 Potluck 的 **Usage（用量）** 页面确认请求是否到达。
+
+## 远程部署
+
+远程 Potluck 实例必须使用 HTTPS 地址：
+
+```text
+Base URL: https://potluck.example.com/v1
+```
+
+`localhost` 表示运行 VS Code 的机器，无法指向另一台电脑上的 Potluck。
+暴露公网前，请在 **Dashboard → Endpoint** 开启端点 API Key 验证。
+
+## 故障排查
+
+- **连接被拒绝：**确认 Potluck 正在 `21023` 运行，并且 Cline 能访问该机器。
+- **返回 401：**选择或重新创建 Potluck API Key；不要填写上游提供商密钥。
+- **模型不存在：**查询 `/v1/models`，复制完整返回值。
+- **返回 404：**确认手动填写的 Base URL 以 `/v1` 结尾。
+- **设置未生效：**重新加载 VS Code 窗口并新建 Cline 任务。
+- **工具调用异常：**换用明确支持工具调用的模型；能输出文本不等于适合
+  Agent 任务。
+
+Cline 当前字段及行为可参考
+[OpenAI Compatible 官方文档](https://docs.cline.bot/provider-config/openai-compatible)。
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"开始前","id":"开始前"},{"level":2,"text":"自动配置","id":"自动配置"},{"level":2,"text":"手动配置","id":"手动配置"},{"level":2,"text":"获取有效模型 ID","id":"获取有效模型-id"},{"level":2,"text":"验证连接","id":"验证连接"},{"level":2,"text":"远程部署","id":"远程部署"},{"level":2,"text":"故障排查","id":"故障排查"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

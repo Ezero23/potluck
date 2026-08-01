@@ -1,0 +1,130 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN","integration","continue",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","integration/continue","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:Td0f,# Continue
+
+Continue 可以把 Potluck 作为 OpenAI 兼容模型提供商。当前 Continue 推荐
+`config.yaml`，旧的 `config.json` 已被标记为废弃。
+
+## 开始前
+
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 按照 [Continue 官方安装文档](https://docs.continue.dev/getting-started/install)
+   安装 Continue 扩展。
+
+## 获取有效模型 ID
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+选择一个完整的 `data[].id`。下面使用 `MODEL_ID` 作为占位符，因为每个
+Potluck 实例的模型目录都不同。
+
+## 保存 API Key
+
+创建或编辑 `~/.continue/.env`：
+
+```dotenv
+POTLUCK_API_KEY=YOUR_POTLUCK_API_KEY
+```
+
+不要提交该文件。Continue 的 IDE 扩展不会可靠继承只在终端中 `export`
+的变量，因此 `.env` 才是受支持的本地密钥来源。
+
+## 配置 Continue
+
+打开 Continue 的配置选择器，点击齿轮图标编辑本地 `config.yaml`。默认全局
+路径是 `~/.continue/config.yaml`。
+
+加入一个 Potluck 模型：
+
+```yaml
+name: Potluck
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Potluck
+    provider: openai
+    model: MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply
+```
+
+如果已有配置，请把模型条目合并到现有 `models` 列表，不要覆盖整个文件。
+修改 `~/.continue/.env` 后需要重启或重新加载 IDE。
+
+## 添加多个模型
+
+在 `models` 下增加条目，并使用不同的 `name`：
+
+```yaml
+  - name: Potluck secondary
+    provider: openai
+    model: ANOTHER_MODEL_ID
+    apiBase: http://localhost:21023/v1
+    apiKey: ${{ secrets.POTLUCK_API_KEY }}
+    roles:
+      - chat
+```
+
+只使用当前 Potluck 实例返回的模型 ID，不要复制旧教程中的固定模型清单。
+
+## 验证连接
+
+先检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+打开 Continue Chat，选择刚配置的 Potluck 模型并发送简短消息。如果 Agent
+模式需要工具调用，应选择真正支持工具调用的模型。
+
+## 远程部署
+
+将 `apiBase` 换成 HTTPS 地址：
+
+```yaml
+apiBase: https://potluck.example.com/v1
+```
+
+暴露公网前，请在 **Dashboard → Endpoint** 开启端点 API Key 验证。
+`localhost` 始终表示运行 Continue 扩展的机器。
+
+## 故障排查
+
+- **配置未加载：**使用 `config.yaml`，不要使用已废弃的 `config.json`；
+  同时确认存在 `name`、`version`、`schema`。
+- **找不到密钥：**将 `POTLUCK_API_KEY=...` 写入
+  `~/.continue/.env`，然后重新加载 IDE。
+- **返回 401：**确认使用的是 Potluck API Key，而不是上游提供商密钥。
+- **返回 404：**确认 `apiBase` 以 `/v1` 结尾。
+- **模型不存在：**复制 `/v1/models` 返回的完整 ID。
+- **Agent 工具不可用：**选择支持工具调用的模型；只有确认模型支持时，才
+  手动加入 `capabilities: [tool_use]`。
+
+当前格式请参考 Continue 的
+[`config.yaml` 官方参考](https://docs.continue.dev/reference)和
+[OpenAI 兼容提供商文档](https://docs.continue.dev/customize/model-providers/top-level/openai)。
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"开始前","id":"开始前"},{"level":2,"text":"获取有效模型 ID","id":"获取有效模型-id"},{"level":2,"text":"保存 API Key","id":"保存-api-key"},{"level":2,"text":"配置 Continue","id":"配置-continue"},{"level":2,"text":"添加多个模型","id":"添加多个模型"},{"level":2,"text":"验证连接","id":"验证连接"},{"level":2,"text":"远程部署","id":"远程部署"},{"level":2,"text":"故障排查","id":"故障排查"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

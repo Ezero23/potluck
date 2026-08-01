@@ -1,0 +1,71 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T7ec,# 百家饭文档
+
+百家饭是一个自托管路由器，用来把请求分配到多个能够提供同一模型族的已配置来源。
+
+百家饭自己的路由工作重点包括：
+
+- 在健康来源之间轮转；
+- 自动聚合匹配的模型来源；
+- 根据并发情况选择来源；
+- 在单次请求内尝试另一个符合条件的来源；
+- 查看解析后的路由池和来源健康状态。
+
+回退可以提高可用性，但不保证服务永不中断。当所有候选来源都不可用，或客户端、凭据、网络、
+提供商发生无法恢复的问题时，请求仍然可能失败。
+
+## 快速开始
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+打开 `http://localhost:21023/dashboard`，连接提供商并创建 API Key，然后把 OpenAI 兼容客户端
+指向：
+
+```text
+Base URL: http://localhost:21023/v1
+API Key:  [在仪表盘 → Endpoint 中创建的 Key]
+Model:    [GET /v1/models 返回的模型标识]
+```
+
+当没有保存的密码时，控制面板初始密码是 `123456`。把服务开放给其他设备之前应先修改密码。
+
+## 第三方服务说明
+
+模型目录、价格、配额、认证方式和免费额度都由第三方提供商决定，可能随时变化。百家饭不保证
+任何提供商或模型永久免费、无限量或永久可用。
+
+其余提供商和功能文档正在按照当前代码重新审核。在价格或配额信息带有来源和复核日期之前，请
+仅把它们视为示例。
+
+## 项目来源
+
+百家饭以 [9router](https://github.com/decolua/9router) 为直接代码基础，并保留了其 MIT 许可证
+和上游版权声明。
+
+[OmniRoute](https://github.com/diegosouzapw/OmniRoute) 也是一个源自 9router 的相关项目，
+不是百家饭的分支。
+
+已验证的功能、部署说明和详细致谢请查看仓库
+[README](https://github.com/Ezero23/potluck/blob/main/README.zh-CN.md) 与
+[NOTICE](https://github.com/Ezero23/potluck/blob/main/NOTICE.md)。
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"快速开始","id":"快速开始"},{"level":2,"text":"第三方服务说明","id":"第三方服务说明"},{"level":2,"text":"项目来源","id":"项目来源"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

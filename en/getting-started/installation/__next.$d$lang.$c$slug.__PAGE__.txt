@@ -1,0 +1,289 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T161e,# Installation
+
+Potluck can run from source or from the project container image. Development,
+production, Docker, and the CLI all use `21023` as the default application
+port.
+
+---
+
+## Requirements
+
+- Node.js 22
+- npm
+- macOS, Linux, or Windows
+- At least one model-provider account that you are authorized to use
+
+Check the local versions:
+
+```bash
+node --version
+npm --version
+```
+
+---
+
+## Run from source
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+`npm run dev` uses the default port `21023`. Open:
+
+```text
+http://localhost:21023/dashboard
+```
+
+The compatible API base URL is:
+
+```text
+http://localhost:21023/v1
+```
+
+The repository development script explicitly selects the project default.
+
+---
+
+## Run with Docker
+
+The container listens on `21023`:
+
+```bash
+docker run -d \
+  --name potluck \
+  -p 21023:21023 \
+  -e DATA_DIR=/app/data \
+  -e JWT_SECRET="replace-with-a-long-random-value" \
+  -e INITIAL_PASSWORD="replace-this-password" \
+  -v "$HOME/.potluck:/app/data" \
+  ghcr.io/ezero23/potluck:latest
+```
+
+Open:
+
+```text
+http://localhost:21023/dashboard
+```
+
+The compatible API base URL is:
+
+```text
+http://localhost:21023/v1
+```
+
+To build the image from the current checkout:
+
+```bash
+docker build -t potluck .
+docker run -d \
+  --name potluck \
+  -p 21023:21023 \
+  -e DATA_DIR=/app/data \
+  -e JWT_SECRET="replace-with-a-long-random-value" \
+  -e INITIAL_PASSWORD="replace-this-password" \
+  -v "$HOME/.potluck:/app/data" \
+  potluck
+```
+
+---
+
+## Build and run in production
+
+```bash
+npm ci
+npm run build
+PORT=21023 HOSTNAME=0.0.0.0 NODE_ENV=production npm start
+```
+
+Production uses the value of `PORT`. Your reverse proxy, health check, and
+client base URL must use the same actual port.
+
+---
+
+## First login
+
+When the database has no password hash and `INITIAL_PASSWORD` is unset, the
+initial dashboard password is:
+
+```text
+123456
+```
+
+You can change it in the application settings. Set a unique strong password
+before allowing access from another machine or the public internet. You can
+also set `INITIAL_PASSWORD` before the first start.
+
+---
+
+## Connect a provider
+
+1. Open **Dashboard → Providers**.
+2. Choose the provider entry that matches the account and region.
+3. Complete a supported OAuth flow or add a provider API key.
+4. Run the connection test.
+5. Refresh the models and confirm which ones the account can actually use.
+
+Potluck does not provide third-party accounts, subscriptions, quota, or
+credentials.
+
+---
+
+## Potluck endpoint keys
+
+Use **Dashboard → Endpoint** to create a Potluck endpoint key and enable
+API-key enforcement.
+
+When enforcement is enabled, client requests need:
+
+```http
+Authorization: Bearer YOUR_POTLUCK_KEY
+```
+
+Whether a local installation requires a key depends on its current setting.
+Enable authentication before exposing the instance beyond the local machine.
+
+---
+
+## Verify the installation
+
+With the default configuration:
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+Expected response:
+
+```json
+{"ok":true}
+```
+
+After enabling endpoint-key enforcement, list models with:
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_KEY"
+```
+
+If you selected a custom port, use that same value in every URL.
+
+---
+
+## Data directory
+
+When `DATA_DIR` is unset, Potluck uses:
+
+- macOS/Linux: `~/.potluck`
+- Windows: `%APPDATA%\potluck`
+
+The current application database is:
+
+```text
+${DATA_DIR}/db/data.sqlite
+```
+
+Automatic database backups are stored in:
+
+```text
+${DATA_DIR}/db/backups/
+```
+
+Files such as `db.json`, `usage.json`, `disabledModels.json`, and
+`request-details.json` are legacy migration inputs, not the current database.
+
+Mount a persistent host directory or volume for Docker. Removing a container
+without persistent storage removes the container's application data.
+
+---
+
+## Important environment variables
+
+Use the repository
+[`.env.example`](https://github.com/Ezero23/potluck/blob/main/.env.example) as
+the current template:
+
+```bash
+JWT_SECRET=replace-with-a-long-random-value
+INITIAL_PASSWORD=replace-this-password
+DATA_DIR=/var/lib/potluck
+PORT=21023
+NODE_ENV=production
+ENABLE_REQUEST_LOGS=false
+```
+
+Never commit real passwords, JWT secrets, or provider credentials.
+Endpoint API-key enforcement is currently changed from **Dashboard →
+Endpoint**, not by an environment variable.
+
+---
+
+## Common problems
+
+### Port already in use
+
+Check the default application port `21023`:
+
+```bash
+lsof -i :21023
+```
+
+Production can use another port:
+
+```bash
+PORT=20200 HOSTNAME=0.0.0.0 NODE_ENV=production npm start
+```
+
+### Dashboard does not load
+
+- Confirm that the process is still running.
+- Use the configured application port.
+- Request `/api/health` first.
+- For a remote deployment, check its firewall, container mapping, and reverse
+  proxy.
+
+### Provider connection fails
+
+- Confirm that the credential region matches the selected provider entry.
+- Confirm that the account has the required API or subscription access.
+- Check proxy settings and the provider's service status.
+- Run the connection test again and diagnose its original error.
+
+### Before upgrading or migrating
+
+Back up the complete `DATA_DIR`, especially:
+
+```text
+${DATA_DIR}/db/data.sqlite
+${DATA_DIR}/db/backups/
+```
+
+---
+
+## Uninstall
+
+Removing the source checkout does not remove the data directory. Verify your
+backup, then remove the checkout, container, and `DATA_DIR` separately as
+needed.
+
+---
+
+## Next steps
+
+- [Quick start](./quick-start.md)
+- [Combos](../features/combos.md)
+- [Troubleshooting](../troubleshooting.md)
+- [GitHub Issues](https://github.com/Ezero23/potluck/issues)
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"Requirements","id":"requirements"},{"level":2,"text":"Run from source","id":"run-from-source"},{"level":2,"text":"Run with Docker","id":"run-with-docker"},{"level":2,"text":"Build and run in production","id":"build-and-run-in-production"},{"level":2,"text":"First login","id":"first-login"},{"level":2,"text":"Connect a provider","id":"connect-a-provider"},{"level":2,"text":"Potluck endpoint keys","id":"potluck-endpoint-keys"},{"level":2,"text":"Verify the installation","id":"verify-the-installation"},{"level":2,"text":"Data directory","id":"data-directory"},{"level":2,"text":"Important environment variables","id":"important-environment-variables"},{"level":2,"text":"Common problems","id":"common-problems"},{"level":3,"text":"Port already in use","id":"port-already-in-use"},{"level":3,"text":"Dashboard does not load","id":"dashboard-does-not-load"},{"level":3,"text":"Provider connection fails","id":"provider-connection-fails"},{"level":3,"text":"Before upgrading or migrating","id":"before-upgrading-or-migrating"},{"level":2,"text":"Uninstall","id":"uninstall"},{"level":2,"text":"Next steps","id":"next-steps"}],"lang":"en","children":["$","$L3",null,{"content":"$4"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

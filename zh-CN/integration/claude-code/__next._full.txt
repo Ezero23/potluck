@@ -1,0 +1,119 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN","integration","claude-code",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","integration/claude-code","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:Tbd2,# Claude Code
+
+Potluck 为 Claude Code 提供 Anthropic 兼容的 Messages API。推荐通过
+Potluck 仪表盘配置；它写入的也是 Anthropic 为 LLM Gateway 定义的环境变量。
+
+## 开始前
+
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 添加并测试至少一个提供商连接。
+3. 打开 **Endpoint（端点）**，创建并复制一个 API Key。
+4. 按照 [Claude Code 官方安装文档](https://docs.anthropic.com/en/docs/claude-code/getting-started)
+   安装 Claude Code。
+
+模型 ID 由你的 Potluck 实例决定。请查询模型列表或在仪表盘中选择，不要从
+教程中照抄固定模型名。
+
+## 自动配置
+
+1. 打开 `http://localhost:21023/dashboard/cli-tools`。
+2. 展开 **Claude Code**。
+3. 选择本地端点和 API Key。
+4. 将 Opus、Sonnet、Haiku 别名映射到 Potluck 中实际可用的模型。
+5. 点击 **Apply settings**。
+
+Potluck 会将这些值合并到 `~/.claude/settings.json` 的 `env` 对象中，
+并保留其他无关的 Claude Code 设置。
+
+进入项目目录后启动：
+
+```bash
+cd /你的/项目路径
+claude
+```
+
+## 手动配置
+
+如果仪表盘无法访问 Claude Code 的配置目录，请将下面内容合并到
+`~/.claude/settings.json`：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:21023/v1",
+    "ANTHROPIC_AUTH_TOKEN": "YOUR_POTLUCK_API_KEY",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "MODEL_ID",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "MODEL_ID",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "MODEL_ID"
+  }
+}
+```
+
+三个别名可以映射到不同模型，但必须使用当前 Potluck 实例返回的模型 ID。
+`ANTHROPIC_AUTH_TOKEN` 是 Potluck 网关的认证密钥，不要在这里填写上游
+提供商密钥。
+
+## 验证连接
+
+检查 Potluck：
+
+```bash
+curl http://localhost:21023/api/health
+```
+
+查询当前密钥可用的模型：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+然后执行一次非交互请求：
+
+```bash
+claude -p "只回复：Potluck connection OK"
+```
+
+## 远程部署
+
+远程实例应使用 HTTPS 地址：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://potluck.example.com/v1",
+    "ANTHROPIC_AUTH_TOKEN": "YOUR_POTLUCK_API_KEY"
+  }
+}
+```
+
+暴露公网前，请先在 **Dashboard → Endpoint** 中开启端点 API Key 验证。
+
+## 故障排查
+
+- **连接被拒绝：**确认 Potluck 正在 `21023` 端口运行。
+- **返回 401：**重新选择或创建 Potluck API Key；不要把 Anthropic
+  上游密钥当作 Potluck 网关密钥。
+- **模型不存在：**使用 `/v1/models` 返回的完整 ID 更新模型别名映射。
+- **Claude 仍进入常规登录流程：**确认 `ANTHROPIC_BASE_URL` 和
+  `ANTHROPIC_AUTH_TOKEN` 都位于 `env` 对象内。
+- **远程连接失败：**使用 HTTPS；`localhost` 指运行 Claude Code 的机器。
+
+这些环境变量的上游含义可参考 Anthropic 的
+[LLM Gateway 官方文档](https://docs.anthropic.com/en/docs/claude-code/llm-gateway)。
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"开始前","id":"开始前"},{"level":2,"text":"自动配置","id":"自动配置"},{"level":2,"text":"手动配置","id":"手动配置"},{"level":2,"text":"验证连接","id":"验证连接"},{"level":2,"text":"远程部署","id":"远程部署"},{"level":2,"text":"故障排查","id":"故障排查"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

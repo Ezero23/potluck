@@ -1,0 +1,180 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN","providers","subscription",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","providers/subscription","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T1c34,# 一个 Endpoint，汇聚你的 AI 订阅
+
+把已经在使用的模型来源接入 Potluck，通过一个本地 API 统一提供给你的 AI
+工具。账号只连接一次，模型进入同一个目录，所有受支持客户端复用同一套 Potluck
+Endpoint 配置。
+
+```text
+你的账号 → Potluck → http://localhost:21023/v1 → 你的 AI 工具
+```
+
+## 为什么把订阅接入 Potluck？
+
+- **所有来源，一处管理。** OAuth 账号、设备授权账号、导入会话和 API Key
+  都在同一个 Dashboard 中管理。
+- **客户端只配置一次。** 客户端连接 Potluck，不必为每一个账号维护不同的
+  Provider 配置。
+- **容量和活动一起看。** 对支持的提供商显示上游配额，同时查看 Potluck
+  在本地记录的请求。
+- **建立更有韧性的模型池。** 在合格账号之间路由，并通过 Combo 在可重试
+  失败后尝试另一个已经测试的来源。
+- **控制权留在本地。** Potluck 由你自托管，运行机器、网络暴露、Endpoint
+  Key 和数据目录都由你决定。
+
+它带来的不是“无限 AI”，而是更高效地组织已有访问权限：当来源变化时，不必
+重新修改每一个客户端。
+
+## 可以汇聚哪些来源？
+
+已安装版本的 Dashboard 才是事实来源。当前 Potluck 包含以下类型的连接流程：
+
+| 来源 | 连接体验 | Potluck 带来的价值 |
+| --- | --- | --- |
+| Claude Code | 浏览器 OAuth | 统一模型目录、本地用量记录和路由 |
+| OpenAI Codex | 浏览器 OAuth 和本地回调 | 把 Codex 模型接入同一个 Potluck Endpoint |
+| Gemini CLI | Google OAuth | 集中查看可用模型和上游返回的配额 |
+| Antigravity | Google OAuth | 与其他已配置来源统一使用 |
+| GitHub Copilot | GitHub 设备授权 | 将 Copilot 支持的模型纳入 Potluck 路由 |
+| Kiro | Dashboard 展示的设备、社交、导入或 Key 流程 | 根据区域和账号类型完成连接与路由 |
+| Cursor | 从本机 Cursor 导入，或粘贴受支持的 Token 数据 | 把 Cursor 作为上游来源，而不是把 Cursor 编辑器当作 Potluck 客户端 |
+
+提供商可用性、账号资格、模型和配额都可能由上游调整。Potluck 读取当前账号
+实际公开的内容，而不是承诺一份很快过期的固定模型表。
+
+> **账号政策：** Potluck 将大多数订阅型接入标记为高风险，因为提供商可能
+> 没有正式授权把个人 OAuth 或应用会话用于代理、路由器。请核对提供商当前
+> 条款。关键或商业工作负载应优先使用官方 API Key。
+
+## 接入第一个来源
+
+1. 启动 Potluck，打开 `http://localhost:21023/dashboard`。
+2. 修改初始仪表盘密码。
+3. 打开 **Dashboard → Providers（提供商）**，选择一个你有权使用的来源。
+4. 阅读账号提示，然后完成页面显示的授权流程。
+5. 返回 Potluck，运行连接测试，并启用一个当前可用的模型。
+
+Potluck 的主 Dashboard 和 API 始终共用 `21023`。登录期间临时使用的提供商
+专用 OAuth 回调端口，不是第二个 Potluck API 端口。
+
+## 发现你真正拥有的模型
+
+在 **Dashboard → Endpoint（端点）** 创建或复制 Potluck API Key，然后从
+运行中的实例读取当前模型目录：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+只使用响应中的完整 `data[].id`。`cc/`、`cx/`、`gc/`、`ag/`、`gh/`
+等别名让来源更容易识别；实时模型目录则避免旧文档替你选择一个账号已经无法
+使用的模型。
+
+发送第一条不含敏感信息的请求：
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MODEL_ID_FROM_V1_MODELS",
+    "messages": [{"role": "user", "content": "Reply with OK."}],
+    "stream": false
+  }'
+```
+
+请求成功后，受支持的 OpenAI 兼容客户端就可以复用同一个 Base URL、
+Potluck Key 和模型 ID。
+
+## 把分散账号变成模型池
+
+一个连接已经有用；多个经过测试的连接，才真正发挥路由价值：
+
+1. 分别添加并测试每一个账号。
+2. 只保留你准备对客户端开放的模型。
+3. 需要指定来源时，直接使用完整模型 ID。
+4. 另一个模型可以接受时，再创建 Combo 作为回退。
+5. 测试客户端需要的工具调用、流式输出、媒体和结构化输出。
+
+Potluck 让来源选择更容易，但回退仍然是尽力而为。它不能创造配额、绕过账号
+限制，也不能让两个不同模型变得完全等价。
+
+## 不再靠猜的配额可见性
+
+对已经实现上游用量接口的提供商，**Dashboard → Quota（配额）** 会展示账号
+返回的时间窗口和重置时间，减少在多个应用之间来回查看。
+
+**Dashboard → Usage（用量）** 展示 Potluck 在本地记录的请求、可用 Token
+统计和成本估算，可用于理解路由活动和排查失败。
+
+这些页面是提供商账号页面的补充，而不是替代：
+
+- 上游价格和额度仍由提供商决定；
+- 并非每个提供商都公开配额；
+- 本地估算不是账单；
+- 试用、促销、重置窗口和模型都可能变化。
+
+因此，Potluck 营销的是自己真正提供的可见性和路由能力，而不是第三方的临时
+价格或额度。
+
+## 保护接入 Potluck 的访问权限
+
+- 妥善保护 `DATA_DIR`、备份、日志和 `.env`。
+- 在其他机器可以访问 API 前启用 Potluck Endpoint Key。
+- 远程部署必须使用 HTTPS 和强仪表盘密码。
+- 不要把 Provider Token 粘贴到 Issue、截图、Prompt 或共享终端。
+- 凭据可能泄露时，立即撤销或重新连接账号。
+
+## 故障排查
+
+### 授权没有完成
+
+- 浏览器或设备码授权期间保持 Potluck 运行。
+- 使用提供商页面显示的回调地址。
+- 暂时关闭会改写 localhost 回调的扩展或代理。
+- 远程服务器应使用提供商页面的远程登录流程，不要为了登录直接暴露回调端口。
+
+### 账号后来断开
+
+打开对应 Provider 页面并重新连接。浏览器 OAuth 凭据可能支持刷新，但部分
+导入的应用会话不支持。检查脱敏日志时不要分享 Token 或授权码。
+
+### 没有显示模型
+
+- 重新运行连接测试。
+- 确认账号有权使用对应的上游产品。
+- 刷新 Provider 模型列表。
+- 查询 `/v1/models`，只使用当前实例返回的 ID。
+
+### 请求返回 401、403 或 429
+
+- `401` 通常表示凭据无效或已经过期。
+- `403` 可能表示账号、组织、产品、区域或政策限制。
+- `429` 可能表示频率限制或额度耗尽。
+
+阅读脱敏后的上游错误，并检查提供商账号页面。不要通过反复导入凭据来绕过账号
+限制。
+
+## 完成你的 Potluck 配置
+
+- 添加[官方 API Key 提供商](./cheap.md)，承载风险更低的生产流量。
+- 阅读[试用与促销](./free.md)，不要假设它们会一直免费。
+- 创建并测试[组合与回退](../features/combos.md)。
+- 将[受支持的 AI 客户端](../integration/other-tools.md)连接到
+  `http://localhost:21023/v1`。
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"为什么把订阅接入 Potluck？","id":"为什么把订阅接入-potluck"},{"level":2,"text":"可以汇聚哪些来源？","id":"可以汇聚哪些来源"},{"level":2,"text":"接入第一个来源","id":"接入第一个来源"},{"level":2,"text":"发现你真正拥有的模型","id":"发现你真正拥有的模型"},{"level":2,"text":"把分散账号变成模型池","id":"把分散账号变成模型池"},{"level":2,"text":"不再靠猜的配额可见性","id":"不再靠猜的配额可见性"},{"level":2,"text":"保护接入 Potluck 的访问权限","id":"保护接入-potluck-的访问权限"},{"level":2,"text":"故障排查","id":"故障排查"},{"level":3,"text":"授权没有完成","id":"授权没有完成"},{"level":3,"text":"账号后来断开","id":"账号后来断开"},{"level":3,"text":"没有显示模型","id":"没有显示模型"},{"level":3,"text":"请求返回 401、403 或 429","id":"请求返回-401403-或-429"},{"level":2,"text":"完成你的 Potluck 配置","id":"完成你的-potluck-配置"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

@@ -1,0 +1,132 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:Tfd3,# 快速开始
+
+本指南会启动一个本地 Potluck 开发实例，并通过它的 OpenAI 兼容接口发送一次测试请求。
+
+## 环境要求
+
+- Node.js 22
+- npm
+- 至少一个受支持提供商的有效凭据
+
+生产环境和不同平台的说明请参阅[安装指南](./installation.md)。
+
+## 1. 安装
+
+```bash
+git clone https://github.com/Ezero23/potluck.git
+cd potluck
+cp .env.example .env
+npm ci
+```
+
+不要提交 `.env`、Potluck 数据目录、数据库备份、提供商凭据或请求日志。
+
+## 2. 启动开发服务器
+
+```bash
+npm run dev
+```
+
+打开 `http://localhost:21023/dashboard`。
+
+未配置密码哈希时，仪表盘初始密码为 `123456`。之后可以在仪表盘中修改，也可以在首次启动前
+设置 `INITIAL_PASSWORD`。
+
+开发模式、生产模式、Docker 和 CLI 默认都使用 `21023`。如果你明确选择了其他端口，
+仪表盘和客户端 URL 必须统一使用该值。
+
+## 3. 连接提供商
+
+打开 **仪表盘 → 提供商**，选择与你的账户对应且受支持的提供商。不同提供商可能要求 API
+Key、OAuth 授权或设备码登录。
+
+模型名称、配额、价格和登录流程由第三方控制，随时可能变化。请以当前 Potluck 实例中的
+提供商卡片和模型选择器为准。
+
+添加提供商之前：
+
+- 确认使用方式符合第三方服务条款；
+- 确认账户是按量计费、订阅制还是受配额限制；
+- 条件允许时使用专门为 Potluck 创建的凭据；
+- 先用不含敏感信息的提示词测试连接。
+
+## 4. 创建 Potluck API Key
+
+打开 **仪表盘 → Endpoint**，创建或复制 Potluck API Key。它与上游提供商凭据用途不同，
+不要混用。
+
+在 **仪表盘 → Endpoint** 中启用端点 Key 验证后，客户端必须以 Bearer Token 形式发送该
+Key。只要实例能被其他设备访问，就强烈建议启用这一设置。
+
+## 5. 查询可用模型
+
+模型标识取决于当前实例实际连接的提供商：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+请使用该接口返回或仪表盘模型选择器显示的标识。直接使用 `provider/model` 会指向对应来源；
+已经配置的路由配置可以使用 `profile:PROFILE_NAME`。
+
+## 6. 发送测试请求
+
+将 `provider/model-id` 替换为 `/v1/models` 返回的模型：
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "provider/model-id",
+    "messages": [
+      {"role": "user", "content": "请回复：Potluck 已连接。"}
+    ],
+    "stream": false
+  }'
+```
+
+请求成功表示客户端已连接到 Potluck，且所选提供商接受了这次请求；它不代表该提供商一定
+支持所有接口、工具调用、流式模式或媒体输入。
+
+## 7. 连接客户端
+
+OpenAI 兼容客户端可使用：
+
+```text
+Base URL: http://localhost:21023/v1
+API key:  YOUR_POTLUCK_API_KEY
+Model:    provider/model-id
+```
+
+不同客户端的配置方式并不完全相同，尤其是 Anthropic 兼容工具。请使用对应指南：
+
+- [Claude Code](../integration/claude-code.md)
+- [Codex](../integration/codex.md)
+- [Cline](../integration/cline.md)
+- [Continue](../integration/continue.md)
+- [Roo Code](../integration/roo.md)
+- [其他工具](../integration/other-tools.md)
+
+## 可选：配置故障切换
+
+组合和路由配置可以在遇到已配置的可重试错误时尝试其他合格来源。加入组合前，应先独立验证
+每一个来源。
+
+故障切换是尽力而为，不是零停机承诺。当凭据过期、所有候选来源都不可用、第三方修改接口、
+客户端断开或错误不可重试时，请求仍然可能失败。
+
+## 下一步
+
+- 查看[订阅型提供商](../providers/subscription.md)。
+- 了解[免费或促销访问](../providers/free.md)的限制。
+- 阅读[组合](../features/combos.md)说明。
+- 首次请求失败时查看[故障排除](../troubleshooting.md)。
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"环境要求","id":"环境要求"},{"level":2,"text":"1. 安装","id":"1-安装"},{"level":2,"text":"2. 启动开发服务器","id":"2-启动开发服务器"},{"level":2,"text":"3. 连接提供商","id":"3-连接提供商"},{"level":2,"text":"4. 创建 Potluck API Key","id":"4-创建-potluck-api-key"},{"level":2,"text":"5. 查询可用模型","id":"5-查询可用模型"},{"level":2,"text":"6. 发送测试请求","id":"6-发送测试请求"},{"level":2,"text":"7. 连接客户端","id":"7-连接客户端"},{"level":2,"text":"可选：配置故障切换","id":"可选配置故障切换"},{"level":2,"text":"下一步","id":"下一步"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null

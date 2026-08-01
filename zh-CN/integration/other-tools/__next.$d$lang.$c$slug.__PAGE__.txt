@@ -1,0 +1,186 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T11cd,# OpenAI 兼容客户端
+
+能够自定义 OpenAI 兼容 Base URL、Bearer API Key 和模型 ID 的客户端，可以
+连接 Potluck。但工具只要写着“支持 OpenAI”并不代表一定兼容；它还必须支持
+自己所发送的接口和请求格式。
+
+## 连接参数
+
+```text
+Base URL: http://localhost:21023/v1
+API Key: YOUR_POTLUCK_API_KEY
+Model: MODEL_ID_FROM_POTLUCK
+```
+
+远程部署时，将 Base URL 换成 `https://potluck.example.com/v1`。
+
+在 **Dashboard → Endpoint** 创建网关密钥。客户端既然连接 Potluck，就不要
+填写上游提供商密钥。
+
+## 查询模型
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+使用一个完整的 `data[].id`。实际模型取决于该 Potluck 实例中的连接、别名、
+禁用项和 Combo 配置。
+
+## 使用 curl 测试
+
+临时设置终端变量：
+
+```bash
+export POTLUCK_BASE_URL="http://localhost:21023/v1"
+export POTLUCK_API_KEY="YOUR_POTLUCK_API_KEY"
+export POTLUCK_MODEL="MODEL_ID_FROM_POTLUCK"
+```
+
+发送非流式 Chat Completions 请求：
+
+```bash
+curl "$POTLUCK_BASE_URL/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POTLUCK_API_KEY" \
+  -d "{
+    \"model\": \"$POTLUCK_MODEL\",
+    \"messages\": [
+      {\"role\": \"user\", \"content\": \"只回复：Potluck connection OK\"}
+    ],
+    \"stream\": false
+  }"
+```
+
+应先通过这个测试，再配置第三方工具。这样可以区分 Potluck 或提供商问题与
+客户端自身的配置问题。
+
+## Python OpenAI SDK
+
+安装当前 SDK：
+
+```bash
+python -m pip install openai
+```
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["POTLUCK_API_KEY"],
+    base_url=os.getenv("POTLUCK_BASE_URL", "http://localhost:21023/v1"),
+)
+
+response = client.chat.completions.create(
+    model=os.environ["POTLUCK_MODEL"],
+    messages=[
+        {"role": "user", "content": "只回复：Potluck connection OK"}
+    ],
+)
+
+print(response.choices[0].message.content)
+```
+
+## JavaScript OpenAI SDK
+
+安装当前 SDK：
+
+```bash
+npm install openai
+```
+
+```javascript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.POTLUCK_API_KEY,
+  baseURL: process.env.POTLUCK_BASE_URL ?? "http://localhost:21023/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: process.env.POTLUCK_MODEL,
+  messages: [
+    { role: "user", content: "只回复：Potluck connection OK" },
+  ],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+## HTTP 客户端
+
+Postman、Insomnia 或类似客户端填写：
+
+```text
+Method: POST
+URL: http://localhost:21023/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer YOUR_POTLUCK_API_KEY
+```
+
+Body：
+
+```json
+{
+  "model": "MODEL_ID_FROM_POTLUCK",
+  "messages": [
+    {
+      "role": "user",
+      "content": "只回复：Potluck connection OK"
+    }
+  ],
+  "stream": false
+}
+```
+
+## 兼容 API 类型
+
+Potluck 提供的兼容路由包括：
+
+| 客户端格式 | 路由 |
+| --- | --- |
+| OpenAI Chat Completions | `/v1/chat/completions` |
+| OpenAI Responses | `/v1/responses` |
+| Anthropic Messages | `/v1/messages` |
+| 模型查询 | `/v1/models` |
+| Embeddings | `/v1/embeddings` |
+| 图片生成 | `/v1/images/generations` |
+| 语音生成 | `/v1/audio/speech` |
+| 语音转文字 | `/v1/audio/transcriptions` |
+
+存在某条路由不代表每个上游模型都支持该能力。请求时必须选择类型和提供商
+能力相匹配的模型。
+
+## 故障排查
+
+- **连接被拒绝：**检查 `http://localhost:21023/api/health`。
+- **返回 401：**检查 Potluck 网关密钥和 Bearer 请求头。
+- **返回 404：**确认客户端 Base URL 只包含一次 `/v1`。
+- **模型错误：**查询 `/v1/models`，使用完整返回值。
+- **工具调用失败：**换成支持原生工具调用的模型。
+- **远程客户端无法连接：**使用 HTTPS；`localhost` 表示客户端所在机器。
+- **客户端没有 Base URL 字段：**不能假设它兼容 Potluck，请改用已有正式
+  文档的集成。
+
+## 安全要求
+
+- 将 API Key 保存在环境变量或客户端密钥存储中。
+- 不要提交 `.env` 文件。
+- 暴露公网前开启端点 API Key 验证。
+- 远程连接使用 HTTPS。
+- 将 Potluck 网关密钥与上游提供商凭据分开。
+
+LangChain、LlamaIndex 等框架的 API 变化很快。应从它们当前的 OpenAI
+兼容提供商文档开始，再应用本文开头的三个连接参数，不再复制容易过期的
+旧版代码。
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"连接参数","id":"连接参数"},{"level":2,"text":"查询模型","id":"查询模型"},{"level":2,"text":"使用 curl 测试","id":"使用-curl-测试"},{"level":2,"text":"Python OpenAI SDK","id":"python-openai-sdk"},{"level":2,"text":"JavaScript OpenAI SDK","id":"javascript-openai-sdk"},{"level":2,"text":"HTTP 客户端","id":"http-客户端"},{"level":2,"text":"兼容 API 类型","id":"兼容-api-类型"},{"level":2,"text":"故障排查","id":"故障排查"},{"level":2,"text":"安全要求","id":"安全要求"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],["$L5","$L6"],"$L7"]}],"loading":null,"isPartial":false}
+5:["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}]
+6:["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

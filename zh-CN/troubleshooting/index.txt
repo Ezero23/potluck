@@ -1,0 +1,207 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","zh-CN","troubleshooting",""],"q":"","i":false,"f":[[["",{"children":[["lang","zh-CN","d"],{"children":[["slug","troubleshooting","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T1773,# 故障排除
+
+排查时应从原始响应、进程输出和脱敏日志开始。不要一次修改多个设置；先确认问题发生在 Potluck
+服务、认证、路由，还是实际选择的第三方提供商。
+
+## 先收集基本信息
+
+记录：
+
+- Potluck 版本和安装方式；
+- 发生错误的准确接口路径和 HTTP 状态码；
+- 使用的模型标识；
+- 同一模型能否通过仪表盘连接测试；
+- 与错误相关且已删除凭据、提示词内容的服务器日志。
+
+先验证本地服务：
+
+```bash
+curl --fail --show-error http://localhost:21023/api/health
+```
+
+预期响应：
+
+```json
+{"ok":true}
+```
+
+Docker 部署查看：
+
+```bash
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+```
+
+源码安装则查看正在运行 `npm run dev` 或 `npm start` 的终端。
+
+## 连接被拒绝
+
+`ECONNREFUSED` 表示指定主机和端口上没有进程接受连接，不是提供商或 API Key 错误。
+
+1. 启动 Potluck：
+
+   ```bash
+   npm run dev
+   ```
+
+2. 确认默认端口正在监听：
+
+   ```bash
+   lsof -nP -iTCP:21023 -sTCP:LISTEN
+   ```
+
+   Windows：
+
+   ```powershell
+   netstat -ano | findstr :21023
+   ```
+
+3. 所有位置使用同一个实际端口：
+
+   ```text
+   仪表盘：http://localhost:21023/dashboard
+   API Base：http://localhost:21023/v1
+   ```
+
+4. 如果客户端运行在容器、虚拟机、远程工作区或厂商服务器中，它的 `localhost` 不一定是
+   Potluck 所在机器。应使用该运行环境能够访问的地址，并用 HTTPS、仪表盘登录和端点 API Key
+   验证进行保护。
+
+不要为了绕过连接问题而直接向公网开放 Potluck 应用端口。优先使用可信 HTTPS 反向代理或已配置
+的隧道。
+
+## 仪表盘打不开
+
+清理浏览器数据前，先请求 `/api/health`。健康检查失败时查看服务日志；健康检查成功但页面
+打不开时：
+
+- 直接打开 `http://localhost:21023/dashboard`；
+- 确认浏览器没有强制使用无关代理或升级到 HTTPS；
+- 使用无痕窗口排除旧 Cookie；
+- 确认仪表盘密码正确。
+
+没有密码哈希且未设置 `INITIAL_PASSWORD` 时，首次本地密码为 `123456`。允许其他设备访问前
+必须修改。
+
+## HTTP 401 或 403
+
+Potluck 有两个不同的凭据边界：
+
+- 仪表盘登录保护管理页面和本地管理 API；
+- 在 **仪表盘 → Endpoint** 中启用验证后，Potluck 端点 Key 保护兼容 `/v1` 客户端请求。
+
+不要把上游提供商凭据当作 Potluck 端点 Key。客户端应使用当前 Potluck 实例创建的有效 Key：
+
+```http
+Authorization: Bearer YOUR_POTLUCK_KEY
+```
+
+如果 401 或 403 实际来自第三方提供商，应重新连接该提供商或替换凭据，再运行仪表盘连接测试。
+
+## 找不到模型
+
+不要从截图或旧文档复制模型标识，应查询正在运行的实例：
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_KEY"
+```
+
+使用响应中返回的标识。只有实际配置了对应路由 profile 后，
+`profile:PROFILE_NAME` 才能使用。如果列表中的模型仍然失败，应检查对应提供商连接、账户地区、
+配额和请求类型支持情况。
+
+## OAuth 过期或提供商认证失败
+
+Token 刷新能力取决于具体提供商，会话被撤销后自动刷新也可能失败。
+
+1. 打开 **仪表盘 → 提供商**。
+2. 运行连接测试并保留原始错误。
+3. 凭据或会话过期时重新连接。
+4. 确认账户和地区与所选提供商条目一致。
+5. 检查出站代理设置和提供商当前服务状态。
+
+不要在 Issue 中发布 refresh token、Cookie、API Key、包含秘密的授权 URL 或 Potluck 数据目录。
+
+## 速率限制或额度耗尽
+
+只有实现了第三方用量查询的集成才能显示额度字段，而且仪表盘数值可能晚于提供商。
+
+- 查看提供商自己的账单和额度页面；
+- 减少并发请求；
+- 等待提供商额度重置；
+- 独立测试另一个连接；
+- 确认每个成员可以单独工作后，再配置组合或路由 profile。
+
+故障切换是尽力而为。它不会创造额度，也无法在所有候选都不可用或错误没有配置为可重试时恢复。
+
+## 响应缓慢或流式输出延迟
+
+先比较一次直接 `provider/model` 请求和组合或 profile 请求，再检查：
+
+- 提供商延迟和服务状态；
+- 出站代理延迟；
+- 提示词和响应大小；
+- 客户端超时设置；
+- 反向代理是否缓冲流式响应。
+
+Nginx 生效的 `location` 应包含：
+
+```nginx
+proxy_buffering off;
+proxy_read_timeout 86400;
+```
+
+网络诊断应使用提供商主机名和 HTTP 请求；即使 HTTPS 正常，ICMP `ping` 也可能被屏蔽。
+
+## 用量或费用异常
+
+仪表盘成本是估算值，不是第三方账单。应与提供商当前账单页面和价格对比。模型价格、订阅、
+促销和免费额度都可能随时变化。
+
+- 检查 Usage 和请求详情；
+- 确认组合或 profile 实际选择了哪个来源；
+- 除非确实需要，否则关闭请求正文日志；
+- 在提供商侧设置消费上限和告警；
+- 可能泄露的凭据应立即轮换。
+
+Potluck 当前不提供通用预算强制执行。
+
+## Docker、Nginx 或数据目录问题
+
+Nginx 返回 502 时：
+
+```bash
+docker ps --filter name=potluck
+docker logs --tail 100 potluck
+curl http://127.0.0.1:21023/api/health
+sudo nginx -t
+```
+
+数据错误应检查 `DATA_DIR` 是否存在、Potluck 进程是否可写，并确认目录没有对所有用户开放读取。
+服务运行期间不要删除或替换 `data.sqlite`。升级和迁移前应备份完整数据目录。
+
+## 仍然需要帮助
+
+- [常见问题](./faq.md)
+- [安装指南](./getting-started/installation.md)
+- [GitHub Issues](https://github.com/Ezero23/potluck/issues)
+
+提交问题时请附上版本、安装方式、接口、状态码、复现步骤和脱敏日志。发布前删除凭据、Token、
+Cookie、提示词、响应内容和个人数据。
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"先收集基本信息","id":"先收集基本信息"},{"level":2,"text":"连接被拒绝","id":"连接被拒绝"},{"level":2,"text":"仪表盘打不开","id":"仪表盘打不开"},{"level":2,"text":"HTTP 401 或 403","id":"http-401-或-403"},{"level":2,"text":"找不到模型","id":"找不到模型"},{"level":2,"text":"OAuth 过期或提供商认证失败","id":"oauth-过期或提供商认证失败"},{"level":2,"text":"速率限制或额度耗尽","id":"速率限制或额度耗尽"},{"level":2,"text":"响应缓慢或流式输出延迟","id":"响应缓慢或流式输出延迟"},{"level":2,"text":"用量或费用异常","id":"用量或费用异常"},{"level":2,"text":"Docker、Nginx 或数据目录问题","id":"dockernginx-或数据目录问题"},{"level":2,"text":"仍然需要帮助","id":"仍然需要帮助"}],"lang":"zh-CN","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

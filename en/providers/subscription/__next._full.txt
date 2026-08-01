@@ -1,0 +1,189 @@
+1:"$Sreact.fragment"
+2:I[39756,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+3:I[37457,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+8:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"ViewportBoundary"]
+a:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"MetadataBoundary"]
+c:I[68027,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"default"]
+:HL["/potluck/_next/static/chunks/d2b47be64d2bb0be.css","style"]
+0:{"P":null,"b":"KXY7CR-qTiJWG0XHIQ5bR","c":["","en","providers","subscription",""],"q":"","i":false,"f":[[["",{"children":[["lang","en","d"],{"children":[["slug","providers/subscription","c"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/potluck/_next/static/chunks/d2b47be64d2bb0be.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}]]}],["$","body",null,{"className":"bg-[#FCFBF9] text-[#6B7280]","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L4",[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true,"nonce":"$undefined"}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],{},null,false,false]},null,false,false]},null,false,false]},null,false,false],["$","$1","h",{"children":[null,["$","$L8",null,{"children":"$L9"}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$6",null,{"name":"Next.Metadata","children":"$Lb"}]}]}],null]}],false]],"m":"$undefined","G":["$c",[]],"S":true}
+d:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+e:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+f:T1db4,# One endpoint for your AI subscriptions
+
+Bring the model sources you already use into Potluck and make them available through
+one local API. Connect an account once, discover its models in one catalog, and use
+the same Potluck endpoint from every supported client.
+
+```text
+Your accounts → Potluck → http://localhost:21023/v1 → Your AI tools
+```
+
+## Why bring subscriptions into Potluck?
+
+- **One place for every source.** Manage OAuth accounts, device-authorized accounts,
+  imported sessions, and API keys from the same Dashboard.
+- **One stable client endpoint.** Clients connect to Potluck instead of carrying a
+  separate provider configuration for every account.
+- **See capacity and activity together.** View upstream quota data where a provider
+  exposes it, alongside requests recorded locally by Potluck.
+- **Build a more resilient model pool.** Route across eligible accounts and use
+  Combos to try another tested source after a retryable failure.
+- **Keep control locally.** Potluck is self-hosted; you choose the machine, network
+  exposure, endpoint keys, and data directory.
+
+The result is not “unlimited AI.” It is a cleaner way to use the access you already
+have without rebuilding every client configuration when a source changes.
+
+## Sources you can bring together
+
+The installed Dashboard is the source of truth. Current Potluck builds include
+connection flows such as:
+
+| Source | Connection experience | What Potluck adds |
+| --- | --- | --- |
+| Claude Code | Browser OAuth | A shared model catalog, local usage history, and routing |
+| OpenAI Codex | Browser OAuth with a local callback | Codex models behind the same Potluck endpoint |
+| Gemini CLI | Google OAuth | One place to inspect available models and reported quota |
+| Antigravity | Google OAuth | Unified access alongside your other configured sources |
+| GitHub Copilot | GitHub device authorization | Copilot-backed models in Potluck routing |
+| Kiro | The device, social, import, or key flow shown in the Dashboard | Region-aware account connection and routing |
+| Cursor | Import from a local Cursor installation or paste supported token data | Cursor as an upstream source—not as a Potluck client |
+
+Provider availability, account eligibility, models, and quotas can change upstream.
+Potluck deliberately reads what the current account exposes instead of promising a
+fixed model list.
+
+> **Account policy:** Most subscription-backed integrations are marked as risky in
+> Potluck because providers may not officially license consumer OAuth or application
+> sessions for proxy/router use. Check the provider's current terms. For critical or
+> commercial workloads, prefer an official API key.
+
+## Connect your first source
+
+1. Start Potluck and open `http://localhost:21023/dashboard`.
+2. Change the initial dashboard password.
+3. Open **Dashboard → Providers** and choose a source you are authorized to use.
+4. Read its account notice, then complete the authorization flow shown on screen.
+5. Return to Potluck, run the connection test, and enable an available model.
+
+Potluck keeps its main Dashboard and API on port `21023`. A temporary
+provider-specific OAuth callback used during login is not a second Potluck API port.
+
+## Discover the models you actually have
+
+Create or copy a Potluck endpoint key under **Dashboard → Endpoint**, then ask your
+running instance for its current model catalog:
+
+```bash
+curl http://localhost:21023/v1/models \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY"
+```
+
+Use an exact `data[].id` from the response. Aliases such as `cc/`, `cx/`, `gc/`,
+`ag/`, and `gh/` make sources recognizable, while the live catalog prevents stale
+documentation from choosing a model your account cannot use.
+
+Send a first non-sensitive request:
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MODEL_ID_FROM_V1_MODELS",
+    "messages": [{"role": "user", "content": "Reply with OK."}],
+    "stream": false
+  }'
+```
+
+Once this works, a supported OpenAI-compatible client can use the same Base URL,
+Potluck key, and model ID.
+
+## Turn separate accounts into a model pool
+
+A single connection is useful; several tested connections are where routing becomes
+valuable:
+
+1. Add and test each account independently.
+2. Keep only the models you intend to expose.
+3. Use a direct model ID when you need a specific source.
+4. Create a Combo when another model is an acceptable fallback.
+5. Test tool calls, streaming, media, and structured output required by your client.
+
+Potluck can make source selection easier, but fallback is still best effort. It cannot
+create quota, bypass account restrictions, or make two different models perfectly
+interchangeable.
+
+## Quota visibility without guesswork
+
+**Dashboard → Quota** shows account-limit information for providers where Potluck has
+an upstream usage integration. This helps you see reported windows and reset times
+without opening several apps.
+
+**Dashboard → Usage** shows requests recorded locally by Potluck, including available
+token counts and cost estimates. Use it to understand routing activity and diagnose
+failures.
+
+These views complement, rather than replace, the provider's account page:
+
+- upstream price and allowance remain the provider's decision;
+- not every provider exposes quota data;
+- local estimates are not invoices;
+- a trial, promotion, reset window, or model can change.
+
+That is why Potluck markets the visibility and routing it provides—not a third party's
+temporary price or quota.
+
+## Protect the access you connect
+
+- Keep `DATA_DIR`, backups, logs, and `.env` private.
+- Require a Potluck endpoint key before another machine can call the API.
+- Use HTTPS and a strong Dashboard password for remote deployments.
+- Never paste provider tokens into issues, screenshots, prompts, or shared terminals.
+- Revoke or reconnect an account immediately if its credential may have leaked.
+
+## Troubleshooting
+
+### Authorization does not finish
+
+- Keep Potluck running while the browser or device-code flow is active.
+- Use the callback address displayed by the provider page.
+- Disable extensions or proxies that rewrite localhost callbacks.
+- For a remote server, follow the provider page's remote-login flow; do not expose a
+  callback port publicly just to make login work.
+
+### The account disconnects later
+
+Open its provider page and reconnect it. Browser OAuth credentials may refresh, while
+some imported application sessions may not. Check sanitized logs without sharing
+tokens or authorization codes.
+
+### No models appear
+
+- Run the connection test again.
+- Confirm that the account can use the upstream product.
+- Refresh the provider model list.
+- Query `/v1/models` and use only IDs returned by your instance.
+
+### A request returns 401, 403, or 429
+
+- `401` usually points to an invalid or expired credential.
+- `403` can indicate an account, organization, product, region, or policy restriction.
+- `429` can indicate a rate limit or exhausted allowance.
+
+Read the sanitized upstream error and check the provider's account page. Do not try to
+work around account restrictions by repeatedly importing credentials.
+
+## Build the rest of your setup
+
+- Add an [official API-key provider](./cheap.md) for lower-risk production traffic.
+- Review [trials and promotions](./free.md) without assuming they remain free.
+- Build and test [Combos and fallback](../features/combos.md).
+- Connect [supported AI clients](../integration/other-tools.md) to
+  `http://localhost:21023/v1`.
+4:["$","$Ld",null,{"headings":[{"level":2,"text":"Why bring subscriptions into Potluck?","id":"why-bring-subscriptions-into-potluck"},{"level":2,"text":"Sources you can bring together","id":"sources-you-can-bring-together"},{"level":2,"text":"Connect your first source","id":"connect-your-first-source"},{"level":2,"text":"Discover the models you actually have","id":"discover-the-models-you-actually-have"},{"level":2,"text":"Turn separate accounts into a model pool","id":"turn-separate-accounts-into-a-model-pool"},{"level":2,"text":"Quota visibility without guesswork","id":"quota-visibility-without-guesswork"},{"level":2,"text":"Protect the access you connect","id":"protect-the-access-you-connect"},{"level":2,"text":"Troubleshooting","id":"troubleshooting"},{"level":3,"text":"Authorization does not finish","id":"authorization-does-not-finish"},{"level":3,"text":"The account disconnects later","id":"the-account-disconnects-later"},{"level":3,"text":"No models appear","id":"no-models-appear"},{"level":3,"text":"A request returns 401, 403, or 429","id":"a-request-returns-401-403-or-429"},{"level":2,"text":"Build the rest of your setup","id":"build-the-rest-of-your-setup"}],"lang":"en","children":["$","$Le",null,{"content":"$f"}]}]
+9:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+7:null
+b:[["$","title","0",{"children":"Potluck Documentation"}],["$","meta","1",{"name":"description","content":"Documentation for the self-hosted Potluck model-source router"}]]

@@ -1,0 +1,126 @@
+1:"$Sreact.fragment"
+2:I[81956,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+3:I[22982,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/76115a2ce06b871c.js"],"default"]
+5:I[97367,["/potluck/_next/static/chunks/ff1a16fafef87110.js","/potluck/_next/static/chunks/803a574de9eda7ae.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+4:T1062,# API Key 提供商
+
+Potluck 可以把请求路由到多种使用 API Key 认证的提供商。某些提供商在特定模型或地区可能成本较低，但 Potluck 不销售提供商服务，也不能保证价格、配额、可用性或模型能力。
+
+发送生产流量前，请以提供商当前公布的条款为准。
+
+---
+
+## 已注册的提供商
+
+当前版本的提供商注册表包含：
+
+| Potluck 提供商 | 地区或端点 | 已注册模型示例 |
+|---|---|---|
+| `glm` | GLM 国际编码端点 | `glm-5.2`、`glm-5.1`、`glm-5`、`glm-4.7`、`glm-4.6v` |
+| `glm-cn` | GLM 中国区编码端点 | `glm-5.2`、`glm-5.1`、`glm-5`、`glm-4.7`、`glm-4.6`、`glm-4.5-air` |
+| `minimax` | MiniMax 国际端点 | `MiniMax-M3`、`MiniMax-M2.7`、`MiniMax-M2.5`、`MiniMax-M2.1` |
+| `minimax-cn` | MiniMax 中国区端点 | `MiniMax-M3`、`MiniMax-M2.7`、`MiniMax-M2.5`、`MiniMax-M2.1` |
+| `kimi` | Kimi 编码端点 | `kimi-k2.6`、`kimi-k2.5`、`kimi-k2.5-thinking`、`kimi-latest` |
+
+该表描述的是本版本 Potluck 自带的注册信息，并不代表你的账户一定能使用全部模型。提供商可能在 Potluck 未发布新版本时改变模型名称和账户权限。
+
+---
+
+## 添加连接
+
+1. 根据提供商条款注册账户并获取凭据。
+2. 打开 **仪表盘 → 提供商**。
+3. 选择与凭据地区相符的提供商。
+4. 添加 API Key，并运行连接测试。
+5. 刷新模型列表，确认准备使用的模型确实可用。
+
+不要假设国际端点的凭据能用于中国区端点，反之亦然。
+
+---
+
+## 调用本地开发端点
+
+通过 `npm run dev` 启动 Potluck 后，可使用：
+
+```bash
+curl http://localhost:21023/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_POTLUCK_KEY" \
+  -d '{
+    "model": "glm/glm-4.7",
+    "messages": [{"role": "user", "content": "只回复 OK"}]
+  }'
+```
+
+请把模型名称替换为当前实例实际返回的模型。如果未启用端点 API Key 验证，本机调用不需要 Potluck Key。把实例开放给其他机器前，应先启用身份验证。
+
+Docker 或生产部署应使用该部署配置的主机和端口，而不是 `localhost:21023`。
+
+---
+
+## 使用组合进行回退
+
+当请求无法完成时，组合可以按配置顺序尝试模型。例如：
+
+```text
+仪表盘 → 组合 → 新建
+
+名称：api-key-fallback
+模型：
+  1. glm/glm-4.7
+  2. minimax/MiniMax-M2.7
+  3. kimi/kimi-latest
+```
+
+只添加账户确实可用、并且与请求类型兼容的模型。回退可以提升可用性，但不会让不同模型的行为、上下文限制、输出质量或计费方式变得相同。
+
+---
+
+## 成本与配额
+
+提供商价格和订阅配额会频繁变化。Potluck 记录的成本是根据本地模型价格数据计算的估算值；最终应以提供商账单和配额页面为准。
+
+使用某个提供商前：
+
+1. 查看其官方价格和订阅页面。
+2. 确认输入、输出、缓存、图片、音频或搜索是否分别计费。
+3. 确认结算货币、地区、税费和账户等级。
+4. 先发送小规模测试请求，并把 Potluck 记录与提供商仪表盘对比。
+5. 如果提供商支持，请在提供商侧设置账单提醒。
+
+Potluck 当前不承诺按金额自动停止请求，也不承诺达到预算后自动切换。组合遵循配置的路由和失败规则，并不是账单控制器。
+
+---
+
+## 故障排除
+
+### 连接测试失败
+
+- 确认所选地区与凭据的签发地区一致。
+- 确认账户已开通 API，并且仍有余额或配额。
+- 如果 Key 可能被撤销或泄露，请重新生成。
+- 查看提供商自己的服务状态。
+
+### 模型不可用
+
+- 在仪表盘中刷新提供商模型。
+- 使用当前实例实际返回的模型 ID。
+- 确认账户和地区已开通该模型。
+- 从组合中移除不可用模型。
+
+### 本地成本与账单不同
+
+- 以提供商账单为准。
+- 检查本地模型价格数据是否最新。
+- 检查是否存在缓存 token、媒体、工具调用或地区差价等额外费用。
+
+---
+
+## 下一步
+
+- [免费提供商连接](./free.md)
+- [订阅提供商连接](./subscription.md)
+- [组合](../features/combos.md)
+0:{"buildId":"KXY7CR-qTiJWG0XHIQ5bR","rsc":["$","$1","c",{"children":[["$","$L2",null,{"headings":[{"level":2,"text":"已注册的提供商","id":"已注册的提供商"},{"level":2,"text":"添加连接","id":"添加连接"},{"level":2,"text":"调用本地开发端点","id":"调用本地开发端点"},{"level":2,"text":"使用组合进行回退","id":"使用组合进行回退"},{"level":2,"text":"成本与配额","id":"成本与配额"},{"level":2,"text":"故障排除","id":"故障排除"},{"level":3,"text":"连接测试失败","id":"连接测试失败"},{"level":3,"text":"模型不可用","id":"模型不可用"},{"level":3,"text":"本地成本与账单不同","id":"本地成本与账单不同"},{"level":2,"text":"下一步","id":"下一步"}],"lang":"zh-CN","children":["$","$L3",null,{"content":"$4"}]}],[["$","script","script-0",{"src":"/potluck/_next/static/chunks/ff1a16fafef87110.js","async":true}],["$","script","script-1",{"src":"/potluck/_next/static/chunks/76115a2ce06b871c.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"loading":null,"isPartial":false}
+7:null
