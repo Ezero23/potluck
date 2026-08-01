@@ -34,8 +34,7 @@ Potluck. Importing a skill does not create provider access or credentials.
 ## Configure the endpoint
 
 ```bash
-# npm run dev
-export POTLUCK_URL="http://localhost:20127"
+export POTLUCK_URL="http://localhost:21023"
 
 # Set this only when endpoint API-key enforcement is enabled.
 export POTLUCK_KEY="your-potluck-endpoint-key"

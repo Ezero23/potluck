@@ -39,7 +39,7 @@ Potluck 可以把请求路由到多种使用 API Key 认证的提供商。某些
 通过 `npm run dev` 启动 Potluck 后，可使用：
 
 ```bash
-curl http://localhost:20127/v1/chat/completions \
+curl http://localhost:21023/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_POTLUCK_KEY" \
   -d '{
@@ -50,7 +50,7 @@ curl http://localhost:20127/v1/chat/completions \
 
 请把模型名称替换为当前实例实际返回的模型。如果未启用端点 API Key 验证，本机调用不需要 Potluck Key。把实例开放给其他机器前，应先启用身份验证。
 
-Docker 或生产部署应使用该部署配置的主机和端口，而不是 `localhost:20127`。
+Docker 或生产部署应使用该部署配置的主机和端口，而不是 `localhost:21023`。
 
 ---
 

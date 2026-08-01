@@ -10,7 +10,7 @@ provider's own usage and billing portal.
 
 ## Provider quota
 
-Open `http://localhost:20127/dashboard/quota` when using the development server.
+Open `http://localhost:21023/dashboard/quota`.
 Potluck requests quota information for connected accounts whose provider integration
 implements a usage adapter.
 
@@ -31,7 +31,7 @@ before making an important capacity decision.
 
 ## Local usage
 
-Open `http://localhost:20127/dashboard/usage`. The Overview supports these periods:
+Open `http://localhost:21023/dashboard/usage`. The Overview supports these periods:
 
 - Today
 - 24 hours

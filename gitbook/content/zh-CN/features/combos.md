@@ -8,19 +8,20 @@ Potluck 再按照为该组合选择的策略处理请求。
 
 ## 创建组合
 
-1. 使用开发服务器时，打开 `http://localhost:20127/dashboard/combos`。
+1. 打开 `http://localhost:21023/dashboard/combos`。
 2. 选择 **Create Combo**。
 3. 输入仅包含字母、数字、`-` 或 `_` 的名称。
 4. 从已连接的提供商中加入模型。
 5. 拖动模型，调整到需要的顺序。
 6. 保存组合并复制组合名称。
 
-生产和容器安装通常使用 `20129` 端口；应以你的实例实际监听端口为准。
+开发、生产、容器和 CLI 默认统一使用 Potluck 的单一端口 `21023`。如果你明确覆盖了
+`PORT`，则使用自行配置的端口。
 
 请求时把组合名称作为 `model`：
 
 ```bash
-curl http://localhost:20127/v1/chat/completions \
+curl http://localhost:21023/v1/chat/completions \
   -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

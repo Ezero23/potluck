@@ -9,20 +9,20 @@ Connect and test every member before relying on the combo.
 
 ## Create a combo
 
-1. Open `http://localhost:20127/dashboard/combos` when using the development server.
+1. Open `http://localhost:21023/dashboard/combos`.
 2. Select **Create Combo**.
 3. Enter a name containing letters, numbers, `-`, or `_`.
 4. Add models from connected providers.
 5. Drag the models into the intended order.
 6. Save the combo and copy its name.
 
-Production and container installations commonly use port `20129`; use the port on
-which your instance is actually listening.
+Development, production, containers, and the CLI use Potluck's single default port
+`21023`. If you explicitly override `PORT`, use that configured port instead.
 
 Use the combo name as the `model` value:
 
 ```bash
-curl http://localhost:20127/v1/chat/completions \
+curl http://localhost:21023/v1/chat/completions \
   -H "Authorization: Bearer YOUR_POTLUCK_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

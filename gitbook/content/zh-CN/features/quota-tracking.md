@@ -9,7 +9,7 @@ Potluck 提供两个相关但不同的视图：
 
 ## 提供商配额
 
-使用开发服务器时，打开 `http://localhost:20127/dashboard/quota`。对于已经实现用量查询适配器
+打开 `http://localhost:21023/dashboard/quota`。对于已经实现用量查询适配器
 的提供商，Potluck 会为已连接账户请求配额信息。
 
 根据第三方返回的数据，卡片可能显示：
@@ -27,7 +27,7 @@ Potluck 提供两个相关但不同的视图：
 
 ## 本地用量
 
-打开 `http://localhost:20127/dashboard/usage`。Overview 支持：
+打开 `http://localhost:21023/dashboard/usage`。Overview 支持：
 
 - 今天
 - 24 小时

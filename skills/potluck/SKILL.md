@@ -10,7 +10,7 @@ Local/remote AI gateway exposing OpenAI-compatible REST. One key, many providers
 ## Setup
 
 ```bash
-export POTLUCK_URL="http://localhost:20128"      # or VPS / tunnel URL
+export POTLUCK_URL="http://localhost:21023"      # or VPS / tunnel URL
 export POTLUCK_KEY="sk-..."                      # from Dashboard → Keys (only if requireApiKey=true)
 ```
 

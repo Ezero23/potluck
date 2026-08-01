@@ -46,7 +46,7 @@ China endpoint, or the reverse.
 When Potluck is running with `npm run dev`, use:
 
 ```bash
-curl http://localhost:20127/v1/chat/completions \
+curl http://localhost:21023/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_POTLUCK_KEY" \
   -d '{
@@ -60,7 +60,7 @@ enforcement is disabled, a Potluck key is not required for local calls. Enable
 authentication before exposing an instance to other machines.
 
 For Docker or production, use that deployment's configured host and port
-instead of `localhost:20127`.
+instead of `localhost:21023`.
 
 ---
 
