@@ -63,6 +63,12 @@ function writeTunnelState(state) {
   fs.writeFileSync(path.join(tunnelDir, "state.json"), JSON.stringify(state));
 }
 
+function writeTunnelPid(pid) {
+  const tunnelDir = path.join(tempDir, "tunnel");
+  fs.mkdirSync(tunnelDir, { recursive: true });
+  fs.writeFileSync(path.join(tunnelDir, "cloudflared.pid"), String(pid));
+}
+
 function writePasswordCache(plaintext) {
   const authDir = path.join(tempDir, "auth");
   fs.mkdirSync(authDir, { recursive: true });
@@ -124,6 +130,7 @@ describe("monitor push lifecycle", () => {
 describe("buildDevicePayload monitor fields", () => {
   it("includes tunnel info from state.json and settings", async () => {
     writeTunnelState({ shortId: "abc123", tunnelUrl: "https://x.trycloudflare.com" });
+    writeTunnelPid(process.pid);
     await seedSettings({ tunnelEnabled: true });
 
     const { buildDevicePayload } = await importPushModule();
@@ -131,8 +138,24 @@ describe("buildDevicePayload monitor fields", () => {
 
     expect(payload.tunnel).toEqual({
       enabled: true,
+      settingsEnabled: true,
+      running: true,
       publicUrl: "https://rabc123.abc-tunnel.us",
       tunnelUrl: "https://x.trycloudflare.com",
+    });
+  });
+
+  it("does not report a persisted tunnel setting as connected without a live process", async () => {
+    writeTunnelState({ shortId: "abc123", tunnelUrl: "https://stale.trycloudflare.com" });
+    await seedSettings({ tunnelEnabled: true });
+
+    const { buildDevicePayload } = await importPushModule();
+    const payload = await buildDevicePayload();
+
+    expect(payload.tunnel).toMatchObject({
+      enabled: false,
+      settingsEnabled: true,
+      running: false,
     });
   });
 
@@ -140,7 +163,13 @@ describe("buildDevicePayload monitor fields", () => {
     const { buildDevicePayload } = await importPushModule();
     const payload = await buildDevicePayload();
 
-    expect(payload.tunnel).toEqual({ enabled: false, publicUrl: "", tunnelUrl: "" });
+    expect(payload.tunnel).toEqual({
+      enabled: false,
+      settingsEnabled: false,
+      running: false,
+      publicUrl: "",
+      tunnelUrl: "",
+    });
   });
 
   it("includes the default dashboardPassword for loopback URLs when no custom password is set", async () => {

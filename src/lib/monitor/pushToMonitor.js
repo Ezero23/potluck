@@ -4,6 +4,7 @@ import { parseJson, stringifyJson } from "../db/helpers/jsonCol.js";
 import { statsEmitter } from "../db/repos/usageRepo.js";
 import { getProviderConnections } from "../db/repos/connectionsRepo.js";
 import { getApiKeys } from "../localDb.js";
+import { isCloudflaredRunning } from "../tunnel/cloudflare/cloudflared.js";
 import { loadState } from "../tunnel/shared/state.js";
 import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
 import pkg from "../../../package.json" with { type: "json" };
@@ -217,8 +218,12 @@ async function buildProvidersPayload() {
 function buildTunnelInfo(settingsRaw) {
   const state = loadState();
   const shortId = state?.shortId || "";
+  const settingsEnabled = settingsRaw?.tunnelEnabled === true;
+  const running = settingsEnabled && isCloudflaredRunning();
   return {
-    enabled: settingsRaw?.tunnelEnabled === true,
+    enabled: running,
+    settingsEnabled,
+    running,
     publicUrl: shortId ? `https://r${shortId}.abc-tunnel.us` : "",
     tunnelUrl: state?.tunnelUrl || "",
   };

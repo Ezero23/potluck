@@ -1,5 +1,5 @@
 import { loadState, saveState, generateShortId } from "../shared/state.js";
-import { spawnQuickTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler, killOrphanedCloudflared, registerGracefulShutdown } from "./cloudflared.js";
+import { spawnQuickTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler, registerGracefulShutdown } from "./cloudflared.js";
 import { clearPid } from "./pid.js";
 import { waitForHealth, probeUrlAlive } from "./healthCheck.js";
 import { WORKER_URL } from "./config.js";
@@ -7,19 +7,25 @@ import { getSettings, updateSettings } from "@/lib/localDb";
 import { notifyMonitorContentChanged } from "@/lib/monitor/pushToMonitor.js";
 import { APP_CONFIG } from "@/shared/constants/config";
 
-const svc = {
-  cancelToken: { cancelled: false },
-  spawnInProgress: false,
-  lastRestartAt: 0,
-  activeLocalPort: null,
+const runtime = globalThis.__potluckTunnelRuntime ??= {
+  svc: {
+    cancelToken: { cancelled: false },
+    spawnInProgress: false,
+    lastRestartAt: 0,
+    activeLocalPort: null,
+    healthStatus: "disabled",
+    publicReachable: false,
+    directReachable: false,
+  },
+  onUnexpectedExit: null,
 };
+const svc = runtime.svc;
 
 export function getTunnelService() { return svc; }
 export function isTunnelManuallyDisabled() { return svc.cancelToken.cancelled; }
 export function isTunnelReconnecting() { return svc.spawnInProgress; }
 
-let onUnexpectedExit = null;
-export function setTunnelUnexpectedExitCallback(cb) { onUnexpectedExit = cb; }
+export function setTunnelUnexpectedExitCallback(cb) { runtime.onUnexpectedExit = cb; }
 
 async function registerTunnelUrl(shortId, tunnelUrl) {
   await fetch(`${WORKER_URL}/api/tunnel/register`, {
@@ -36,14 +42,12 @@ function throwIfCancelled(token) {
 export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) || APP_CONFIG.defaultPort) {
   console.log(`[Tunnel] enable start (port=${localPort})`);
 
-  // Startup self-cleanup: kill any orphaned cloudflared from a previous app instance.
-  // This handles the case where the app was kill -9'd or crashed without graceful shutdown,
-  // leaving a zombie cloudflared (PPID=1) holding a dead tunnel.
-  killOrphanedCloudflared();
-
   svc.cancelToken = { cancelled: false };
   svc.activeLocalPort = localPort;
   svc.spawnInProgress = true;
+  svc.healthStatus = "starting";
+  svc.publicReachable = false;
+  svc.directReachable = false;
   const token = svc.cancelToken;
 
   try {
@@ -58,6 +62,9 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
         ]);
         if (directOk && publicOk) {
           console.log(`[Tunnel] already running, reuse: ${existing.tunnelUrl}`);
+          svc.healthStatus = "healthy";
+          svc.publicReachable = true;
+          svc.directReachable = true;
           notifyMonitorContentChanged();
           return { success: true, tunnelUrl: existing.tunnelUrl, shortId: existing.shortId, publicUrl, alreadyRunning: true };
         }
@@ -83,7 +90,8 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
     // Register exit handler BEFORE spawn so it fires even on early exit
     setUnexpectedExitHandler(() => {
       console.warn("[Tunnel] cloudflared exited unexpectedly, scheduling respawn");
-      if (onUnexpectedExit) onUnexpectedExit();
+      svc.healthStatus = "stopped";
+      if (runtime.onUnexpectedExit) runtime.onUnexpectedExit();
     });
 
     const { tunnelUrl } = await spawnQuickTunnel(localPort, onUrlUpdate);
@@ -97,19 +105,29 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
     console.log(`[Tunnel] registered shortId=${shortId} publicUrl=${publicUrl}`);
 
     // Verify publicUrl first (worker route is reliable; direct *.trycloudflare.com DNS may lag)
-    await waitForHealth(publicUrl, token);
-    console.log("[Tunnel] public URL healthy");
+    try {
+      await waitForHealth(publicUrl, token);
+      svc.publicReachable = true;
+      svc.healthStatus = "healthy";
+      console.log("[Tunnel] public URL healthy");
+    } catch (error) {
+      if (!isCloudflaredRunning() || token.cancelled) throw error;
+      svc.healthStatus = "pending";
+      console.warn(`[Tunnel] public URL pending while cloudflared is running: ${error.message}`);
+    }
     // Direct tunnel probe is best-effort: DNS for *.trycloudflare.com can be slow/blocked
-    if (!(await probeUrlAlive(tunnelUrl))) {
+    svc.directReachable = await probeUrlAlive(tunnelUrl);
+    if (!svc.directReachable) {
       console.warn("[Tunnel] direct URL not reachable yet, continuing via publicUrl");
     } else {
+      svc.healthStatus = "healthy";
       console.log("[Tunnel] direct URL healthy");
     }
 
     console.log("[Tunnel] enable success");
     registerGracefulShutdown();
     notifyMonitorContentChanged();
-    return { success: true, tunnelUrl, shortId, publicUrl };
+    return { success: true, tunnelUrl, shortId, publicUrl, healthPending: svc.healthStatus === "pending" };
   } catch (e) {
     // Suppress noise when spawn was deliberately killed (restart/disable superseded it)
     if (!/cloudflared killed|tunnel cancelled/.test(e.message)) {
@@ -137,6 +155,9 @@ export async function disableTunnel() {
   // Force-clear flags so a subsequent enable is not blocked by a stuck spawnInProgress
   svc.spawnInProgress = false;
   svc.activeLocalPort = null;
+  svc.healthStatus = "disabled";
+  svc.publicReachable = false;
+  svc.directReachable = false;
   notifyMonitorContentChanged();
   return { success: true };
 }
@@ -151,6 +172,10 @@ export async function getTunnelStatus() {
 
   // Lazy: skip PID probe entirely when user disabled tunnel
   const running = settingsEnabled ? isCloudflaredRunning() : false;
+  const healthStatus = !settingsEnabled ? "disabled"
+    : svc.spawnInProgress ? "starting"
+    : running ? svc.healthStatus
+    : "stopped";
 
   return {
     enabled: settingsEnabled && running,
@@ -158,6 +183,9 @@ export async function getTunnelStatus() {
     tunnelUrl,
     shortId,
     publicUrl,
-    running
+    running,
+    healthStatus,
+    publicReachable: running && svc.publicReachable,
+    directReachable: running && svc.directReachable,
   };
 }
