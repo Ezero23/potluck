@@ -1,5 +1,6 @@
 import { loadState, saveState, generateShortId } from "../shared/state.js";
-import { spawnQuickTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler, registerGracefulShutdown } from "./cloudflared.js";
+import { loadNamedTunnelConfig } from "../shared/namedTunnel.js";
+import { spawnQuickTunnel, spawnNamedTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler, registerGracefulShutdown } from "./cloudflared.js";
 import { clearPid } from "./pid.js";
 import { waitForHealth, probeUrlAlive } from "./healthCheck.js";
 import { WORKER_URL } from "./config.js";
@@ -51,6 +52,9 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
   const token = svc.cancelToken;
 
   try {
+    const named = loadNamedTunnelConfig();
+    if (named) return await enableNamedTunnel(named, localPort, token);
+
     if (isCloudflaredRunning()) {
       const existing = loadState();
       if (existing?.tunnelUrl && existing?.shortId) {
@@ -139,6 +143,53 @@ export async function enableTunnel(localPort = parseInt(process.env.PORT, 10) ||
   }
 }
 
+// Named tunnel mode: run the pre-provisioned account tunnel whose ingress
+// hostname is fixed. No worker registration, no shortId, no URL rotation.
+async function enableNamedTunnel(named, localPort, token) {
+  console.log(`[Tunnel] named tunnel mode: ${named.name} -> ${named.publicUrl}`);
+  try {
+    if (isCloudflaredRunning()) {
+      if (await probeUrlAlive(named.publicUrl)) {
+        console.log("[Tunnel] named tunnel already healthy, reuse");
+        svc.healthStatus = "healthy";
+        svc.publicReachable = true;
+        svc.directReachable = true;
+        notifyMonitorContentChanged();
+        return { success: true, tunnelUrl: named.publicUrl, publicUrl: named.publicUrl, named: true, alreadyRunning: true };
+      }
+      console.log("[Tunnel] named tunnel stale, respawn");
+    }
+
+    killCloudflared(localPort);
+    throwIfCancelled(token);
+
+    setUnexpectedExitHandler(() => {
+      console.warn("[Tunnel] cloudflared exited unexpectedly, scheduling respawn");
+      svc.healthStatus = "stopped";
+      if (runtime.onUnexpectedExit) runtime.onUnexpectedExit();
+    });
+
+    await spawnNamedTunnel(named.name);
+    throwIfCancelled(token);
+
+    await updateSettings({ tunnelEnabled: true, tunnelUrl: named.publicUrl });
+
+    await waitForHealth(named.publicUrl, token);
+    svc.publicReachable = true;
+    svc.directReachable = true;
+    svc.healthStatus = "healthy";
+    console.log(`[Tunnel] named tunnel healthy: ${named.publicUrl}`);
+    registerGracefulShutdown();
+    notifyMonitorContentChanged();
+    return { success: true, tunnelUrl: named.publicUrl, publicUrl: named.publicUrl, named: true };
+  } catch (e) {
+    if (!/cloudflared killed|tunnel cancelled/.test(e.message)) {
+      console.error(`[Tunnel] named enable error: ${e.message}`);
+    }
+    throw e;
+  }
+}
+
 export async function disableTunnel() {
   console.log("[Tunnel] disable");
   // Abort any in-flight enable so it cannot resurrect state after we clear it
@@ -165,10 +216,11 @@ export async function disableTunnel() {
 export async function getTunnelStatus() {
   const settings = await getSettings();
   const settingsEnabled = settings.tunnelEnabled === true;
+  const named = loadNamedTunnelConfig();
   const state = loadState();
   const shortId = state?.shortId || "";
-  const publicUrl = shortId ? `https://r${shortId}.abc-tunnel.us` : "";
-  const tunnelUrl = state?.tunnelUrl || "";
+  const publicUrl = named?.publicUrl || (shortId ? `https://r${shortId}.abc-tunnel.us` : "");
+  const tunnelUrl = named?.publicUrl || state?.tunnelUrl || "";
 
   // Lazy: skip PID probe entirely when user disabled tunnel
   const running = settingsEnabled ? isCloudflaredRunning() : false;
@@ -180,6 +232,7 @@ export async function getTunnelStatus() {
   return {
     enabled: settingsEnabled && running,
     settingsEnabled,
+    named: named ? named.name : null,
     tunnelUrl,
     shortId,
     publicUrl,

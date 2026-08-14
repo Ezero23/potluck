@@ -9,7 +9,7 @@ import {
   getTunnelService, getTailscaleService, setTunnelUnexpectedExitCallback,
   killCloudflared, killOrphanedCloudflared, isCloudflaredRunning,
   isTailscaleRunning, isTailscaleRunningStrict, isDaemonAlive, startFunnel,
-  checkInternet, loadState, probeCloudflareAlive,
+  checkInternet, loadState, loadNamedTunnelConfig, probeCloudflareAlive,
   RESTART_COOLDOWN_MS, NETWORK_SETTLE_MS,
   WATCHDOG_INTERVAL_MS, NETWORK_CHECK_INTERVAL_MS, VIRTUAL_IFACE_REGEX,
 } from "@/lib/tunnel";
@@ -166,12 +166,13 @@ async function safeRestartTunnel(reason) {
   // two consecutive dead ticks (~2 min) kill and respawn.
   if (isCloudflaredRunning()) {
     if (reason !== "watchdog") return;
+    // Named tunnels have one fixed hostname and no trycloudflare URL; the
+    // public probe alone is the truth there.
+    const named = loadNamedTunnelConfig();
     const state = loadState();
-    const publicUrl = state?.shortId ? `https://r${state.shortId}.abc-tunnel.us` : "";
-    const [publicOk, directOk] = await Promise.all([
-      probeCloudflareAlive(publicUrl),
-      probeCloudflareAlive(state?.tunnelUrl || ""),
-    ]);
+    const publicUrl = named?.publicUrl || (state?.shortId ? `https://r${state.shortId}.abc-tunnel.us` : "");
+    const publicOk = await probeCloudflareAlive(publicUrl);
+    const directOk = named ? publicOk : await probeCloudflareAlive(state?.tunnelUrl || "");
     if (publicOk || directOk) {
       g.tunnelHungTicks = 0;
       return;

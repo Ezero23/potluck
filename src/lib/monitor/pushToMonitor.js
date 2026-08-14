@@ -5,6 +5,7 @@ import { statsEmitter } from "../db/repos/usageRepo.js";
 import { getApiKeys } from "../localDb.js";
 import { isCloudflaredRunning } from "../tunnel/cloudflare/cloudflared.js";
 import { loadState } from "../tunnel/shared/state.js";
+import { loadNamedTunnelConfig } from "../tunnel/shared/namedTunnel.js";
 import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
 import { buildQuotaSnapshot } from "./quotaCoordinator.js";
 import pkg from "../../../package.json" with { type: "json" };
@@ -13,10 +14,12 @@ const DEFAULT_URL = "http://127.0.0.1:17321";
 const DEFAULT_DEVICE_ID = "potluck";
 const DEFAULT_DASHBOARD_PASSWORD = "123456";
 const PUSH_DEBOUNCE_MS = 500;
+const SNAPSHOT_REFRESH_MS = 30_000;
 const FAILURE_COOLDOWN_MS = 30_000;
 
 let lastPushAt = 0;
 let pushTimer = null;
+let snapshotTimer = null;
 let failureBackoffUntil = 0;
 let loggedDisabled = false;
 let loggedMissingSecret = false;
@@ -133,6 +136,7 @@ async function buildProvidersPayload() {
 }
 
 function buildTunnelInfo(settingsRaw) {
+  const named = loadNamedTunnelConfig();
   const state = loadState();
   const shortId = state?.shortId || "";
   const settingsEnabled = settingsRaw?.tunnelEnabled === true;
@@ -141,8 +145,8 @@ function buildTunnelInfo(settingsRaw) {
     enabled: running,
     settingsEnabled,
     running,
-    publicUrl: shortId ? `https://r${shortId}.abc-tunnel.us` : "",
-    tunnelUrl: state?.tunnelUrl || "",
+    publicUrl: named?.publicUrl || (shortId ? `https://r${shortId}.abc-tunnel.us` : ""),
+    tunnelUrl: named?.publicUrl || state?.tunnelUrl || "",
   };
 }
 
@@ -310,6 +314,11 @@ export function startMonitorPush() {
   statsEmitter.on("update", schedulePush);
   // Also push once at startup so the monitor immediately shows current totals.
   schedulePush();
+  // Account health and tunnel state can change without producing a usage event.
+  // Keep sending a fresh snapshot so a Monitor opened after Potluck can pair
+  // automatically and recover from an earlier failed delivery.
+  snapshotTimer = setInterval(schedulePush, SNAPSHOT_REFRESH_MS);
+  snapshotTimer.unref?.();
 }
 
 export function stopMonitorPush() {
@@ -318,5 +327,9 @@ export function stopMonitorPush() {
   if (pushTimer) {
     clearTimeout(pushTimer);
     pushTimer = null;
+  }
+  if (snapshotTimer) {
+    clearInterval(snapshotTimer);
+    snapshotTimer = null;
   }
 }
