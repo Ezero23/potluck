@@ -9,7 +9,7 @@ import {
   getTunnelService, getTailscaleService, setTunnelUnexpectedExitCallback,
   killCloudflared, killOrphanedCloudflared, isCloudflaredRunning,
   isTailscaleRunning, isTailscaleRunningStrict, isDaemonAlive, startFunnel,
-  checkInternet,
+  checkInternet, loadState, probeCloudflareAlive,
   RESTART_COOLDOWN_MS, NETWORK_SETTLE_MS,
   WATCHDOG_INTERVAL_MS, NETWORK_CHECK_INTERVAL_MS, VIRTUAL_IFACE_REGEX,
 } from "@/lib/tunnel";
@@ -46,6 +46,7 @@ const g = global.__appSingleton ??= {
   mitmStartInProgress: false,
   tunnelAutoResumed: false,
   tailscaleAutoResumed: false,
+  tunnelHungTicks: 0,
 };
 
 export async function initializeApp() {
@@ -158,7 +159,47 @@ async function safeRestartTunnel(reason) {
 
   // Process alive = trust cloudflared (self-reconnects via --retries 99, keeps same URL).
   // Killing a live process on network change drops the tunnel and rotates the quick-tunnel URL.
-  if (isCloudflaredRunning()) return;
+  //
+  // Exception: watchdog ticks verify that trust. A quick-tunnel QUIC session can
+  // half-open — the process idles, `--retries 99` never fires, and the edge
+  // answers 530 while nothing locally looks wrong. Probe the URLs; only after
+  // two consecutive dead ticks (~2 min) kill and respawn.
+  if (isCloudflaredRunning()) {
+    if (reason !== "watchdog") return;
+    const state = loadState();
+    const publicUrl = state?.shortId ? `https://r${state.shortId}.abc-tunnel.us` : "";
+    const [publicOk, directOk] = await Promise.all([
+      probeCloudflareAlive(publicUrl),
+      probeCloudflareAlive(state?.tunnelUrl || ""),
+    ]);
+    if (publicOk || directOk) {
+      g.tunnelHungTicks = 0;
+      return;
+    }
+    g.tunnelHungTicks += 1;
+    if (g.tunnelHungTicks < 2) {
+      console.log(`[Tunnel] watchdog: process alive but URLs dead (${g.tunnelHungTicks}/2), waiting`);
+      return;
+    }
+    g.tunnelHungTicks = 0;
+    if (Date.now() - svc.lastRestartAt < RESTART_COOLDOWN_MS) {
+      console.log("[Tunnel] hung but cooldown active, skip (watchdog)");
+      return;
+    }
+    if (!await checkInternet()) return;
+    console.log("[Tunnel] safeRestart (watchdog) — cloudflared alive but tunnel hung, respawning [force]");
+    const tunnelPort = parseInt(process.env.PORT, 10) || APP_CONFIG.defaultPort;
+    try {
+      await enableTunnel(tunnelPort);
+      svc.lastRestartAt = Date.now();
+      console.log("[Tunnel] hung-tunnel respawn success");
+    } catch (err) {
+      if (!/cloudflared killed|tunnel cancelled/.test(err.message)) {
+        console.log("[Tunnel] hung-tunnel respawn failed:", err.message);
+      }
+    }
+    return;
+  }
 
   if (!force && Date.now() - svc.lastRestartAt < RESTART_COOLDOWN_MS) {
     console.log(`[Tunnel] degraded but cooldown active, skip (${reason})`);
