@@ -3,6 +3,7 @@ import "material-symbols/outlined.css";
 import "./globals.css";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import { RuntimeI18nProvider } from "@/i18n/RuntimeI18nProvider";
+import ChunkErrorRecovery from "@/shared/components/ChunkErrorRecovery";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({ children }) {
       <body className={`${inter.variable} ${orbitron.variable} font-sans antialiased`}>
         <ThemeProvider>
           <RuntimeI18nProvider>
+            <ChunkErrorRecovery />
             {children}
           </RuntimeI18nProvider>
         </ThemeProvider>
