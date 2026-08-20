@@ -248,11 +248,13 @@ describe("buildDevicePayload monitor fields", () => {
 
     expect(payload.limits.schemaVersion).toBe(2);
     expect(payload.limits.snapshotType).toBe("full");
-    expect(payload.limits.sourceInstanceId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(payload.limits.sourceInstanceId).toMatch(/^potluck:[0-9a-f-]{36}$/);
     expect(payload.limits.snapshotId).toContain(payload.limits.sourceInstanceId);
     expect(rows).toHaveLength(2);
     expect(new Set(rows.map((row) => row.connectionKey)).size).toBe(2);
     expect(rows.every((row) => row.managedBy === "potluck")).toBe(true);
+    expect(rows.every((row) => row.sourceDetail === "managed")).toBe(true);
+    expect(rows.every((row) => String(row.connectionKey || "").startsWith("potluck:"))).toBe(true);
     expect(JSON.stringify(payload.limits)).not.toMatch(/sk-first|sk-second|accessToken|refreshToken/);
   });
 });
