@@ -2,11 +2,11 @@ import os from "node:os";
 import { getAdapter } from "../db/driver.js";
 import { parseJson, stringifyJson } from "../db/helpers/jsonCol.js";
 import { statsEmitter } from "../db/repos/usageRepo.js";
-import { getProviderConnections } from "../db/repos/connectionsRepo.js";
 import { getApiKeys } from "../localDb.js";
 import { isCloudflaredRunning } from "../tunnel/cloudflare/cloudflared.js";
 import { loadState } from "../tunnel/shared/state.js";
 import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
+import { buildQuotaSnapshot } from "./quotaCoordinator.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 const DEFAULT_URL = "http://127.0.0.1:17321";
@@ -114,104 +114,21 @@ function addDayIntoPeriod(period, day) {
   }
 }
 
-function normalizeConnectionStatus(conn) {
-  if (conn.isActive === false) return "disabled";
-
-  const testStatus = String(conn.testStatus || "").trim().toLowerCase();
-  const errorCode = String(conn.errorCode || "").trim().toLowerCase();
-  const lastError = String(conn.lastError || "").trim();
-
-  if (testStatus === "ok") return "ok";
-  if (testStatus === "error" || lastError) {
-    if (/rate.?limit|429|too many/.test(errorCode + " " + lastError.toLowerCase())) {
-      return errorCode.includes("source") || lastError.toLowerCase().includes("source")
-        ? "sourceRateLimited"
-        : "rateLimited";
-    }
-    if (/auth|unauth|401|403|forbidden/.test(errorCode + " " + lastError.toLowerCase())) {
-      return "unauthorized";
-    }
-    if (/unavailable|503|502|500|timeout/.test(errorCode + " " + lastError.toLowerCase())) {
-      return "unavailable";
-    }
-    return "error";
-  }
-
-  // Active connection with no explicit test result yet: treat as ok so it appears in Monitor.
-  return "ok";
-}
-
-function providerRegion(providerId) {
-  const p = String(providerId || "").toLowerCase();
-  if (p.endsWith("-cn")) return "cn";
-  if (p === "qoder") return "cn";
-  return "en";
-}
-
-function providerDisplayLabel(providerId) {
-  const p = String(providerId || "").toLowerCase();
-  const known = {
-    "gemini-cli": "Gemini CLI",
-    "qoder-cn": "Qoder CN",
-    kimchi: "Kimi (kimchi)",
-    kimi: "Kimi",
-    "opencode-go": "OpenCode Go",
-    "brave-search": "Brave Search",
-    tavily: "Tavily",
-    nvidia: "NVIDIA",
-    codex: "Codex",
-    openrouter: "OpenRouter",
-    ollama: "Ollama",
-  };
-  return known[p] || p[0]?.toUpperCase() + p.slice(1);
-}
-
-const MONITOR_COLLAPSIBLE_PROVIDERS = new Set([
-  "claude", "codex", "cursor", "openrouter", "mimo", "qoder", "kimi", "ollama",
-]);
-
-function stableAccountKey(conn) {
-  const provider = String(conn.provider || "").toLowerCase();
-  // For providers that Monitor may also track locally, use a stable identity
-  // (email or name) so aggregateLimits merges Potluck and local entries and
-  // the best status (usually ok from Potluck) wins.
-  if (MONITOR_COLLAPSIBLE_PROVIDERS.has(provider)) {
-    return conn.email || conn.name || conn.displayName || conn.id;
-  }
-  return conn.id;
-}
-
 async function buildProvidersPayload() {
   try {
-    const connections = await getProviderConnections();
-    const providers = connections.map((conn) => {
-      const name = conn.name || conn.displayName || "";
-      const email = conn.email || "";
-      const label = name || providerDisplayLabel(conn.provider);
-      const status = normalizeConnectionStatus(conn);
-      return {
-        provider: conn.provider,
-        accountKey: stableAccountKey(conn),
-        accountLabel: label,
-        accountName: name,
-        accountEmail: email,
-        status,
-        source: conn.authType || "api",
-        sourceDetail: "web",
-        // Use the current push time as updatedAt: a live Potluck connection should
-        // win over a stale notConfigured local observation in aggregateLimits.
-        updatedAt: new Date().toISOString(),
-        region: providerRegion(conn.provider),
-      };
-    });
-
-    return {
-      updatedAt: new Date().toISOString(),
-      providers,
-    };
+    return await buildQuotaSnapshot();
   } catch (e) {
-    console.error("[monitor] Failed to build providers payload:", e.message);
-    return { updatedAt: new Date().toISOString(), providers: [] };
+    console.error("[monitor] Failed to build quota snapshot:", e.message);
+    return {
+      schemaVersion: 2,
+      snapshotType: "full",
+      sourceInstanceId: "potluck",
+      snapshotId: `potluck-error-${Date.now()}`,
+      generatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      refreshMs: 300000,
+      providers: [],
+    };
   }
 }
 
