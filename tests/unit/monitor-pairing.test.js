@@ -224,4 +224,35 @@ describe("buildDevicePayload monitor fields", () => {
 
     expect("apiKey" in payload).toBe(false);
   });
+
+  it("pushes a versioned full quota snapshot with distinct Connection identities", async () => {
+    const { createProviderConnection } = await import("@/lib/db/repos/connectionsRepo.js");
+    await createProviderConnection({
+      provider: "glm",
+      authType: "apikey",
+      apiKey: "sk-first-must-stay-local",
+      name: "First GLM",
+      isActive: false,
+    });
+    await createProviderConnection({
+      provider: "glm",
+      authType: "apikey",
+      apiKey: "sk-second-must-stay-local",
+      name: "Second GLM",
+      isActive: false,
+    });
+
+    const { buildDevicePayload } = await importPushModule();
+    const payload = await buildDevicePayload();
+    const rows = payload.limits.providers;
+
+    expect(payload.limits.schemaVersion).toBe(2);
+    expect(payload.limits.snapshotType).toBe("full");
+    expect(payload.limits.sourceInstanceId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(payload.limits.snapshotId).toContain(payload.limits.sourceInstanceId);
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map((row) => row.connectionKey)).size).toBe(2);
+    expect(rows.every((row) => row.managedBy === "potluck")).toBe(true);
+    expect(JSON.stringify(payload.limits)).not.toMatch(/sk-first|sk-second|accessToken|refreshToken/);
+  });
 });
