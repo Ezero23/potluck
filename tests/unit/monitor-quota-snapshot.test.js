@@ -119,18 +119,19 @@ describe("connection quota coordinator", () => {
       windows: [{ kind: "session", used: 10, limit: 100 }],
       lastAttemptAt: "2026-08-20T01:00:00.000Z",
       lastSuccessAt: "2026-08-20T01:00:00.000Z",
-    }, "2026-08-20T01:00:00.000Z");
+    }, "2026-08-20T01:00:00.000Z", "instance-a");
     const second = buildProviderSnapshotRow(connection("b"), {
       quotaStatus: "fresh",
       windows: [{ kind: "session", used: 20, limit: 100 }],
       lastAttemptAt: "2026-08-20T01:00:00.000Z",
       lastSuccessAt: "2026-08-20T01:00:00.000Z",
-    }, "2026-08-20T01:00:00.000Z");
+    }, "2026-08-20T01:00:00.000Z", "instance-a");
 
     expect(first.provider).toBe("glm");
-    expect(first.connectionKey).toBe("a");
-    expect(second.connectionKey).toBe("b");
+    expect(first.connectionKey).toBe("potluck:instance-a:a");
+    expect(second.connectionKey).toBe("potluck:instance-a:b");
     expect(first.managedBy).toBe("potluck");
+    expect(first.sourceDetail).toBe("managed");
     expect(first.windows[0].used).toBe(10);
     expect(second.windows[0].used).toBe(20);
     expect(JSON.stringify([first, second])).not.toMatch(/"(accessToken|refreshToken|apiKey|cookie)"\s*:/i);
