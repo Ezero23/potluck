@@ -46,21 +46,75 @@ export async function getIflowUsage(accessToken) {
 
 /**
  * Ollama Cloud Usage
- * Ollama Cloud uses an API key from ollama.com/settings/keys
- * and has no public usage API — free tier has light usage limits (resets every 5h & 7d).
- * This returns an informational message with the plan details.
+ * GET https://ollama.com/api/usage (Bearer apiKey) reports each window's
+ * `usage` as a 0..1 ratio (1.0 = limit reached); no reset timestamps.
+ * POST /api/me returns the plan label — best-effort, never blocks quota.
  */
-export async function getOllamaUsage(accessToken, providerSpecificData) {
+const OLLAMA_USAGE_URL = "https://ollama.com/api/usage";
+const OLLAMA_ME_URL = "https://ollama.com/api/me";
+
+function ollamaWindow(usage) {
+  const ratio = Number(usage);
+  if (!Number.isFinite(ratio)) return null;
+  const usedPercent = Math.max(0, Math.min(100, Math.round(ratio * 1000) / 10));
+  return {
+    used: null,
+    total: null,
+    remaining: null,
+    remainingPercentage: Math.max(0, Math.min(100, 100 - usedPercent)),
+    usedPercent,
+    resetAt: null,
+    unlimited: false,
+  };
+}
+
+async function getOllamaPlanLabel(apiKey, proxyOptions) {
   try {
-    // Ollama Cloud does not expose a public quota/usage API.
-    // The provider is configured as noAuth with a notice explaining limits.
-    // We return a graceful message so the UI shows a friendly state instead of an error.
-    const plan = providerSpecificData?.plan || "Free";
-    return {
-      plan,
-      message: "Ollama Cloud uses a free tier with light usage limits (resets every 5h & 7d). For detailed usage tracking, visit ollama.com/settings/keys.",
-      quotas: [],
-    };
+    const response = await proxyAwareFetch(OLLAMA_ME_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+        "Content-Length": "0",
+      },
+    }, proxyOptions);
+    if (!response.ok) return "";
+    const plan = String((await response.json())?.Plan || "").trim();
+    return plan ? plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase() : "";
+  } catch {
+    return "";
+  }
+}
+
+export async function getOllamaUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) {
+    return { message: "Ollama API key not available." };
+  }
+  try {
+    const response = await proxyAwareFetch(OLLAMA_USAGE_URL, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+      },
+    }, proxyOptions);
+    if (response.status === 401 || response.status === 403) {
+      return { message: "Ollama API key invalid or expired." };
+    }
+    if (response.status === 429) {
+      return { message: "Ollama usage API rate limited (429)." };
+    }
+    if (!response.ok) {
+      return { message: `Ollama usage API error (${response.status}).` };
+    }
+    const limits = (await response.json())?.limits || {};
+    const session = ollamaWindow(limits.session?.usage);
+    const weekly = ollamaWindow(limits.weekly?.usage);
+    const quotas = {};
+    if (session) quotas.Session = session;
+    if (weekly) quotas.Weekly = weekly;
+    const plan = await getOllamaPlanLabel(apiKey, proxyOptions);
+    return { ...(plan ? { plan } : {}), quotas };
   } catch (error) {
     return { message: "Unable to fetch Ollama Cloud usage." };
   }
