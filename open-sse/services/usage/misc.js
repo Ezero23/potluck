@@ -48,7 +48,9 @@ export async function getIflowUsage(accessToken) {
  * Ollama Cloud Usage
  * GET https://ollama.com/api/usage (Bearer apiKey) reports each window's
  * `usage` as a 0..1 ratio (1.0 = limit reached); no reset timestamps.
- * POST /api/me returns the plan label — best-effort, never blocks quota.
+ * POST /api/me returns the plan label and account email — best-effort, never
+ * blocks quota. The email lets the Monitor recognize that this API-key row and
+ * a locally probed row are the same Ollama account and merge them.
  */
 const OLLAMA_USAGE_URL = "https://ollama.com/api/usage";
 const OLLAMA_ME_URL = "https://ollama.com/api/me";
@@ -68,7 +70,7 @@ function ollamaWindow(usage) {
   };
 }
 
-async function getOllamaPlanLabel(apiKey, proxyOptions) {
+async function getOllamaAccountInfo(apiKey, proxyOptions) {
   try {
     const response = await proxyAwareFetch(OLLAMA_ME_URL, {
       method: "POST",
@@ -78,11 +80,16 @@ async function getOllamaPlanLabel(apiKey, proxyOptions) {
         "Content-Length": "0",
       },
     }, proxyOptions);
-    if (!response.ok) return "";
-    const plan = String((await response.json())?.Plan || "").trim();
-    return plan ? plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase() : "";
+    if (!response.ok) return {};
+    const data = await response.json();
+    const rawPlan = String(data?.Plan || "").trim();
+    const email = String(data?.Email || "").trim().toLowerCase();
+    return {
+      ...(rawPlan ? { plan: rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() } : {}),
+      ...(email.includes("@") ? { email } : {}),
+    };
   } catch {
-    return "";
+    return {};
   }
 }
 
@@ -113,8 +120,8 @@ export async function getOllamaUsage(apiKey, proxyOptions = null) {
     const quotas = {};
     if (session) quotas.Session = session;
     if (weekly) quotas.Weekly = weekly;
-    const plan = await getOllamaPlanLabel(apiKey, proxyOptions);
-    return { ...(plan ? { plan } : {}), quotas };
+    const info = await getOllamaAccountInfo(apiKey, proxyOptions);
+    return { ...info, quotas };
   } catch (error) {
     return { message: "Unable to fetch Ollama Cloud usage." };
   }
