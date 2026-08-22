@@ -31,4 +31,19 @@ describe("provider display split (E1)", () => {
     expect(m.ALIAS_TO_ID.kr).toBe("kiro");
     expect(m.getProvidersByKind("tts").length).toBeGreaterThan(0);
   });
+
+  it("distinguishes recurring free quotas from trials and regional limits", async () => {
+    const { FREE_TIER_GUIDANCE } = await import("../../src/shared/constants/providersDisplay.js");
+    const { AI_PROVIDERS } = await import("../../src/shared/constants/providers.js");
+
+    expect(FREE_TIER_GUIDANCE.openrouter.badge).toBe("50 free req/day");
+    expect(FREE_TIER_GUIDANCE.openrouter.detail).toContain("$10 of lifetime credit purchases");
+    expect(FREE_TIER_GUIDANCE.vertex.kind).toBe("welcome-credit");
+    expect(FREE_TIER_GUIDANCE.byteplus.kind).toBe("trial-tokens");
+    expect(FREE_TIER_GUIDANCE.gemini.kind).toBe("region-and-model-limited");
+    expect(FREE_TIER_GUIDANCE.nvidia.kind).toBe("development-trial");
+    expect(AI_PROVIDERS["cloudflare-ai"].freeTier.badge).toBe("10K neurons/day");
+    expect(AI_PROVIDERS.ollama.notice.text).toContain("every 5 hours");
+    expect(AI_PROVIDERS.openrouter.notice.text).not.toContain("no credit card needed");
+  });
 });

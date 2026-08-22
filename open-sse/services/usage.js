@@ -10,6 +10,7 @@ import { getCodexUsage, consumeCodexRateLimitResetCredit, getCodexRateLimitReset
 export { consumeCodexRateLimitResetCredit, getCodexRateLimitResetCredits };
 import { getKiroUsage } from "./usage/kiro.js";
 import { getMiniMaxUsage } from "./usage/minimax.js";
+import { getOpencodeGoUsage } from "./usage/opencodego.js";
 import { getCodeBuddyCnUsage } from "./usage/codebuddy-cn.js";
 import {
   getQwenUsage,
@@ -37,13 +38,14 @@ const USAGE_HANDLERS = {
   "qoder-cn": (c) => getQoderUsage(c.accessToken, "qoder-cn", c.proxyOptions),
   qwen: (c) => getQwenUsage(c.accessToken, c.providerSpecificData),
   iflow: (c) => getIflowUsage(c.accessToken),
-  ollama: (c) => getOllamaUsage(c.accessToken),
+  ollama: (c) => getOllamaUsage(c.apiKey || c.accessToken, c.proxyOptions),
   glm: (c) => getGlmUsage(c.apiKey, c.provider, c.proxyOptions),
   "glm-cn": (c) => getGlmUsage(c.apiKey, c.provider, c.proxyOptions),
   minimax: (c) => getMiniMaxUsage(c.apiKey, c.provider, c.proxyOptions),
   "minimax-cn": (c) => getMiniMaxUsage(c.apiKey, c.provider, c.proxyOptions),
   "vercel-ai-gateway": (c) => getVercelAiGatewayUsage(c.apiKey, c.proxyOptions),
   "codebuddy-cn": (c) => getCodeBuddyCnUsage(c.accessToken, c.apiKey, c.providerSpecificData, c.proxyOptions),
+  "opencode-go": (c) => getOpencodeGoUsage(c.apiKey, c.proxyOptions),
 };
 
 export async function getUsageForProvider(connection, proxyOptions = null) {

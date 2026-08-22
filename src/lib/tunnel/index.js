@@ -45,6 +45,7 @@ export { probeUrlAlive as probeTailscaleAlive } from "./tailscale/healthCheck.js
 
 // Shared
 export { loadState, generateShortId } from "./shared/state.js";
+export { loadNamedTunnelConfig } from "./shared/namedTunnel.js";
 export { checkInternet } from "./shared/internetCheck.js";
 export {
   RESTART_COOLDOWN_MS,

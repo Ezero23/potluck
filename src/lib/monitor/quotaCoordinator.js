@@ -480,7 +480,7 @@ export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso
     accountKey: connectionSnapshotKey(connection, sourceId),
     accountLabel: text(connection.name || connection.displayName || connection.email || provider).slice(0, 64),
     accountName: text(connection.name || connection.displayName).slice(0, 64),
-    accountEmail: text(connection.email).slice(0, 254),
+    accountEmail: (text(connection.email) || text(state.usage?.email)).slice(0, 254),
     planLabel: text(state.usage?.plan).slice(0, 64),
     status,
     connectionStatus: connStatus,

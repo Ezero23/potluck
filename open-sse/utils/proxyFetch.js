@@ -226,7 +226,10 @@ async function getDispatcher(proxyUrl) {
       proxyDispatchers.delete(proxyDispatchers.keys().next().value);
     }
     const { ProxyAgent } = await import("undici");
-    proxyDispatchers.set(normalized, new ProxyAgent({ uri: normalized }));
+    proxyDispatchers.set(normalized, new ProxyAgent({
+      uri: normalized,
+      connect: { timeout: 10_000 },
+    }));
   }
 
   return proxyDispatchers.get(normalized);
@@ -343,8 +346,17 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       if (proxyOptions?.strictProxy === true) {
         throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
       }
-      console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
-      return originalFetch(url, options);
+      // Local proxies (Clash/ Surge/ …) drop connections in bursts while
+      // switching nodes or under load; one immediate retry absorbs most of
+      // those before the direct fallback — which from CN is usually dead for
+      // the very hosts that need the proxy.
+      try {
+        const dispatcher = await getDispatcher(proxyUrl);
+        return await originalFetch(url, { ...options, dispatcher });
+      } catch (retryError) {
+        console.warn(`[ProxyFetch] Proxy failed twice, falling back to direct: ${retryError.message}`);
+        return originalFetch(url, options);
+      }
     }
   }
 

@@ -66,6 +66,9 @@ export default function APIPageClient({ machineId }) {
   const tsMissRef = useRef(0);
   // Browser-side reachable cache (independent of backend DNS quirks)
   const tunnelClientReachableRef = useRef(false);
+  // Server-reported reachability: fallback when the browser's own probe fails
+  // (e.g. a local HTTP/SOCKS proxy breaks the tunnel hostname for this browser only).
+  const tunnelServerReachableRef = useRef(false);
   const tsClientReachableRef = useRef(false);
   // Track whether reachable=true was ever observed in this session.
   // Distinguishes "Checking..." (initial cold cache) from "Reconnecting..." (lost connection).
@@ -127,7 +130,7 @@ export default function APIPageClient({ machineId }) {
     const probeBoth = async () => {
       if (document.hidden) return;
       if (tunnelEnabled && (tunnelUrl || tunnelPublicUrl)) {
-        const ok = await clientPingAny(tunnelPublicUrl, tunnelUrl);
+        const ok = (await clientPingAny(tunnelPublicUrl, tunnelUrl)) || tunnelServerReachableRef.current;
         tunnelClientReachableRef.current = ok;
         if (ok) { tunnelMissRef.current = 0; setTunnelReachable(true); if (!tunnelEverReachableRef.current) { tunnelEverReachableRef.current = true; setTunnelEverReachable(true); } }
         else { tunnelMissRef.current += 1; if (tunnelMissRef.current >= REACHABLE_MISS_THRESHOLD) setTunnelReachable(false); }
@@ -153,8 +156,8 @@ export default function APIPageClient({ machineId }) {
     return () => clearInterval(id);
   }, [tunnelEnabled, tunnelUrl, tunnelPublicUrl, tsEnabled, tsUrl, tunnelReachable, tsReachable]);
 
-  // Client-side reachable only (server no longer probes; watchdog handles backend health).
-  // Miss-debounce: only flip to false after N consecutive misses.
+  // Reachable = browser ping, falling back to the server's own probe (covers
+  // browsers whose local proxy breaks the tunnel hostname). Miss-debounce applies.
   const updateReachable = useCallback((_unused, clientRef, missRef, setter, everRef, everSetter) => {
     const reachable = clientRef.current;
     if (reachable) {
@@ -181,6 +184,7 @@ export default function APIPageClient({ machineId }) {
       setTunnelUrl(tUrl);
       setTunnelPublicUrl(data.tunnel?.publicUrl || "");
       setTunnelEnabled(tEnabled);
+      tunnelServerReachableRef.current = data.tunnel?.publicReachable === true;
       updateReachable(null, tunnelClientReachableRef, tunnelMissRef, setTunnelReachable, tunnelEverReachableRef, setTunnelEverReachable);
 
       const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
@@ -212,6 +216,7 @@ export default function APIPageClient({ machineId }) {
         setTunnelUrl(tUrl);
         setTunnelPublicUrl(data.tunnel?.publicUrl || "");
         setTunnelEnabled(tEnabled);
+        tunnelServerReachableRef.current = data.tunnel?.publicReachable === true;
         updateReachable(null, tunnelClientReachableRef, tunnelMissRef, setTunnelReachable, tunnelEverReachableRef, setTunnelEverReachable);
 
         const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;

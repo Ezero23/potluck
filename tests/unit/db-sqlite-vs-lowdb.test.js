@@ -101,6 +101,31 @@ describe("DB SQLite layer — public API parity", () => {
     expect(back.providerSpecificData).toEqual({ foo: "bar" });
   });
 
+  it("providerConnections: same-name API keys remain separate accounts", async () => {
+    const first = await sqliteDb.createProviderConnection({
+      provider: "kimi",
+      authType: "apikey",
+      name: "codingplan",
+      apiKey: "key-one",
+    });
+    const second = await sqliteDb.createProviderConnection({
+      provider: "kimi",
+      authType: "apikey",
+      name: "codingplan",
+      apiKey: "key-two",
+    });
+
+    const accounts = await sqliteDb.getProviderConnections({ provider: "kimi" });
+    expect(accounts).toHaveLength(2);
+    expect(new Set(accounts.map((account) => account.id))).toEqual(
+      new Set([first.id, second.id]),
+    );
+    expect(accounts.map((account) => account.apiKey).sort()).toEqual([
+      "key-one",
+      "key-two",
+    ]);
+  });
+
   it("providerNodes: CRUD", async () => {
     const n = await sqliteDb.createProviderNode({ type: "openai", name: "Test", baseUrl: "https://api.test", apiType: "openai" });
     expect(n.id).toBeDefined();

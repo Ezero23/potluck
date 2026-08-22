@@ -125,6 +125,28 @@ describe("monitor push lifecycle", () => {
     stopMonitorPush();
     expect(statsEmitter.listenerCount("update")).toBe(listenerCountBefore);
   });
+
+  it("refreshes the snapshot so Monitor can start after Potluck", async () => {
+    vi.useFakeTimers();
+    try {
+      const { startMonitorPush, stopMonitorPush } = await importPushModule();
+      // Baseline first: imported modules (db driver, usageRepo, …) may already
+      // hold timers of their own, so count relative to what exists.
+      const before = vi.getTimerCount();
+      startMonitorPush();
+      expect(vi.getTimerCount() - before).toBe(3);
+
+      await vi.advanceTimersByTimeAsync(500);
+      expect(vi.getTimerCount() - before).toBe(2);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(vi.getTimerCount() - before).toBe(2);
+      stopMonitorPush();
+      expect(vi.getTimerCount() - before).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("buildDevicePayload monitor fields", () => {

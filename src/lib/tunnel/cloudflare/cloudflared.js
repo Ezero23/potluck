@@ -416,6 +416,81 @@ export async function spawnQuickTunnel(localPort, onUrlUpdate) {
   });
 }
 
+/**
+ * Spawn a named (account) tunnel by name. Uses ~/.cloudflared/config.yml and
+ * the tunnel credentials — the ingress hostname is fixed, no trycloudflare
+ * URL is generated. Resolves once connections register with the edge.
+ */
+export async function spawnNamedTunnel(tunnelName) {
+  const binaryPath = await ensureCloudflared();
+
+  const child = spawn(binaryPath, ["tunnel", "run", tunnelName], {
+    detached: false,
+    windowsHide: true,
+    cwd: os.tmpdir(),
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+
+  cloudflaredProcess = child;
+  savePid(child.pid);
+
+  return new Promise((resolve, reject) => {
+    let connectionCount = 0;
+    let resolved = false;
+    let logTail = "";
+
+    const timeout = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      reject(new Error(`named tunnel timed out. Last log: ${logTail.slice(-800) || "(empty)"}`));
+    }, 90000);
+
+    const handleLog = (data) => {
+      const msg = data.toString();
+      logTail = (logTail + msg).slice(-4000);
+      // Two registered connections is enough evidence the tunnel is up
+      // (cloudflared opens four); more just take longer on slow networks.
+      const matches = msg.match(/Registered tunnel connection/g);
+      if (matches) {
+        connectionCount += matches.length;
+        if (connectionCount >= 2 && !resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          resolve(child);
+        }
+      }
+    };
+
+    child.stdout.on("data", handleLog);
+    child.stderr.on("data", handleLog);
+
+    child.on("error", (err) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeout);
+      reject(err);
+    });
+
+    child.on("exit", (code, signal) => {
+      releaseChild(child);
+      if (consumeIntentionalKill(child)) {
+        clearTimeout(timeout);
+        if (!resolved) { resolved = true; reject(new Error("cloudflared killed")); }
+        return;
+      }
+      console.log(`[Tunnel] named cloudflared exit code=${code} signal=${signal}`);
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        const tail = logTail.slice(-600).trim() || "(empty)";
+        reject(new Error(`cloudflared named tunnel exited (code ${code}). Last log: ${tail}`));
+        return;
+      }
+      if (unexpectedExitHandler) unexpectedExitHandler();
+    });
+  });
+}
+
 // Kill cloudflared processes whose command line targets the given port (any host).
 // The numeric boundary prevents the configured port from matching a longer port number.
 function killCloudflaredByPort(port) {

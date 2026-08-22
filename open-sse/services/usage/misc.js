@@ -2,6 +2,8 @@
  * Misc usage handlers (Qwen, iFlow, Ollama, GLM, Vercel AI Gateway, Qoder)
  */
 
+import crypto from "node:crypto";
+
 import { proxyAwareFetch } from "../../utils/proxyFetch.js";
 import { U } from "./shared.js";
 
@@ -46,28 +48,148 @@ export async function getIflowUsage(accessToken) {
 
 /**
  * Ollama Cloud Usage
- * Ollama Cloud uses an API key from ollama.com/settings/keys
- * and has no public usage API — free tier has light usage limits (resets every 5h & 7d).
- * This returns an informational message with the plan details.
+ * GET https://ollama.com/api/usage (Bearer apiKey) reports each window's
+ * `usage` as a 0..1 ratio (1.0 = limit reached); no reset timestamps.
+ * POST /api/me returns the plan label and account email — best-effort, never
+ * blocks quota. The email lets the Monitor recognize that this API-key row and
+ * a locally probed row are the same Ollama account and merge them.
  */
-export async function getOllamaUsage(accessToken, providerSpecificData) {
+const OLLAMA_USAGE_URL = "https://ollama.com/api/usage";
+const OLLAMA_ME_URL = "https://ollama.com/api/me";
+
+function ollamaWindow(usage) {
+  const ratio = Number(usage);
+  if (!Number.isFinite(ratio)) return null;
+  const usedPercent = Math.max(0, Math.min(100, Math.round(ratio * 1000) / 10));
+  return {
+    used: null,
+    total: null,
+    remaining: null,
+    remainingPercentage: Math.max(0, Math.min(100, 100 - usedPercent)),
+    usedPercent,
+    resetAt: null,
+    unlimited: false,
+  };
+}
+
+async function getOllamaAccountInfo(apiKey, proxyOptions) {
   try {
-    // Ollama Cloud does not expose a public quota/usage API.
-    // The provider is configured as noAuth with a notice explaining limits.
-    // We return a graceful message so the UI shows a friendly state instead of an error.
-    const plan = providerSpecificData?.plan || "Free";
+    const response = await proxyAwareFetch(OLLAMA_ME_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+        "Content-Length": "0",
+      },
+    }, proxyOptions);
+    if (!response.ok) return {};
+    const data = await response.json();
+    const rawPlan = String(data?.Plan || "").trim();
+    const email = String(data?.Email || "").trim().toLowerCase();
     return {
-      plan,
-      message: "Ollama Cloud uses a free tier with light usage limits (resets every 5h & 7d). For detailed usage tracking, visit ollama.com/settings/keys.",
-      quotas: [],
+      ...(rawPlan ? { plan: rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() } : {}),
+      ...(email.includes("@") ? { email } : {}),
     };
+  } catch {
+    return {};
+  }
+}
+
+export async function getOllamaUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) {
+    return { message: "Ollama API key not available." };
+  }
+  try {
+    const response = await proxyAwareFetch(OLLAMA_USAGE_URL, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+      },
+    }, proxyOptions);
+    if (response.status === 401 || response.status === 403) {
+      return { message: "Ollama API key invalid or expired." };
+    }
+    if (response.status === 429) {
+      return { message: "Ollama usage API rate limited (429)." };
+    }
+    if (!response.ok) {
+      return { message: `Ollama usage API error (${response.status}).` };
+    }
+    const limits = (await response.json())?.limits || {};
+    const session = ollamaWindow(limits.session?.usage);
+    const weekly = ollamaWindow(limits.weekly?.usage);
+    const quotas = {};
+    if (session) quotas.Session = session;
+    if (weekly) quotas.Weekly = weekly;
+    const info = await getOllamaAccountInfo(apiKey, proxyOptions);
+    return { ...info, quotas };
   } catch (error) {
     return { message: "Unable to fetch Ollama Cloud usage." };
   }
 }
 
+// GLM reports window length as unit × number: unit 5 = minutes, 3 = hours,
+// 1 = days, 6 = weeks. Returns minutes, or null when the pair is unusable.
+function glmWindowMinutes(limit) {
+  const unit = Number(limit?.unit);
+  const number = Number(limit?.number);
+  if (!Number.isFinite(unit) || !Number.isFinite(number) || number <= 0) return null;
+  if (unit === 5) return number;
+  if (unit === 3) return number * 60;
+  if (unit === 1) return number * 24 * 60;
+  if (unit === 6) return number * 7 * 24 * 60;
+  return null;
+}
+
+function glmNumberOrNull(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function glmUsedPercent(limit) {
+  const total = glmNumberOrNull(limit?.usage);
+  const remaining = glmNumberOrNull(limit?.remaining);
+  const currentValue = glmNumberOrNull(limit?.currentValue ?? limit?.current_value);
+  if (total !== null && total > 0) {
+    let usedRaw = null;
+    if (remaining !== null) {
+      const usedFromRemaining = total - remaining;
+      usedRaw = currentValue === null ? usedFromRemaining : Math.max(usedFromRemaining, currentValue);
+    } else if (currentValue !== null) {
+      usedRaw = currentValue;
+    }
+    if (usedRaw !== null) {
+      return Math.max(0, Math.min(100, (Math.max(0, Math.min(total, usedRaw)) / total) * 100));
+    }
+  }
+  const explicit = glmNumberOrNull(limit?.percentage ?? limit?.usedPercent ?? limit?.used_percent);
+  return explicit === null ? null : Math.max(0, Math.min(100, explicit));
+}
+
+function glmQuota(limit) {
+  const usedPercent = glmUsedPercent(limit);
+  if (usedPercent === null) return null;
+  const resetMs = Number(limit?.nextResetTime ?? limit?.next_reset_time) || 0;
+  return {
+    used: usedPercent,
+    total: 100,
+    remaining: Math.max(0, 100 - usedPercent),
+    remainingPercentage: Math.max(0, 100 - usedPercent),
+    resetAt: resetMs > 0 ? new Date(resetMs).toISOString() : null,
+    unlimited: false,
+  };
+}
+
 /**
  * GLM Coding Plan usage (international + China regions)
+ *
+ * bigmodel.cn coding plans report quotas as CREDIT_LIMIT with 5-hour + weekly
+ * windows; z.ai international uses TOKENS_LIMIT. Parse both.
  */
 export async function getGlmUsage(apiKey, provider, proxyOptions = null) {
   if (!apiKey) {
@@ -80,7 +202,10 @@ export async function getGlmUsage(apiKey, provider, proxyOptions = null) {
   try {
     const response = await proxyAwareFetch(quotaUrl, {
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        // This endpoint expects the raw API key as the Authorization value
+        // (matching the official GLM Coding Plan client), not Bearer form.
+        Authorization: apiKey,
+        "Accept-Language": "en-US,en",
         Accept: "application/json",
       },
     }, proxyOptions);
@@ -95,30 +220,32 @@ export async function getGlmUsage(apiKey, provider, proxyOptions = null) {
     const json = await response.json();
     const data = json?.data && typeof json.data === "object" ? json.data : {};
     const limits = Array.isArray(data.limits) ? data.limits : [];
+
+    let tokenLimits = limits.filter((limit) => limit && limit.type === "TOKENS_LIMIT" && glmUsedPercent(limit) !== null);
+    const creditLimits = limits.filter((limit) => limit && limit.type === "CREDIT_LIMIT" && glmUsedPercent(limit) !== null);
+    if (!tokenLimits.length && creditLimits.length) tokenLimits = creditLimits;
+    tokenLimits.sort((a, b) => (glmWindowMinutes(a) ?? Infinity) - (glmWindowMinutes(b) ?? Infinity));
+
     const quotas = {};
-
-    for (const limit of limits) {
-      if (!limit || limit.type !== "TOKENS_LIMIT") continue;
-      const usedPercent = Number(limit.percentage) || 0;
-      const resetMs = Number(limit.nextResetTime) || 0;
-      const remaining = Math.max(0, 100 - usedPercent);
-
-      quotas["session"] = {
-        used: usedPercent,
-        total: 100,
-        remaining,
-        remainingPercentage: remaining,
-        resetAt: resetMs > 0 ? new Date(resetMs).toISOString() : null,
-        unlimited: false,
-      };
-    }
+    const session = tokenLimits.length >= 2 ? tokenLimits[0] : null;
+    const weekly = tokenLimits.length >= 2 ? tokenLimits[tokenLimits.length - 1] : tokenLimits[0] || null;
+    if (session) quotas["Session"] = glmQuota(session);
+    if (weekly) quotas["Weekly"] = glmQuota(weekly);
 
     const levelRaw = typeof data.level === "string" ? data.level : "";
     const plan = levelRaw
       ? levelRaw.charAt(0).toUpperCase() + levelRaw.slice(1).toLowerCase()
       : "Unknown";
 
-    return { plan, quotas };
+    // Opaque account fingerprint: the Monitor hashes the same API key with the
+    // same recipe (sha256 of "zai\0<key>\0") for its local zai row, so the web
+    // row and the local row can be recognized as the same account and merged.
+    const fingerprint = crypto.createHash("sha256")
+      .update("zai").update("\0")
+      .update(apiKey).update("\0")
+      .digest("hex");
+
+    return { plan, email: `glm-${fingerprint}@glm-account.local`, quotas };
   } catch (error) {
     return { message: `GLM error: ${error.message}` };
   }

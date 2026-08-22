@@ -119,10 +119,11 @@ export async function createProviderConnection(data) {
         if (incomingUsername || existingUsername) return false;
         return true;
       });
-    } else if (data.authType === "apikey" && data.name) {
-      existing = all.find(c => c.authType === "apikey" && c.name === data.name);
     }
-    // access_token: never dedup — user manages duplicates manually
+    // API keys and access tokens are never deduplicated by display name. A
+    // label is not an account identity, and users commonly give several keys
+    // the same label when building a provider pool. Updates already have an
+    // explicit ID and go through updateProviderConnection().
 
     if (existing) {
       const merged = { ...existing, ...data, updatedAt: now };
