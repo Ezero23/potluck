@@ -32,7 +32,7 @@ Requirements: Node.js 22 and npm.
 **Option 1 — CLI release (recommended for desktop):**
 
 ```bash
-npm install -g https://github.com/Ezero23/potluck/releases/download/v0.1.10/potluck-cli-0.1.10.tgz
+npm install -g https://github.com/Ezero23/potluck/releases/download/v0.1.11/potluck-cli-0.1.11.tgz
 potluck
 ```
 
