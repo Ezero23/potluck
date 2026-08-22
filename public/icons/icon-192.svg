@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="24" fill="#0a0a0a"/>
-  <text x="96" y="120" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#ffffff" text-anchor="middle">9R</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="108" fill="#061116"/>
+  <path d="M101 278c1 101 66 169 155 169s154-68 155-169c-42 24-96 37-155 37s-113-13-155-37Z" fill="url(#bowl)"/>
+  <path d="M110 276c36-22 82-33 118-36M284 240c36 3 82 14 118 36" stroke="url(#rim)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M149 139v38c0 28 14 38 35 50 17 10 26 23 26 48v18M220 119v74c0 20 24 28 24 53v47M292 119v74c0 20-24 28-24 53v47M363 139v38c0 28-14 38-35 50-17 10-26 23-26 48v18" stroke="#F5FFFF" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="149" cy="125" r="34" fill="#0BB8DB"/><circle cx="220" cy="105" r="34" fill="#10C8D2"/><circle cx="292" cy="105" r="34" fill="#13D2C5"/><circle cx="363" cy="125" r="34" fill="#16D6C0"/>
+  <defs>
+    <linearGradient id="bowl" x1="101" y1="320" x2="411" y2="320" gradientUnits="userSpaceOnUse"><stop stop-color="#08B8D8"/><stop offset=".5" stop-color="#0DBFD7"/><stop offset=".5" stop-color="#10D0C9"/><stop offset="1" stop-color="#10D6C2"/></linearGradient>
+    <linearGradient id="rim" x1="110" y1="258" x2="402" y2="258" gradientUnits="userSpaceOnUse"><stop stop-color="#08B8D8"/><stop offset="1" stop-color="#10D6C2"/></linearGradient>
+  </defs>
 </svg>

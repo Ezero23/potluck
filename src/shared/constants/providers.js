@@ -1,6 +1,9 @@
 // Provider definitions
 import REGISTRY from "open-sse/providers/registry/index.js";
-import { RISK_NOTICE } from "@/shared/constants/providersDisplay";
+import {
+  FREE_TIER_GUIDANCE,
+  RISK_NOTICE,
+} from "@/shared/constants/providersDisplay";
 
 const MEDIA_ENTRY_KEYS = [
   "serviceKinds", "ttsConfig", "sttConfig", "embeddingConfig",
@@ -18,6 +21,13 @@ function buildProviderEntry(r) {
   }
   const display = { ...(r.display || {}) };
   if (display.deprecationNotice === "RISK_NOTICE") display.deprecationNotice = RISK_NOTICE;
+  const freeTier = FREE_TIER_GUIDANCE[r.id];
+  if (freeTier) {
+    display.notice = {
+      ...(display.notice || {}),
+      text: freeTier.detail,
+    };
+  }
   return {
     ...display,
     id: r.id,
@@ -35,6 +45,7 @@ function buildProviderEntry(r) {
     ...(r.authModes ? { authModes: r.authModes } : {}),
     ...(r.authType ? { authType: r.authType } : {}),
     ...(r.authHint ? { authHint: r.authHint } : {}),
+    ...(freeTier ? { freeTier } : {}),
   };
 }
 
