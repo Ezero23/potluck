@@ -12,6 +12,7 @@ import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { getExecutor } from "open-sse/executors/index.js";
 import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
+import { recordMonitorEvent } from "./healthEvents.js";
 
 export const QUOTA_SNAPSHOT_SCHEMA_VERSION = 2;
 export const DEFAULT_QUOTA_TTL_MS = 5 * 60 * 1000;
@@ -32,6 +33,13 @@ function text(value) {
 
 function lower(value) {
   return text(value).toLowerCase();
+}
+
+function normalizeSourceInstanceId(value) {
+  const raw = text(value);
+  if (!raw) return "";
+  if (raw.startsWith("potluck:")) return raw.slice(0, 128);
+  return `potluck:${safeIdentityToken(raw, "instance")}`.slice(0, 128);
 }
 
 function nowIso(now = Date.now()) {
@@ -64,6 +72,17 @@ function classifyErrorCategory(quotaStatus) {
   if (quotaStatus === "unavailable") return "unavailable";
   if (quotaStatus === "stale") return "network";
   return "unknown";
+}
+
+function classifyErrorCode(quotaStatus, { usage, error } = {}) {
+  const message = lower(error?.message || usage?.message);
+  if (quotaStatus === "unauthorized") return isAuthExpiredMessage(usage) ? "auth_expired" : "auth_failed";
+  if (quotaStatus === "rateLimited") return "rate_limited";
+  if (quotaStatus === "unavailable") return includesAny(message, ["timeout"]) ? "provider_timeout" : "provider_unavailable";
+  if (quotaStatus === "unsupported") return "quota_unsupported";
+  if (quotaStatus === "stale") return "last_good_snapshot";
+  if (quotaStatus === "error") return "quota_error";
+  return quotaStatus;
 }
 
 function safeErrorDetail(quotaStatus) {
@@ -304,8 +323,9 @@ function mergeState(previous, attempt, attemptedAt) {
     quotaStatus,
     error: successful || quotaStatus === "unsupported" ? null : {
       category: classifyErrorCategory(quotaStatus),
-      code: quotaStatus,
+      code: classifyErrorCode(quotaStatus, attempt),
       safeDetail: safeErrorDetail(quotaStatus),
+      retryAt: isoOrNull(attempt?.error?.retryAt || attempt?.error?.retryAfter),
       recoverable: true,
     },
   };
@@ -341,6 +361,29 @@ export function createQuotaCoordinator({
         cached: false,
       };
       cache.set(key, next);
+      if (!previous || previous.quotaStatus !== next.quotaStatus) {
+        recordMonitorEvent({
+          type: "health_event",
+          occurredAt: attemptedAt,
+          provider: connection.provider,
+          connectionKey: connectionSnapshotKey(connection),
+          status: next.quotaStatus,
+          reasonCode: next.error?.code || next.quotaStatus,
+          reason: next.error?.safeDetail,
+          retryAt: next.error?.retryAt,
+        });
+      }
+      recordMonitorEvent({
+        type: "quota_attempt",
+        occurredAt: attemptedAt,
+        provider: connection.provider,
+        connectionKey: connectionSnapshotKey(connection),
+        status: next.quotaStatus,
+        reasonCode: next.error?.code || next.quotaStatus,
+        reason: next.error?.safeDetail,
+        retryAt: next.error?.retryAt,
+        final: next.quotaStatus === "fresh" || next.quotaStatus === "unsupported",
+      });
       return next;
     })().finally(() => inflight.delete(key));
 
@@ -382,20 +425,20 @@ export function ensureMonitorSourceId() {
   if (sourceInstanceId) return sourceInstanceId;
   const configured = text(process.env.POTLUCK_MONITOR_SOURCE_ID);
   if (configured) {
-    sourceInstanceId = configured.slice(0, 128);
+    sourceInstanceId = normalizeSourceInstanceId(configured);
     return sourceInstanceId;
   }
   const file = sourceIdFile();
   try {
     const existing = text(fs.readFileSync(file, "utf8"));
     if (existing) {
-      sourceInstanceId = existing.slice(0, 128);
+      sourceInstanceId = normalizeSourceInstanceId(existing);
       return sourceInstanceId;
     }
   } catch {
     // Create below.
   }
-  sourceInstanceId = crypto.randomUUID();
+  sourceInstanceId = normalizeSourceInstanceId(crypto.randomUUID());
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
     fs.writeFileSync(file, `${sourceInstanceId}\n`, { mode: 0o600 });
@@ -405,7 +448,17 @@ export function ensureMonitorSourceId() {
   return sourceInstanceId;
 }
 
-export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso()) {
+function safeIdentityToken(value, fallback) {
+  const token = text(value).replace(/[^A-Za-z0-9._:-]/g, "_").slice(0, 80);
+  return token || fallback;
+}
+
+function connectionSnapshotKey(connection, sourceId = ensureMonitorSourceId()) {
+  const instance = text(sourceId).replace(/^potluck:/, "");
+  return `potluck:${safeIdentityToken(instance, "instance")}:${safeIdentityToken(connection?.id, "connection")}`;
+}
+
+export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso(), sourceId = ensureMonitorSourceId()) {
   const provider = text(connection.provider);
   const quotaStatus = state.quotaStatus || "notChecked";
   const connStatus = state.quotaStatus === "fresh" && connection.isActive !== false
@@ -423,8 +476,8 @@ export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso
           : (quotaStatus === "error" && !hasWindows ? "error" : (connStatus === "ok" ? "ok" : connStatus)))));
   return {
     provider,
-    connectionKey: text(connection.id),
-    accountKey: text(connection.id),
+    connectionKey: connectionSnapshotKey(connection, sourceId),
+    accountKey: connectionSnapshotKey(connection, sourceId),
     accountLabel: text(connection.name || connection.displayName || connection.email || provider).slice(0, 64),
     accountName: text(connection.name || connection.displayName).slice(0, 64),
     accountEmail: (text(connection.email) || text(state.usage?.email)).slice(0, 254),
@@ -433,7 +486,7 @@ export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso
     connectionStatus: connStatus,
     quotaStatus: hasWindows && quotaStatus === "fresh" ? "fresh" : quotaStatus,
     source: connection.authType === "oauth" ? "oauth" : "api",
-    sourceDetail: "web",
+    sourceDetail: "managed",
     managedBy: "potluck",
     authType: connection.authType === "oauth"
       ? "oauth"
@@ -451,6 +504,7 @@ export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso
 
 export async function buildQuotaSnapshot({ force = false, concurrency = DEFAULT_QUOTA_CONCURRENCY } = {}) {
   const connections = await getProviderConnections();
+  const sourceInstanceIdValue = ensureMonitorSourceId();
   const generatedAt = nowIso();
   const providers = new Array(connections.length);
   const workerCount = Math.max(1, Math.min(Number(concurrency) || DEFAULT_QUOTA_CONCURRENCY, connections.length || 1));
@@ -462,11 +516,10 @@ export async function buildQuotaSnapshot({ force = false, concurrency = DEFAULT_
       if (index >= connections.length) return;
       const connection = connections[index];
       const state = await defaultCoordinator.fetchConnection(connection, { force });
-      providers[index] = buildProviderSnapshotRow(connection, state, generatedAt);
+      providers[index] = buildProviderSnapshotRow(connection, state, generatedAt, sourceInstanceIdValue);
     }
   };
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  const sourceInstanceIdValue = ensureMonitorSourceId();
   return {
     schemaVersion: QUOTA_SNAPSHOT_SCHEMA_VERSION,
     snapshotId: `${sourceInstanceIdValue}:${Date.now()}:${crypto.randomUUID()}`,
@@ -475,7 +528,7 @@ export async function buildQuotaSnapshot({ force = false, concurrency = DEFAULT_
     generatedAt,
     updatedAt: generatedAt,
     refreshMs: DEFAULT_QUOTA_TTL_MS,
-    capabilities: ["connection_status_v2", "quota_status_v2", "full_snapshot", "last_good"],
+    capabilities: ["connection_status_v2", "quota_status_v2", "multi_connection", "quota_pool_key"],
     providers,
   };
 }

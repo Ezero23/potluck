@@ -31,6 +31,7 @@ import {
   acquireSource,
   releaseSource,
 } from "open-sse/routing/engine.js";
+import { recordMonitorEvent } from "@/lib/monitor/healthEvents.js";
 
 /**
  * Handle chat completion request
@@ -183,6 +184,8 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
 
   const fallbackOn = new Set(profile.fallbackOn || ["403", "429", "quota_exceeded", "timeout", "5xx"]);
   const excludeCandidates = [];
+  const requestId = String(request?.headers?.get?.("x-request-id") || `potluck-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`).slice(0, 128);
+  const traces = [];
   let lastResponse = null;
   let lastTrace = null;
 
@@ -194,10 +197,13 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
       const msg = lastResponse
         ? `All candidates exhausted for profile ${profileName}. Last error: ${String(err.message || err)}`
         : err.message || String(err);
+      recordRoutingMonitorEvent({ requestId, profileName, traces, status: "error", reason: msg, reasonCode: "no_eligible_candidate", final: true });
       return errorResponse(HTTP_STATUS.SERVICE_UNAVAILABLE, msg);
     }
 
     const { provider, model, trace } = selected;
+    trace.requestId = requestId;
+    traces.push(trace);
     lastTrace = trace;
     const candidateModelStr = `${provider}/${model}`;
     excludeCandidates.push(candidateModelStr);
@@ -213,6 +219,7 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
     try {
       log.info("ROUTING", `Profile ${profileName} selected ${candidateModelStr}`);
 
+      const attemptStartedAt = Date.now();
       let result = await handleSingleModelChat(
         body,
         candidateModelStr,
@@ -256,12 +263,31 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
         fallbackOn.has("quota_exceeded") && /quota|rate.?limit|usage.?limit/i.test(errorText);
 
       if (!shouldFallback) {
+        trace.recordOutcome(provider, model, statusCode, Date.now() - attemptStartedAt, null);
+        recordRoutingMonitorEvent({ requestId, profileName, traces, status: "success", final: true });
         recordSuccess(provider);
         const tracked = trackStreamForRelease(result, () => releaseSource(provider, model));
         streamOwnsRelease = true; // helper guarantees exactly-once release
         return injectRoutingHeaders(tracked, trace);
       }
 
+      const failureReasonCode = firstTokenTimedOut
+        ? "first_token_timeout"
+        : (statusCode === 401 || statusCode === 403)
+          ? "auth_failed"
+          : (statusCode === 429 || /rate.?limit|quota|usage.?limit/i.test(errorText))
+            ? "rate_limited"
+            : (statusCode >= 500 || statusCode === 0)
+              ? "provider_unavailable"
+              : `http_${statusCode}`;
+      trace.recordOutcome(
+        provider,
+        model,
+        firstTokenTimedOut ? 0 : statusCode,
+        Date.now() - attemptStartedAt,
+        firstTokenTimedOut ? "first-token-timeout" : (errorText || `http-${statusCode}`),
+        failureReasonCode
+      );
       recordError(provider, firstTokenTimedOut ? 0 : statusCode);
       log.warn("ROUTING", `Profile ${profileName} candidate ${candidateModelStr} failed (${firstTokenTimedOut ? "first-token-timeout" : statusCode}), trying next`);
     } finally {
@@ -274,6 +300,15 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
     }
   }
 
+  recordRoutingMonitorEvent({
+    requestId,
+    profileName,
+    traces,
+    status: "error",
+    reason: `all candidates failed: ${lastResponse?.status || "unknown"}`,
+    reasonCode: "all_candidates_failed",
+    final: true
+  });
   return errorResponse(
     HTTP_STATUS.SERVICE_UNAVAILABLE,
     `Profile ${profileName}: all candidates failed. Last result: ${lastResponse?.status || "unknown"}`,
@@ -282,6 +317,23 @@ async function handleRoutingProfileChat(body, modelStr, clientRawRequest, reques
       ? injectRoutingHeaders({ headers: lastResponse.headers }, lastTrace)
       : undefined
   );
+}
+
+function recordRoutingMonitorEvent({ requestId, profileName, traces, status, reason = "", reasonCode = "", final = false }) {
+  const lastTrace = traces[traces.length - 1];
+  if (!lastTrace) {
+    recordMonitorEvent({ type: "routing_attempt", requestId, profile: profileName, status, reason, reasonCode, final });
+    return;
+  }
+  const candidates = traces.flatMap((trace) => trace.entries || []);
+  const event = lastTrace.toMonitorEvent({ final, status });
+  event.requestId = requestId;
+  event.profile = profileName;
+  event.candidates = candidates;
+  if (reason) event.reason = reason;
+  if (reasonCode) event.reasonCode = reasonCode;
+  event.fallbackCount = candidates.filter((entry) => entry.status === "error").length;
+  recordMonitorEvent(event);
 }
 
 function injectRoutingHeaders(result, trace) {

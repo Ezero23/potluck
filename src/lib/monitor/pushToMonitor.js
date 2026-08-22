@@ -8,6 +8,7 @@ import { loadState } from "../tunnel/shared/state.js";
 import { loadNamedTunnelConfig } from "../tunnel/shared/namedTunnel.js";
 import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
 import { buildQuotaSnapshot } from "./quotaCoordinator.js";
+import { acknowledgeMonitorEvents, buildMonitorEnvelope } from "./healthEvents.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 const DEFAULT_URL = "http://127.0.0.1:17321";
@@ -16,6 +17,8 @@ const DEFAULT_DASHBOARD_PASSWORD = "123456";
 const PUSH_DEBOUNCE_MS = 500;
 const SNAPSHOT_REFRESH_MS = 30_000;
 const FAILURE_COOLDOWN_MS = 30_000;
+const QUOTA_REFRESH_INTERVAL_MS = 60_000;
+const PUSH_REQUEST_TIMEOUT_MS = 15_000;
 
 let lastPushAt = 0;
 let pushTimer = null;
@@ -23,6 +26,7 @@ let snapshotTimer = null;
 let failureBackoffUntil = 0;
 let loggedDisabled = false;
 let loggedMissingSecret = false;
+let quotaRefreshTimer = null;
 
 function isEnabled() {
   const env = process.env.POTLUCK_MONITOR_ENABLED;
@@ -121,17 +125,10 @@ async function buildProvidersPayload() {
   try {
     return await buildQuotaSnapshot();
   } catch (e) {
-    console.error("[monitor] Failed to build quota snapshot:", e.message);
-    return {
-      schemaVersion: 2,
-      snapshotType: "full",
-      sourceInstanceId: "potluck",
-      snapshotId: `potluck-error-${Date.now()}`,
-      generatedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      refreshMs: 300000,
-      providers: [],
-    };
+    // An empty full snapshot means "all Connections were deleted" to Monitor.
+    // Preserve the last accepted snapshot by omitting limits from this push.
+    console.error("[monitor] Failed to build quota snapshot; preserving last snapshot:", e.message);
+    return null;
   }
 }
 
@@ -237,7 +234,8 @@ export async function buildDevicePayload() {
     clientStatus: { potluck: "active" },
     projectsEnabled: false,
     periods,
-    limits,
+    ...(limits ? { limits } : {}),
+    monitor: buildMonitorEnvelope(limits),
     tunnel: buildTunnelInfo(settingsRaw),
     todayHours: buildTodayHours(db),
     ...(isLoopbackMonitorUrl() ? buildDashboardPasswordField(settingsRaw) : {}),
@@ -266,16 +264,29 @@ async function pushOnce() {
   if (Date.now() < failureBackoffUntil) return;
 
   try {
+    const targetUrl = monitorUrl();
+    const target = new URL(targetUrl);
+    if (!isLoopbackMonitorUrl() && target.protocol !== "https:") {
+      throw new Error("Remote Monitor URL must use HTTPS");
+    }
     const payload = await buildDevicePayload();
-    const url = `${monitorUrl()}/api/ingest`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "authorization": `Bearer ${secret}`,
-      },
-      body: stringifyJson(payload),
-    });
+    const url = `${targetUrl}/api/ingest`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), PUSH_REQUEST_TIMEOUT_MS);
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${secret}`,
+        },
+        body: stringifyJson(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -284,7 +295,8 @@ async function pushOnce() {
 
     lastPushAt = Date.now();
     failureBackoffUntil = 0;
-    console.log(`[monitor] Pushed usage to ${url} (deviceId=${payload.deviceId})`);
+    acknowledgeMonitorEvents(payload.monitor?.events?.map((event) => event.id) || []);
+    console.log(`[monitor] Pushed usage to ${url} (deviceId=${payload.deviceId}, events=${payload.monitor?.events?.length || 0})`);
   } catch (e) {
     failureBackoffUntil = Date.now() + FAILURE_COOLDOWN_MS;
     console.error(`[monitor] Push failed: ${e.message}; cooling off ${FAILURE_COOLDOWN_MS}ms`);
@@ -312,6 +324,10 @@ export function startMonitorPush() {
   if (listenerInstalled) return;
   listenerInstalled = true;
   statsEmitter.on("update", schedulePush);
+  if (!quotaRefreshTimer) {
+    quotaRefreshTimer = setInterval(() => schedulePush(), QUOTA_REFRESH_INTERVAL_MS);
+    quotaRefreshTimer.unref?.();
+  }
   // Also push once at startup so the monitor immediately shows current totals.
   schedulePush();
   // Account health and tunnel state can change without producing a usage event.
@@ -328,8 +344,13 @@ export function stopMonitorPush() {
     clearTimeout(pushTimer);
     pushTimer = null;
   }
+  if (quotaRefreshTimer) {
+    clearInterval(quotaRefreshTimer);
+    quotaRefreshTimer = null;
+  }
   if (snapshotTimer) {
     clearInterval(snapshotTimer);
     snapshotTimer = null;
   }
+
 }

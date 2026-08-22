@@ -88,7 +88,12 @@ async function selectProviderByPriority(profileName, profile, body, excludeCandi
           ? "quota exhausted"
           : health?.errorRate5m > 0.3
           ? "high error rate"
-          : "recently errored"
+          : "recently errored",
+        health?.quotaPercent >= 100
+          ? "quota_exhausted"
+          : health?.errorRate5m > 0.3
+          ? "high_error_rate"
+          : "recent_error"
       );
       continue;
     }
@@ -96,7 +101,7 @@ async function selectProviderByPriority(profileName, profile, body, excludeCandi
     // Verify model exists in registry
     const parsed = parseModel(`${candidate.provider}/${candidate.model}`);
     if (!parsed || !parsed.provider) {
-      trace.recordSkipped(candidate.provider, candidate.model, "model not found in registry");
+      trace.recordSkipped(candidate.provider, candidate.model, "model not found in registry", "model_not_found");
       continue;
     }
 
@@ -104,7 +109,7 @@ async function selectProviderByPriority(profileName, profile, body, excludeCandi
     const caps = getCapabilitiesForModel(parsed.provider, parsed.model);
     const missing = [...requiredCaps].filter((cap) => !caps[cap]);
     if (missing.length > 0) {
-      trace.recordSkipped(parsed.provider, parsed.model, `missing capabilities: ${missing.join(", ")}`);
+      trace.recordSkipped(parsed.provider, parsed.model, `missing capabilities: ${missing.join(", ")}`, "missing_capability");
       continue;
     }
 
@@ -150,13 +155,13 @@ async function selectProviderByRotation(profileName, profile, body, excludeCandi
   for (const candidate of candidates) {
     const parsed = parseModel(`${candidate.provider}/${candidate.model}`);
     if (!parsed || !parsed.provider) {
-      trace.recordSkipped(candidate.provider, candidate.model, "model not found in registry");
+      trace.recordSkipped(candidate.provider, candidate.model, "model not found in registry", "model_not_found");
       continue;
     }
     const caps = getCapabilitiesForModel(parsed.provider, parsed.model);
     const missing = [...requiredCaps].filter((cap) => !caps[cap]);
     if (missing.length > 0) {
-      trace.recordSkipped(parsed.provider, parsed.model, `missing capabilities: ${missing.join(", ")}`);
+      trace.recordSkipped(parsed.provider, parsed.model, `missing capabilities: ${missing.join(", ")}`, "missing_capability");
       continue;
     }
     capable.push({ ...candidate, provider: parsed.provider, model: parsed.model });
