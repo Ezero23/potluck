@@ -20,6 +20,10 @@ import {
 } from "@/shared/constants/providers";
 import Link from "next/link";
 import { getErrorCode, getRelativeTime } from "@/shared/utils";
+import {
+  isProviderConnection,
+  providerConnectionsForStats,
+} from "@/shared/utils/providerConnectionStats";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import ModelAvailabilityBadge from "./components/ModelAvailabilityBadge";
@@ -118,26 +122,13 @@ export default function ProvidersPage() {
     !searchQuery.trim() ||
     name.toLowerCase().includes(searchQuery.trim().toLowerCase());
 
-  const sortByPriority = (entries, authType) =>
+  const sortByPriority = (entries) =>
     [...entries].sort(([ka, a], [kb, b]) => {
       const pa = a.priority ?? 999;
       const pb = b.priority ?? 999;
       if (pa !== pb) return pa - pb;
-      const sa = getProviderStats(ka, authType);
-      const sb = getProviderStats(kb, authType);
-      const ca = sa.connected > 0 ? 1 : 0;
-      const cb = sb.connected > 0 ? 1 : 0;
-      if (ca !== cb) return cb - ca;
-      return (a.name || "").localeCompare(b.name || "");
-    });
-
-  const sortItemsByPriority = (items, authType) =>
-    [...items].sort((a, b) => {
-      const pa = a.priority ?? 999;
-      const pb = b.priority ?? 999;
-      if (pa !== pb) return pa - pb;
-      const sa = getProviderStats(a.id, authType);
-      const sb = getProviderStats(b.id, authType);
+      const sa = getProviderStats(ka);
+      const sb = getProviderStats(kb);
       const ca = sa.connected > 0 ? 1 : 0;
       const cb = sb.connected > 0 ? 1 : 0;
       if (ca !== cb) return cb - ca;
@@ -165,10 +156,10 @@ export default function ProvidersPage() {
     fetchData();
   }, []);
 
-  const getProviderStats = (providerId, authType) => {
-    const authTypes = Array.isArray(authType) ? authType : [authType];
-    const providerConnections = connections.filter(
-      (c) => c.provider === providerId && authTypes.includes(c.authType),
+  const getProviderStats = (providerId) => {
+    const providerConnections = providerConnectionsForStats(
+      connections,
+      providerId,
     );
 
     const getEffectiveStatus = (conn) => {
@@ -209,12 +200,12 @@ export default function ProvidersPage() {
     return { connected, error, total, errorCode, errorTime, allDisabled };
   };
 
-  // Toggle all connections for a provider on/off. authType may be a single
-  // string or an array (kiro counts oauth + api_key/apikey together).
-  const handleToggleProvider = async (providerId, authType, newActive) => {
-    const authTypes = Array.isArray(authType) ? authType : [authType];
-    const matches = (c) =>
-      c.provider === providerId && authTypes.includes(c.authType);
+  // A provider card represents the provider as a whole. Include legacy and
+  // dual-auth records so the card cannot say "No connections" while its
+  // detail page contains a usable or failed account.
+  const handleToggleProvider = async (providerId, newActive) => {
+    const matches = (connection) =>
+      isProviderConnection(connection, providerId);
     const providerConns = connections.filter(matches);
     setConnections((prev) =>
       prev.map((c) => (matches(c) ? { ...c, isActive: newActive } : c)),
@@ -278,7 +269,6 @@ export default function ProvidersPage() {
 
   const oauthEntries = sortByPriority(
     Object.entries(OAUTH_PROVIDERS).filter(([, info]) => !info.hidden && matchSearch(info.name)),
-    "oauth",
   );
   const freeEntries = Object.entries(FREE_PROVIDERS)
     .filter(([, info]) => !info.hidden && matchSearch(info.name))
@@ -290,7 +280,6 @@ export default function ProvidersPage() {
         matchSearch(info.name) &&
         (info.serviceKinds ?? ["llm"]).includes("llm"),
     ),
-    "freeTier",
   ).sort(([, a], [, b]) => (b.noAuth ? 1 : 0) - (a.noAuth ? 1 : 0));
   // API Key: connected providers first, then alphabetical by name
   const apikeyEntries = Object.entries(APIKEY_PROVIDERS)
@@ -301,8 +290,8 @@ export default function ProvidersPage() {
         matchSearch(info.name),
     )
     .sort(([ka, a], [kb, b]) => {
-      const ca = getProviderStats(ka, "apikey").total > 0 ? 0 : 1;
-      const cb = getProviderStats(kb, "apikey").total > 0 ? 0 : 1;
+      const ca = getProviderStats(ka).total > 0 ? 0 : 1;
+      const cb = getProviderStats(kb).total > 0 ? 0 : 1;
       if (ca !== cb) return ca - cb;
       return (a.name || "").localeCompare(b.name || "");
     });
@@ -381,10 +370,10 @@ export default function ProvidersPage() {
                   key={info.id}
                   providerId={info.id}
                   provider={info}
-                  stats={getProviderStats(info.id, "apikey")}
+                  stats={getProviderStats(info.id)}
                   authType="compatible"
                   onToggle={(active) =>
-                    handleToggleProvider(info.id, "apikey", active)
+                    handleToggleProvider(info.id, active)
                   }
                 />
               ),
@@ -428,22 +417,27 @@ export default function ProvidersPage() {
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "oauth")}
+              stats={getProviderStats(key)}
               authType="oauth"
-              onToggle={(active) => handleToggleProvider(key, "oauth", active)}
+              onToggle={(active) => handleToggleProvider(key, active)}
             />
           ))}
         </div>
       </div>
       )}
 
-      {/* Free Tier Providers */}
+      {/* Free quotas and time-limited trial credits */}
       {(freeEntries.length > 0 || freeTierEntries.length > 0) && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Free Tier Providers
-          </h2>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+              Free Quotas &amp; Trial Credits
+            </h2>
+            <p className="mt-1 max-w-3xl text-xs leading-relaxed text-text-muted">
+              These are not all permanently free. Check each label for recurring quotas, regional limits, development-only access, or expiring welcome credit.
+            </p>
+          </div>
           <button
             onClick={() => handleBatchTest("free")}
             disabled={!!testingMode}
@@ -464,34 +458,26 @@ export default function ProvidersPage() {
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {freeEntries.map(([key, info]) => {
-            // Kiro accepts both OAuth and api-key connections; count/toggle both
-            // so the card total matches the provider detail page (#kiro-apikey).
-            // Kiro's headless api-key flow persists authType "api_key" (underscore),
-            // while generic apikey providers use "apikey" — include both spellings.
-            const freeAuthTypes =
-              key === "kiro" ? ["oauth", "apikey", "api_key"] : "oauth";
-            return (
+          {freeEntries.map(([key, info]) => (
               <ProviderCard
                 key={key}
                 providerId={key}
                 provider={info}
-                stats={getProviderStats(key, freeAuthTypes)}
+                stats={getProviderStats(key)}
                 authType="free"
                 onToggle={(active) =>
-                  handleToggleProvider(key, freeAuthTypes, active)
+                  handleToggleProvider(key, active)
                 }
               />
-            );
-          })}
+          ))}
           {freeTierEntries.map(([key, info]) => (
             <ApiKeyProviderCard
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "apikey")}
+              stats={getProviderStats(key)}
               authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+              onToggle={(active) => handleToggleProvider(key, active)}
             />
           ))}
         </div>
@@ -530,9 +516,9 @@ export default function ProvidersPage() {
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "apikey")}
+              stats={getProviderStats(key)}
               authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+              onToggle={(active) => handleToggleProvider(key, active)}
             />
           ))}
         </div>
@@ -561,9 +547,9 @@ export default function ProvidersPage() {
               key={key}
               providerId={key}
               provider={info}
-              stats={getProviderStats(key, "apikey")}
+              stats={getProviderStats(key)}
               authType="apikey"
-              onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+              onToggle={(active) => handleToggleProvider(key, active)}
             />
           ))}
         </div>
@@ -804,6 +790,13 @@ function ApiKeyProviderCard({
                 ) : (
                   <>
                     {getStatusDisplay(connected, error, errorCode)}
+                    {provider.freeTier?.badge && (
+                      <Badge variant="default" size="sm">
+                        <span title={provider.freeTier.detail}>
+                          {provider.freeTier.badge}
+                        </span>
+                      </Badge>
+                    )}
                     {isCompatible && (
                       <Badge variant="default" size="sm">
                         {provider.apiType === "responses"
@@ -857,6 +850,10 @@ ApiKeyProviderCard.propTypes = {
     color: PropTypes.string,
     textIcon: PropTypes.string,
     apiType: PropTypes.string,
+    freeTier: PropTypes.shape({
+      badge: PropTypes.string.isRequired,
+      detail: PropTypes.string.isRequired,
+    }),
   }).isRequired,
   stats: PropTypes.shape({
     connected: PropTypes.number,
