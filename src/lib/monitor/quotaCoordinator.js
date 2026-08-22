@@ -12,6 +12,7 @@ import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { getExecutor } from "open-sse/executors/index.js";
 import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
+import { recordMonitorEvent } from "./healthEvents.js";
 
 export const QUOTA_SNAPSHOT_SCHEMA_VERSION = 2;
 export const DEFAULT_QUOTA_TTL_MS = 5 * 60 * 1000;
@@ -71,6 +72,17 @@ function classifyErrorCategory(quotaStatus) {
   if (quotaStatus === "unavailable") return "unavailable";
   if (quotaStatus === "stale") return "network";
   return "unknown";
+}
+
+function classifyErrorCode(quotaStatus, { usage, error } = {}) {
+  const message = lower(error?.message || usage?.message);
+  if (quotaStatus === "unauthorized") return isAuthExpiredMessage(usage) ? "auth_expired" : "auth_failed";
+  if (quotaStatus === "rateLimited") return "rate_limited";
+  if (quotaStatus === "unavailable") return includesAny(message, ["timeout"]) ? "provider_timeout" : "provider_unavailable";
+  if (quotaStatus === "unsupported") return "quota_unsupported";
+  if (quotaStatus === "stale") return "last_good_snapshot";
+  if (quotaStatus === "error") return "quota_error";
+  return quotaStatus;
 }
 
 function safeErrorDetail(quotaStatus) {
@@ -311,8 +323,9 @@ function mergeState(previous, attempt, attemptedAt) {
     quotaStatus,
     error: successful || quotaStatus === "unsupported" ? null : {
       category: classifyErrorCategory(quotaStatus),
-      code: quotaStatus,
+      code: classifyErrorCode(quotaStatus, attempt),
       safeDetail: safeErrorDetail(quotaStatus),
+      retryAt: isoOrNull(attempt?.error?.retryAt || attempt?.error?.retryAfter),
       recoverable: true,
     },
   };
@@ -348,6 +361,29 @@ export function createQuotaCoordinator({
         cached: false,
       };
       cache.set(key, next);
+      if (!previous || previous.quotaStatus !== next.quotaStatus) {
+        recordMonitorEvent({
+          type: "health_event",
+          occurredAt: attemptedAt,
+          provider: connection.provider,
+          connectionKey: connectionSnapshotKey(connection),
+          status: next.quotaStatus,
+          reasonCode: next.error?.code || next.quotaStatus,
+          reason: next.error?.safeDetail,
+          retryAt: next.error?.retryAt,
+        });
+      }
+      recordMonitorEvent({
+        type: "quota_attempt",
+        occurredAt: attemptedAt,
+        provider: connection.provider,
+        connectionKey: connectionSnapshotKey(connection),
+        status: next.quotaStatus,
+        reasonCode: next.error?.code || next.quotaStatus,
+        reason: next.error?.safeDetail,
+        retryAt: next.error?.retryAt,
+        final: next.quotaStatus === "fresh" || next.quotaStatus === "unsupported",
+      });
       return next;
     })().finally(() => inflight.delete(key));
 

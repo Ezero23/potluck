@@ -7,6 +7,7 @@ import { isCloudflaredRunning } from "../tunnel/cloudflare/cloudflared.js";
 import { loadState } from "../tunnel/shared/state.js";
 import { ensureMonitorSecret, readDashboardPasswordPlain } from "./pairing.js";
 import { buildQuotaSnapshot } from "./quotaCoordinator.js";
+import { acknowledgeMonitorEvents, buildMonitorEnvelope } from "./healthEvents.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 const DEFAULT_URL = "http://127.0.0.1:17321";
@@ -230,6 +231,7 @@ export async function buildDevicePayload() {
     projectsEnabled: false,
     periods,
     ...(limits ? { limits } : {}),
+    monitor: buildMonitorEnvelope(limits),
     tunnel: buildTunnelInfo(settingsRaw),
     todayHours: buildTodayHours(db),
     ...(isLoopbackMonitorUrl() ? buildDashboardPasswordField(settingsRaw) : {}),
@@ -289,7 +291,8 @@ async function pushOnce() {
 
     lastPushAt = Date.now();
     failureBackoffUntil = 0;
-    console.log(`[monitor] Pushed usage to ${url} (deviceId=${payload.deviceId})`);
+    acknowledgeMonitorEvents(payload.monitor?.events?.map((event) => event.id) || []);
+    console.log(`[monitor] Pushed usage to ${url} (deviceId=${payload.deviceId}, events=${payload.monitor?.events?.length || 0})`);
   } catch (e) {
     failureBackoffUntil = Date.now() + FAILURE_COOLDOWN_MS;
     console.error(`[monitor] Push failed: ${e.message}; cooling off ${FAILURE_COOLDOWN_MS}ms`);

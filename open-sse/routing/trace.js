@@ -21,8 +21,9 @@
  */
 
 export class RoutingTrace {
-  constructor(profileName) {
+  constructor(profileName, requestId = '') {
     this.profileName = profileName;
+    this.requestId = String(requestId || '').trim().slice(0, 128);
     this.entries = [];
     this.startedAt = Date.now();
   }
@@ -38,24 +39,26 @@ export class RoutingTrace {
   }
 
   /** Record that a candidate was skipped (unhealthy / quota full). */
-  recordSkipped(provider, model, reason) {
+  recordSkipped(provider, model, reason, reasonCode = '') {
     this.entries.push({
       provider,
       model,
       status: "skipped",
       reason,
+      ...(reasonCode ? { reasonCode } : {}),
       timestamp: Date.now(),
     });
   }
 
   /** Record the outcome after the request completes. */
-  recordOutcome(provider, model, httpStatus, latencyMs, error) {
+  recordOutcome(provider, model, httpStatus, latencyMs, error, reasonCode = '') {
     this.entries.push({
       provider,
       model,
       status: error ? "error" : "success",
       httpStatus,
       latencyMs,
+      ...(reasonCode ? { reasonCode } : {}),
       reason: error,
       timestamp: Date.now(),
     });
@@ -99,4 +102,30 @@ export class RoutingTrace {
     const chain = this.toChainHeader();
     return `[routing:${this.profileName}] ${chain} (${this.totalLatencyMs}ms)`;
   }
+
+  toMonitorEvent({ final = false, status = '' } = {}) {
+    const candidates = this.entries.map((entry) => ({
+      provider: entry.provider,
+      model: entry.model,
+      status: entry.status,
+      ...(entry.reason ? { reason: entry.reason } : {}),
+      ...(entry.reasonCode ? { reasonCode: entry.reasonCode } : {}),
+      ...(entry.httpStatus ? { httpStatus: entry.httpStatus } : {}),
+      ...(Number.isFinite(entry.latencyMs) ? { latencyMs: entry.latencyMs } : {})
+    }));
+    const success = [...this.entries].reverse().find((entry) => entry.status === 'success');
+    const selected = [...this.entries].reverse().find((entry) => entry.status === 'selected' || entry.status === 'success');
+    return {
+      type: 'routing_attempt',
+      requestId: this.requestId,
+      profile: this.profileName,
+      status: status || (success ? 'success' : 'error'),
+      selectedProvider: success?.provider || selected?.provider,
+      selectedModel: success?.model || selected?.model,
+      fallbackCount: this.entries.filter((entry) => entry.status === 'error').length,
+      latencyMs: this.totalLatencyMs,
+      final,
+      candidates
+    };
+    }
 }
