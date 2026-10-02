@@ -20,6 +20,15 @@
  * }} TraceEntry
  */
 
+/**
+ * HTTP header values must be Latin-1 (ByteString). Trace chains use "→" and
+ * may carry non-ASCII reason text, which makes Headers.set() throw
+ * "Cannot convert argument to a ByteString". Normalize before injecting.
+ */
+function toHeaderSafe(value) {
+  return String(value ?? "").replace(/→/g, "->").replace(/[^\x00-\xFF]/g, "?");
+}
+
 export class RoutingTrace {
   constructor(profileName, requestId = '') {
     this.profileName = profileName;
@@ -91,9 +100,9 @@ export class RoutingTrace {
   /** Return headers object for injection into response. */
   toHeaders() {
     return {
-      "X-Routing-Chain": this.toChainHeader(),
-      "X-Selected-Provider": this.toSelectedHeader(),
-      "X-Routing-Profile": this.profileName || "none",
+      "X-Routing-Chain": toHeaderSafe(this.toChainHeader()),
+      "X-Selected-Provider": toHeaderSafe(this.toSelectedHeader()),
+      "X-Routing-Profile": toHeaderSafe(this.profileName || "none"),
     };
   }
 
