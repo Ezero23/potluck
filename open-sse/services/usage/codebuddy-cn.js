@@ -27,8 +27,23 @@ const PROVIDER_ID = "codebuddy-cn";
 
 // Prefer the *Precise string fields (exact), fall back to the numeric ones.
 function num(precise, plain) {
-  const n = Number(precise ?? plain);
-  return Number.isFinite(n) ? n : 0;
+  const raw = precise ?? plain;
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function packageQuota(acc, usedPrecise, usedPlain, totalPrecise, totalPlain, recurring) {
+  const used = num(acc[usedPrecise], acc[usedPlain]);
+  const total = num(acc[totalPrecise], acc[totalPlain]);
+  if (used === null || total === null || total < 0 || used < 0) return null;
+  return {
+    used,
+    total,
+    resetAt: parseResetTime(acc.CycleEndTime),
+    unlimited: false,
+    recurring,
+  };
 }
 
 // Label a refill pack by its cycle length (Monthly is the common CodeBuddy case).
@@ -102,31 +117,38 @@ export async function getCodeBuddyCnUsage(accessToken, apiKey, providerSpecificD
     const seenRefill = {};
     refills.forEach((acc) => {
       const base = refillCadence(acc);
+      const quota = packageQuota(
+        acc,
+        "CycleCapacityUsedPrecise",
+        "CycleCapacityUsed",
+        "CycleCapacitySizePrecise",
+        "CycleCapacitySize",
+        true
+      );
+      if (!quota) return;
       seenRefill[base] = (seenRefill[base] || 0) + 1;
       const name = seenRefill[base] > 1 ? `${base} ${seenRefill[base]}` : base;
-      quotas[name] = {
-        used: num(acc.CycleCapacityUsedPrecise, acc.CycleCapacityUsed),
-        total: num(acc.CycleCapacitySizePrecise, acc.CycleCapacitySize),
-        resetAt: parseResetTime(acc.CycleEndTime),
-        unlimited: false,
-        // Recurring allowance: the CycleEndTime is the next refresh, not the
-        // final expiry. The UI must show "Resets in", not "Expires in".
-        recurring: true,
-      };
+      quotas[name] = quota;
     });
     // Bonus packs: use the lifetime Capacity balance; resetAt is the expiry.
     // These are one-shot credits (CycleEndTime == DeductionEndTime), so they
     // never replenish — mark recurring:false so the UI shows "Expires in"
     // instead of implying a monthly refill.
     bonuses.forEach((acc, i) => {
-      quotas[`Bonus Pack ${i + 1}`] = {
-        used: num(acc.CapacityUsedPrecise, acc.CapacityUsed),
-        total: num(acc.CapacitySizePrecise, acc.CapacitySize),
-        resetAt: parseResetTime(acc.CycleEndTime),
-        unlimited: false,
-        recurring: false,
-      };
+      const quota = packageQuota(
+        acc,
+        "CapacityUsedPrecise",
+        "CapacityUsed",
+        "CapacitySizePrecise",
+        "CapacitySize",
+        false
+      );
+      if (quota) quotas[`Bonus Pack ${i + 1}`] = quota;
     });
+
+    if (Object.keys(quotas).length === 0) {
+      return { message: "CodeBuddy CN connected. No complete quota data was returned." };
+    }
 
     const basePkg = refills[0] || accounts[0] || {};
     const plan = basePkg.PackageName || basePkg.SubProductName || "CodeBuddy CN";

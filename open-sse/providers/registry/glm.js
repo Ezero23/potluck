@@ -27,6 +27,7 @@ export default {
     },
     usage: {
       url: "https://api.z.ai/api/monitor/usage/quota/limit",
+      subscriptionUrl: "https://api.z.ai/api/biz/subscription/list",
     },
   },
   // Multi-endpoint: pick the transport matching client sourceFormat to skip translation.

@@ -10,3 +10,4 @@ node_modules/
 # macOS
 .DS_Store
 .next-cli-build/
+.commandcode/

@@ -13,6 +13,12 @@ const ANTIGRAVITY_CONFIG = {
   userAgent: getPlatformUserAgent(),
 };
 
+function quotaFraction(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const fraction = Number(value);
+  return Number.isFinite(fraction) ? Math.max(0, Math.min(1, fraction)) : null;
+}
+
 /**
  * Gemini CLI Usage — fetch per-model quota via Cloud Code Assist API.
  * Uses retrieveUserQuota (same endpoint as `gemini /stats`) returning
@@ -65,9 +71,9 @@ export async function getGeminiUsage(accessToken, providerSpecificData, proxyOpt
 
     if (Array.isArray(data.buckets)) {
       for (const bucket of data.buckets) {
-        if (!bucket.modelId || bucket.remainingFraction == null) continue;
+        const remainingFraction = quotaFraction(bucket.remainingFraction);
+        if (!bucket.modelId || remainingFraction === null) continue;
 
-        const remainingFraction = Number(bucket.remainingFraction) || 0;
         const total = 1000; // Normalized base, matches antigravity convention
         const remaining = Math.round(total * remainingFraction);
         const used = Math.max(0, total - remaining);
@@ -187,7 +193,8 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
           continue;
         }
 
-        const remainingFraction = info.quotaInfo.remainingFraction || 0;
+        const remainingFraction = quotaFraction(info.quotaInfo.remainingFraction);
+        if (remainingFraction === null) continue;
         const remainingPercentage = remainingFraction * 100;
 
         // Convert percentage to used/total for UI compatibility

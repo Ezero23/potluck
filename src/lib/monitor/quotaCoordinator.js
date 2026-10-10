@@ -460,6 +460,11 @@ function connectionSnapshotKey(connection, sourceId = ensureMonitorSourceId()) {
 
 export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso(), sourceId = ensureMonitorSourceId()) {
   const provider = text(connection.provider);
+  const connectionKey = connectionSnapshotKey(connection, sourceId);
+  const upstreamAccountKey = text(state.usage?.accountKey).slice(0, 256);
+  const quotaPoolKey = text(
+    state.usage?.quotaPoolKey || connection.providerSpecificData?.quotaPoolKey
+  ).slice(0, 256);
   const quotaStatus = state.quotaStatus || "notChecked";
   const connStatus = state.quotaStatus === "fresh" && connection.isActive !== false
     ? "ok"
@@ -476,8 +481,9 @@ export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso
           : (quotaStatus === "error" && !hasWindows ? "error" : (connStatus === "ok" ? "ok" : connStatus)))));
   return {
     provider,
-    connectionKey: connectionSnapshotKey(connection, sourceId),
-    accountKey: connectionSnapshotKey(connection, sourceId),
+    connectionKey,
+    accountKey: upstreamAccountKey || connectionKey,
+    ...(upstreamAccountKey ? { upstreamAccountKey } : {}),
     accountLabel: text(connection.name || connection.displayName || connection.email || provider).slice(0, 64),
     accountName: text(connection.name || connection.displayName).slice(0, 64),
     accountEmail: (text(connection.email) || text(state.usage?.email)).slice(0, 254),
@@ -491,14 +497,14 @@ export function buildProviderSnapshotRow(connection, state, generatedAt = nowIso
     authType: connection.authType === "oauth"
       ? "oauth"
       : (["apikey", "api_key"].includes(connection.authType) ? "apikey" : "unknown"),
-    identityKind: "connection",
+    identityKind: upstreamAccountKey ? "account" : "connection",
     enabled: connection.isActive !== false,
     updatedAt: generatedAt,
     lastAttemptAt: state.lastAttemptAt,
     lastSuccessAt: state.lastSuccessAt,
     windows: state.windows,
     ...(state.error ? { error: state.error } : {}),
-    ...(connection.providerSpecificData?.quotaPoolKey ? { quotaPoolKey: connection.providerSpecificData.quotaPoolKey } : {}),
+    ...(quotaPoolKey ? { quotaPoolKey } : {}),
   };
 }
 

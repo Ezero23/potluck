@@ -84,4 +84,42 @@ describe("Gemini CLI usage project id resolution", () => {
     expect(usage.message).toContain("Reconnect Gemini CLI");
     expect(usage.message).toContain("Gemini Code Assist");
   });
+
+  it("drops invalid Gemini fractions but preserves a real exhausted bucket", async () => {
+    proxyAwareFetch.mockResolvedValueOnce(jsonResponse({
+      buckets: [
+        { modelId: "invalid", remainingFraction: "not-a-number" },
+        { modelId: "exhausted", remainingFraction: 0 },
+      ],
+    }));
+
+    const usage = await getUsageForProvider({
+      provider: "gemini-cli",
+      accessToken: "token",
+      projectId: "cloud-code-project",
+    });
+
+    expect(usage.quotas.invalid).toBeUndefined();
+    expect(usage.quotas.exhausted.remainingPercentage).toBe(0);
+  });
+
+  it("drops Antigravity quotaInfo without a fraction instead of inventing exhaustion", async () => {
+    proxyAwareFetch
+      .mockResolvedValueOnce(jsonResponse({ currentTier: { name: "Pro" } }))
+      .mockResolvedValueOnce(jsonResponse({
+        models: {
+          "gemini-3-flash-agent": { quotaInfo: {} },
+          "gemini-pro-agent": { quotaInfo: { remainingFraction: 0 } },
+        },
+      }));
+
+    const usage = await getUsageForProvider({
+      provider: "antigravity",
+      accessToken: "token",
+      providerSpecificData: {},
+    });
+
+    expect(usage.quotas["gemini-3-flash-agent"]).toBeUndefined();
+    expect(usage.quotas["gemini-pro-agent"].remainingPercentage).toBe(0);
+  });
 });

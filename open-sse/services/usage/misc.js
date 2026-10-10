@@ -12,6 +12,10 @@ const GLM_QUOTA_URLS = {
   international: U("glm").url,
   china: U("glm-cn").url,
 };
+const GLM_SUBSCRIPTION_URLS = {
+  international: U("glm").subscriptionUrl,
+  china: U("glm-cn").subscriptionUrl,
+};
 
 // Vercel AI Gateway credits endpoint
 // Returns { balance: "95.50", total_used: "4.50" } (USD as decimal strings).
@@ -171,7 +175,7 @@ function glmUsedPercent(limit) {
   return explicit === null ? null : Math.max(0, Math.min(100, explicit));
 }
 
-function glmQuota(limit) {
+function glmQuota(limit, fallbackResetAt = null) {
   const usedPercent = glmUsedPercent(limit);
   if (usedPercent === null) return null;
   const resetMs = Number(limit?.nextResetTime ?? limit?.next_reset_time) || 0;
@@ -180,9 +184,58 @@ function glmQuota(limit) {
     total: 100,
     remaining: Math.max(0, 100 - usedPercent),
     remainingPercentage: Math.max(0, 100 - usedPercent),
-    resetAt: resetMs > 0 ? new Date(resetMs).toISOString() : null,
+    resetAt: resetMs > 0 ? new Date(resetMs).toISOString() : fallbackResetAt,
     unlimited: false,
   };
+}
+
+function glmIsoDateOrNull(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function glmIdentityField(source, fields, prefix) {
+  if (!source || typeof source !== "object") return "";
+  for (const field of fields) {
+    const value = source[field];
+    if ((typeof value === "string" || typeof value === "number") && String(value).trim()) {
+      return `${prefix}:${String(value).trim().slice(0, 256)}`;
+    }
+  }
+  return "";
+}
+
+function glmSubscriptionIdentity(quotaData, subscription) {
+  return glmIdentityField(subscription, ["subscription_id", "subscriptionId", "id"], "subscription")
+    || glmIdentityField(quotaData, ["subscription_id", "subscriptionId"], "subscription")
+    || glmIdentityField(subscription, ["account_id", "accountId", "user_id", "userId"], "account")
+    || glmIdentityField(quotaData, ["account_id", "accountId", "user_id", "userId"], "account");
+}
+
+function glmOpaqueKey(...parts) {
+  const hash = crypto.createHash("sha256");
+  for (const part of parts) hash.update(String(part)).update("\0");
+  return `sha256:${hash.digest("hex")}`;
+}
+
+async function getGlmSubscription(apiKey, region, proxyOptions) {
+  try {
+    const response = await proxyAwareFetch(GLM_SUBSCRIPTION_URLS[region], {
+      headers: {
+        Authorization: apiKey,
+        "Accept-Language": "en-US,en",
+        Accept: "application/json",
+      },
+    }, proxyOptions);
+    if (!response?.ok) return null;
+    const body = await response.json();
+    return Array.isArray(body?.data)
+      ? body.data.find((row) => row && typeof row === "object") || null
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -220,22 +273,37 @@ export async function getGlmUsage(apiKey, provider, proxyOptions = null) {
     const json = await response.json();
     const data = json?.data && typeof json.data === "object" ? json.data : {};
     const limits = Array.isArray(data.limits) ? data.limits : [];
+    const subscription = await getGlmSubscription(apiKey, region, proxyOptions);
 
-    let tokenLimits = limits.filter((limit) => limit && limit.type === "TOKENS_LIMIT" && glmUsedPercent(limit) !== null);
-    const creditLimits = limits.filter((limit) => limit && limit.type === "CREDIT_LIMIT" && glmUsedPercent(limit) !== null);
+    const limitType = (limit) => String(limit?.type || "").trim().toUpperCase();
+    let tokenLimits = limits.filter((limit) => limitType(limit) === "TOKENS_LIMIT" && glmUsedPercent(limit) !== null);
+    const creditLimits = limits.filter((limit) => limitType(limit) === "CREDIT_LIMIT" && glmUsedPercent(limit) !== null);
     if (!tokenLimits.length && creditLimits.length) tokenLimits = creditLimits;
     tokenLimits.sort((a, b) => (glmWindowMinutes(a) ?? Infinity) - (glmWindowMinutes(b) ?? Infinity));
 
     const quotas = {};
-    const session = tokenLimits.length >= 2 ? tokenLimits[0] : null;
-    const weekly = tokenLimits.length >= 2 ? tokenLimits[tokenLimits.length - 1] : tokenLimits[0] || null;
+    const onlyWindowMinutes = tokenLimits.length === 1 ? glmWindowMinutes(tokenLimits[0]) : null;
+    const session = tokenLimits.length >= 2 || (onlyWindowMinutes !== null && onlyWindowMinutes < 7 * 24 * 60)
+      ? tokenLimits[0]
+      : null;
+    const weekly = tokenLimits.length >= 2 || onlyWindowMinutes === null || onlyWindowMinutes >= 7 * 24 * 60
+      ? tokenLimits[tokenLimits.length - 1] || null
+      : null;
     if (session) quotas["Session"] = glmQuota(session);
     if (weekly) quotas["Weekly"] = glmQuota(weekly);
 
-    const levelRaw = typeof data.level === "string" ? data.level : "";
-    const plan = levelRaw
-      ? levelRaw.charAt(0).toUpperCase() + levelRaw.slice(1).toLowerCase()
-      : "Unknown";
+    const timeLimit = limits.find((limit) => limitType(limit) === "TIME_LIMIT" && glmUsedPercent(limit) !== null);
+    const renewAtRaw = subscription?.next_renew_time ?? subscription?.nextRenewTime;
+    const renewAt = glmIsoDateOrNull(renewAtRaw);
+    if (timeLimit) quotas["Monthly"] = glmQuota(timeLimit, renewAt);
+
+    const subscriptionPlan = String(subscription?.product_name ?? subscription?.productName ?? "").trim();
+    const levelPlan = String(data.level ?? "").trim();
+    const plan = subscriptionPlan
+      || (levelPlan ? levelPlan.charAt(0).toUpperCase() + levelPlan.slice(1).toLowerCase() : "Unknown");
+    const subscriptionIdentity = glmSubscriptionIdentity(data, subscription);
+    const accountKey = subscriptionIdentity ? glmOpaqueKey("zai-account", region, subscriptionIdentity) : "";
+    const quotaPoolKey = subscriptionIdentity ? glmOpaqueKey("zai-pool", region, subscriptionIdentity) : "";
 
     // Opaque account fingerprint: the Monitor hashes the same API key with the
     // same recipe (sha256 of "zai\0<key>\0") for its local zai row, so the web
@@ -245,7 +313,12 @@ export async function getGlmUsage(apiKey, provider, proxyOptions = null) {
       .update(apiKey).update("\0")
       .digest("hex");
 
-    return { plan, email: `glm-${fingerprint}@glm-account.local`, quotas };
+    return {
+      plan,
+      email: `glm-${fingerprint}@glm-account.local`,
+      quotas,
+      ...(accountKey ? { accountKey, quotaPoolKey } : {}),
+    };
   } catch (error) {
     return { message: `GLM error: ${error.message}` };
   }
@@ -257,10 +330,8 @@ export async function getGlmUsage(apiKey, provider, proxyOptions = null) {
  * Calls GET /v1/credits which returns:
  *   { "balance": "95.50", "total_used": "4.50" }   (USD as decimal strings)
  *
- * We surface this as a single "Balance ($)" quota row so the existing
- * QuotaTable / progress-bar UI can render it. used = total_used,
- * total = balance + total_used (the original credit allotment), so the
- * remaining percentage equals balance / total.
+ * The endpoint reports a team balance and lifetime spend. It does not report a
+ * monthly allocation, so neither value may be turned into a monthly percent.
  *
  * Docs: https://vercel.com/docs/ai-gateway/usage
  */
@@ -290,42 +361,31 @@ export async function getVercelAiGatewayUsage(apiKey, proxyOptions = null) {
 
     const data = await response.json();
 
-    // Vercel returns numeric strings; coerce safely.
-    const balance = Number(data?.balance) || 0;
-    const totalUsed = Number(data?.total_used) || 0;
-
-    // Vercel gives $5/month free credit. The API doesn't return the
-    // monthly allocation so we use the known constant as the denominator.
-    const MONTHLY_CREDIT = 5;
-    const remainingPercentage = (balance / MONTHLY_CREDIT) * 100;
-
-    if (balance <= 0 && totalUsed <= 0) {
-      return {
-        plan: "Pay-as-you-go",
-        message: "Vercel AI Gateway connected. No credit allocation found (BYOK or unfunded account).",
-        quotas: {},
-      };
+    const balance = glmNumberOrNull(data?.balance);
+    const totalUsed = glmNumberOrNull(data?.total_used);
+    if (balance === null && totalUsed === null) {
+      return { message: "Vercel AI Gateway connected. No credit data was returned." };
     }
 
-    // "Used (USD)": how much has been spent this month (no fixed cap → unlimited).
-    // "Remaining (USD)": balance remaining out of the $5 monthly allocation.
     return {
       plan: "Pay-as-you-go",
       quotas: {
-        "Used (USD)": {
-          used: totalUsed,
-          total: 0,
-          remaining: 0,
-          remainingPercentage: 100,
-          unlimited: true,
-        },
-        "Remaining (USD)": {
-          used: balance,
-          total: MONTHLY_CREDIT,
-          remaining: balance,
-          remainingPercentage,
-          unlimited: false,
-        },
+        ...(balance === null ? {} : {
+          "Credit balance (USD)": {
+            amount: Math.max(0, balance),
+            remaining: Math.max(0, balance),
+            unit: "credits",
+            unlimited: false,
+          },
+        }),
+        ...(totalUsed === null ? {} : {
+          "Lifetime spend (USD)": {
+            used: Math.max(0, totalUsed),
+            total: null,
+            remaining: null,
+            unlimited: false,
+          },
+        }),
       },
     };
   } catch (error) {
@@ -363,8 +423,8 @@ export async function getQoderUsage(accessToken, provider = "qoder", proxyOption
     // Quota records live under `quotas`; scalar metadata
     // (totalUsagePercentage, isQuotaExceeded, expiresAt) are surfaced as
     // siblings so the dashboard parser doesn't try to render them as rows.
-    const userQuota = body.userQuota || {};
-    const orgQuota = body.orgResourcePackage || {};
+    const userQuota = body.userQuota;
+    const orgQuota = body.orgResourcePackage;
     // Qoder publishes a single absolute reset timestamp (`expiresAt` in ms);
     // surface it on every quota record as ISO so the table can render
     // "resets at" alongside used/total.
@@ -372,25 +432,32 @@ export async function getQoderUsage(accessToken, provider = "qoder", proxyOption
       ? Number(body.expiresAt)
       : null;
     const resetAt = expiresAtMs ? new Date(expiresAtMs).toISOString() : null;
-    const quotas = {
-      user: {
-        total: Number(userQuota.total) || 0,
-        used: Number(userQuota.used) || 0,
-        remaining: Number(userQuota.remaining) || 0,
-        unit: userQuota.unit || "credits",
+    const quotaRecord = (raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const total = glmNumberOrNull(raw.total);
+      const used = glmNumberOrNull(raw.used);
+      const remaining = glmNumberOrNull(raw.remaining);
+      if (total === null && used === null && remaining === null) return null;
+      return {
+        total,
+        used,
+        remaining,
+        unit: raw.unit || "credits",
         resetAt,
-      },
-      organization: {
-        total: Number(orgQuota.total) || 0,
-        used: Number(orgQuota.used) || 0,
-        remaining: Number(orgQuota.remaining) || 0,
-        unit: orgQuota.unit || "credits",
-        resetAt,
-      },
+      };
     };
+    const quotas = {};
+    const user = quotaRecord(userQuota);
+    const organization = quotaRecord(orgQuota);
+    if (user) quotas.user = user;
+    if (organization) quotas.organization = organization;
+    if (Object.keys(quotas).length === 0) {
+      return { message: "Qoder connected. No quota data was returned." };
+    }
+    const totalUsagePercentage = glmNumberOrNull(body.totalUsagePercentage);
     return {
       quotas,
-      totalUsagePercentage: Number(body.totalUsagePercentage) || 0,
+      ...(totalUsagePercentage === null ? {} : { totalUsagePercentage }),
       isQuotaExceeded: !!body.isQuotaExceeded,
       expiresAt: expiresAtMs,
     };

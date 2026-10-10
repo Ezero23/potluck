@@ -9,6 +9,12 @@ import { U, parseResetTime } from "./shared.js";
 /**
  * Kiro (AWS CodeWhisperer) Usage
  */
+function quotaNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function parseKiroQuotaData(data) {
   const usageList = data.usageBreakdownList || [];
   const quotaInfo = {};
@@ -16,26 +22,28 @@ function parseKiroQuotaData(data) {
 
   usageList.forEach((breakdown) => {
     const resourceType = breakdown.resourceType?.toLowerCase() || "unknown";
-    const used = breakdown.currentUsageWithPrecision || 0;
-    const total = breakdown.usageLimitWithPrecision || 0;
+    const used = quotaNumber(breakdown.currentUsageWithPrecision);
+    const total = quotaNumber(breakdown.usageLimitWithPrecision);
+    if (used === null || total === null || total < 0 || used < 0) return;
 
     quotaInfo[resourceType] = {
       used,
       total,
-      remaining: total - used,
+      remaining: Math.max(0, total - used),
       resetAt,
       unlimited: false,
     };
 
     // Add free trial if available
     if (breakdown.freeTrialInfo) {
-      const freeUsed = breakdown.freeTrialInfo.currentUsageWithPrecision || 0;
-      const freeTotal = breakdown.freeTrialInfo.usageLimitWithPrecision || 0;
+      const freeUsed = quotaNumber(breakdown.freeTrialInfo.currentUsageWithPrecision);
+      const freeTotal = quotaNumber(breakdown.freeTrialInfo.usageLimitWithPrecision);
+      if (freeUsed === null || freeTotal === null || freeTotal < 0 || freeUsed < 0) return;
 
       quotaInfo[`${resourceType}_freetrial`] = {
         used: freeUsed,
         total: freeTotal,
-        remaining: freeTotal - freeUsed,
+        remaining: Math.max(0, freeTotal - freeUsed),
         resetAt: parseResetTime(breakdown.freeTrialInfo.freeTrialExpiry || resetAt),
         unlimited: false,
       };

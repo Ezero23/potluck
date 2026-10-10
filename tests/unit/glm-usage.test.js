@@ -67,4 +67,50 @@ describe("GLM coding-plan usage", () => {
     expect(usage.quotas.Weekly.remainingPercentage).toBeCloseTo(58, 0);
     expect(usage.quotas.Session).toBeUndefined();
   });
+
+  it("returns Monthly and stable account/pool keys only when subscription identity is explicit", async () => {
+    proxyAwareFetch
+      .mockResolvedValueOnce(
+        glmResponse([
+          { type: "TOKENS_LIMIT", unit: 6, number: 1, percentage: 25 },
+          { type: "TIME_LIMIT", percentage: 100 },
+        ])
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: "subscription-shared", product_name: "GLM Coding Pro", next_renew_time: "2026-09-01T00:00:00Z" }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    const usage = await getUsageForProvider({
+      provider: "glm",
+      authType: "apikey",
+      apiKey: "sk-shared",
+    });
+
+    expect(usage.plan).toBe("GLM Coding Pro");
+    expect(usage.quotas.Monthly.remainingPercentage).toBe(0);
+    expect(usage.quotas.Monthly.resetAt).toBe("2026-09-01T00:00:00.000Z");
+    expect(usage.accountKey).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(usage.quotaPoolKey).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  it("treats one short token window as Session and ignores an invalid renewal timestamp", async () => {
+    proxyAwareFetch
+      .mockResolvedValueOnce(glmResponse([
+        { type: "tokens_limit", unit: 3, number: 5, percentage: 40 },
+        { type: "time_limit", percentage: 100 },
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: "subscription-shared", next_renew_time: "not-a-date" }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    const usage = await getUsageForProvider({
+      provider: "glm",
+      authType: "apikey",
+      apiKey: "sk-shared",
+    });
+
+    expect(usage.quotas.Session.remainingPercentage).toBe(60);
+    expect(usage.quotas.Weekly).toBeUndefined();
+    expect(usage.quotas.Monthly.resetAt).toBeNull();
+  });
 });

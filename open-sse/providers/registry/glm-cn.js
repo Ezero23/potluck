@@ -18,6 +18,7 @@ export default {
     headers: {},
     usage: {
       url: "https://open.bigmodel.cn/api/monitor/usage/quota/limit",
+      subscriptionUrl: "https://open.bigmodel.cn/api/biz/subscription/list",
     },
   },
   models: [

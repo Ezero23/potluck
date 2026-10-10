@@ -130,10 +130,36 @@ describe("connection quota coordinator", () => {
     expect(first.provider).toBe("glm");
     expect(first.connectionKey).toBe("potluck:instance-a:a");
     expect(second.connectionKey).toBe("potluck:instance-a:b");
+    expect(first.accountKey).toBe("potluck:instance-a:a");
+    expect(second.accountKey).toBe("potluck:instance-a:b");
     expect(first.managedBy).toBe("potluck");
     expect(first.sourceDetail).toBe("managed");
     expect(first.windows[0].used).toBe(10);
     expect(second.windows[0].used).toBe(20);
     expect(JSON.stringify([first, second])).not.toMatch(/"(accessToken|refreshToken|apiKey|cookie)"\s*:/i);
+  });
+
+  it("shares an explicit upstream account and quota pool without collapsing connections", () => {
+    const state = (used) => ({
+      quotaStatus: "fresh",
+      usage: {
+        accountKey: "sha256:shared-account",
+        quotaPoolKey: "sha256:shared-pool",
+      },
+      windows: [{ kind: "billing", used, limit: 100 }],
+      lastAttemptAt: "2026-08-20T01:00:00.000Z",
+      lastSuccessAt: "2026-08-20T01:00:00.000Z",
+    });
+
+    const first = buildProviderSnapshotRow(connection("a"), state(80), "2026-08-20T01:00:00.000Z", "instance-a");
+    const second = buildProviderSnapshotRow(connection("b"), state(80), "2026-08-20T01:00:00.000Z", "instance-a");
+
+    expect(first.connectionKey).not.toBe(second.connectionKey);
+    expect(first.accountKey).toBe("sha256:shared-account");
+    expect(second.accountKey).toBe("sha256:shared-account");
+    expect(first.upstreamAccountKey).toBe("sha256:shared-account");
+    expect(first.quotaPoolKey).toBe("sha256:shared-pool");
+    expect(second.quotaPoolKey).toBe("sha256:shared-pool");
+    expect(first.identityKind).toBe("account");
   });
 });
