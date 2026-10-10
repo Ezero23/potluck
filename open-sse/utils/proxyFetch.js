@@ -294,6 +294,25 @@ async function createBypassRequest(parsedUrl, realIP, options) {
   });
 }
 
+// Local-proxy burst cooldown: Clash/Surge drop connections in bursts while
+// switching nodes. During a burst every fetch paid two doomed proxy attempts
+// before the direct fallback (latency + log spam). After 3 consecutive
+// double-failures the env proxy is skipped for 30s; any success resets it.
+// Per-connection proxies (explicit connectionProxyUrl) are never cooled down —
+// they are user-configured per provider and rare.
+const ENV_PROXY_COOLDOWN_MS = 30_000;
+const ENV_PROXY_FAILURE_THRESHOLD = 3;
+const envProxyHealth = { consecutiveFailures: 0, cooldownUntil: 0, cooldownLogged: false };
+
+function envProxyInCooldown() {
+  if (envProxyHealth.cooldownUntil > Date.now()) return true;
+  if (envProxyHealth.cooldownUntil !== 0) {
+    envProxyHealth.cooldownUntil = 0;
+    envProxyHealth.cooldownLogged = false;
+  }
+  return false;
+}
+
 export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   const targetUrl = typeof url === "string" ? url : url.toString();
 
@@ -310,8 +329,18 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   }
 
   const connectionProxyUrl = resolveConnectionProxyUrl(targetUrl, proxyOptions);
+  const isEnvProxy = !connectionProxyUrl;
   const envProxyUrl = connectionProxyUrl ? null : normalizeProxyUrl(getEnvProxyUrl(targetUrl));
-  const proxyUrl = connectionProxyUrl || envProxyUrl;
+  let proxyUrl = connectionProxyUrl || envProxyUrl;
+
+  // Burst cooldown only applies to the env/global proxy.
+  if (isEnvProxy && proxyUrl && envProxyInCooldown()) {
+    if (!envProxyHealth.cooldownLogged) {
+      envProxyHealth.cooldownLogged = true;
+      console.warn(`[ProxyFetch] env proxy ${proxyUrl} in ${ENV_PROXY_COOLDOWN_MS / 1000}s cooldown after ${envProxyHealth.consecutiveFailures} burst failures — going direct`);
+    }
+    proxyUrl = null;
+  }
 
   // MITM DNS bypass: for known MITM-intercepted hosts, resolve real IP to avoid DNS spoof
   if (shouldBypassMitmDns(targetUrl)) {
@@ -340,7 +369,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   if (proxyUrl) {
     try {
       const dispatcher = await getDispatcher(proxyUrl);
-      return await originalFetch(url, { ...options, dispatcher });
+      const response = await originalFetch(url, { ...options, dispatcher });
+      if (isEnvProxy) envProxyHealth.consecutiveFailures = 0;
+      return response;
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
       if (proxyOptions?.strictProxy === true) {
@@ -352,9 +383,18 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       // the very hosts that need the proxy.
       try {
         const dispatcher = await getDispatcher(proxyUrl);
-        return await originalFetch(url, { ...options, dispatcher });
+        const response = await originalFetch(url, { ...options, dispatcher });
+        if (isEnvProxy) envProxyHealth.consecutiveFailures = 0;
+        return response;
       } catch (retryError) {
         console.warn(`[ProxyFetch] Proxy failed twice, falling back to direct: ${retryError.message}`);
+        if (isEnvProxy) {
+          envProxyHealth.consecutiveFailures += 1;
+          if (envProxyHealth.consecutiveFailures >= ENV_PROXY_FAILURE_THRESHOLD) {
+            envProxyHealth.cooldownUntil = Date.now() + ENV_PROXY_COOLDOWN_MS;
+            envProxyHealth.cooldownLogged = false;
+          }
+        }
         return originalFetch(url, options);
       }
     }
