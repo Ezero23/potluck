@@ -209,7 +209,10 @@ export const PATTERN_CAPABILITIES = [
   { pattern: "*kimi*",          caps: { reasoning: true, thinkingFormat: "kimi", contextWindow: 262144 } },
 
   // ── GLM / Z.ai (thinking.enabled; disable via enable_thinking:false) ─
-  { pattern: "*glm-5*",         caps: { reasoning: true, thinkingFormat: "zai", contextWindow: 200000, maxOutput: 128000 } },
+  // GLM 5.x always thinks: the coding endpoints reject enable_thinking:false /
+  // any disable intent with 1210 "use low, high, or max" → thinkingCanDisable:false
+  // clamps disable requests to thinking-on instead of failing the request.
+  { pattern: "*glm-5*",         caps: { reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 128000 } },
   { pattern: "*glm-4.7*",       caps: { reasoning: true, thinkingFormat: "zai", contextWindow: 200000, maxOutput: 128000 } },
   { pattern: "*glm-4*",         caps: { reasoning: true, thinkingFormat: "zai", contextWindow: 200000 } },
   { pattern: "*glm*",           caps: { reasoning: true, thinkingFormat: "zai", contextWindow: 200000 } },
