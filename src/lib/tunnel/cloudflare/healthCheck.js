@@ -12,7 +12,11 @@ export async function probeUrlAlive(url) {
     const res = await fetch(`${url}/api/health`, {
       signal: AbortSignal.timeout(HEALTH_CHECK.fetchTimeoutMs),
     });
-    return res.ok;
+    // Only edge "origin unreachable" answers mean the tunnel is dead.
+    // A WAF 403/challenge, a 429, or an app-level 5xx still proves the
+    // edge→cloudflared→app path works; treating those as dead made the
+    // watchdog respawn a healthy tunnel (brief public outage per respawn).
+    return res.status !== 502 && res.status !== 504 && res.status !== 530;
   } catch {
     return false;
   }
