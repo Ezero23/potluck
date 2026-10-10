@@ -1,3 +1,5 @@
+export const MAX_TOOL_NAME_LENGTH = 64;
+
 // HTTP status codes
 export const HTTP_STATUS = {
   BAD_REQUEST: 400,

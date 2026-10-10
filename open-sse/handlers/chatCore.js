@@ -291,6 +291,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   if (!providerResponse.ok) {
     trackPendingRequest(model, provider, connectionId, false, true);
     const { statusCode, message, resetsAtMs } = await parseUpstreamError(providerResponse, executor);
+    // Debug escape hatch: dump the exact outbound body for 4xx diagnosis.
+    if (process.env.POTLUCK_DUMP_FAILED_REQUESTS && statusCode >= 400 && statusCode < 500) {
+      try {
+        const fs = await import("fs");
+        fs.writeFileSync(`/tmp/potluck-failed-${provider}-${statusCode}-${Date.now()}.json`,
+          JSON.stringify({ model, upstreamModel: model, body: finalBody || translatedBody, clientBody: body, upstreamMessage: message }, null, 2));
+      } catch { /* dump is best-effort */ }
+    }
     appendRequestLog({ model, provider, connectionId, status: `FAILED ${statusCode}` }).catch(() => { });
     saveRequestDetail(buildRequestDetail({
       provider, model, connectionId,
@@ -314,7 +322,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
 
   // Provider forced streaming but client wants JSON
   if (!clientRequestedStreaming && providerRequiresStreaming) {
-    const result = await handleForcedSSEToJson({ ...sharedCtx, providerResponse, sourceFormat, trackDone, appendLog });
+    const result = await handleForcedSSEToJson({ ...sharedCtx, providerResponse, sourceFormat, trackDone, appendLog, toolNameMap });
     if (result) { streamController.handleComplete(); return result; }
   }
 

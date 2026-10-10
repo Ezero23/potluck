@@ -1,4 +1,6 @@
 import { FORMATS } from "./formats.js";
+import { normalizeToolNames, restoreToolNames } from "./concerns/toolNames.js";
+import { sanitizeToolSchemas } from "./concerns/toolSchema.js";
 import { ensureToolCallIds, fixMissingToolResponses } from "./concerns/toolCall.js";
 import { prepareClaudeRequest } from "./formats/claude.js";
 import { cloakClaudeTools } from "../utils/claudeCloaking.js";
@@ -142,7 +144,7 @@ export function translateRequest(sourceFormat, targetFormat, model, body, stream
   //   }
   // }
 
-  return result;
+  return normalizeToolNames(sanitizeToolSchemas(result));
 }
 
 // Translate response chunk: target -> openai -> source
@@ -150,7 +152,7 @@ export function translateResponse(targetFormat, sourceFormat, chunk, state) {
   ensureInitialized();
   // If same format, return as-is
   if (sourceFormat === targetFormat) {
-    return [chunk];
+    return [restoreToolNames(chunk, state?.toolNameMap)];
   }
 
   let results = [chunk];
@@ -163,7 +165,7 @@ export function translateResponse(targetFormat, sourceFormat, chunk, state) {
   const directFn = responseRegistry.get(`${targetFormat}:${sourceFormat}`);
   if (directFn) {
     const converted = directFn(chunk, state);
-    return converted ? (Array.isArray(converted) ? converted : [converted]) : [];
+    return converted ? (Array.isArray(converted) ? converted : [converted]).map(item => restoreToolNames(item, state?.toolNameMap)) : [];
   }
 
   // Step 1: target -> openai (if target is not openai)
@@ -193,6 +195,8 @@ export function translateResponse(targetFormat, sourceFormat, chunk, state) {
       results = finalResults;
     }
   }
+
+  results = results.map(item => restoreToolNames(item, state?.toolNameMap));
 
   // Attach OpenAI intermediate results for logging
   if (openaiResults && sourceFormat !== FORMATS.OPENAI && targetFormat !== FORMATS.OPENAI) {

@@ -8,7 +8,7 @@ import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
 import { buildRequestDetail, extractRequestConfig, extractUsageFromResponse, saveUsageStats } from "./requestDetail.js";
 import { appendRequestLog, saveRequestDetail } from "@/lib/usageDb.js";
-import { decloakToolNames } from "../../utils/claudeCloaking.js";
+import { restoreToolNames } from "../../translator/concerns/toolNames.js";
 
 function parseToolArguments(value) {
   if (!value) return {};
@@ -231,7 +231,7 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   }
 
   // Decloak tool_use names once on raw Claude body, before any translation (INPUT side)
-  responseBody = decloakToolNames(responseBody, toolNameMap);
+  responseBody = restoreToolNames(responseBody, toolNameMap);
 
   const usage = extractUsageFromResponse(responseBody);
   appendLog({ tokens: usage, status: "200 OK" });

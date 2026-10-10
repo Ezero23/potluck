@@ -9,7 +9,8 @@ describe("RoutingTrace monitor projection", () => {
     trace.recordOutcome("anthropic", "claude-sonnet", 200, 42, null);
 
     expect(trace.toHeaders()).toMatchObject({
-      "X-Routing-Chain": "anthropic/claude-sonnet:sel → anthropic/claude-sonnet:200",
+      // header values are Latin-1 (ByteString) — "→" is folded to "->"
+      "X-Routing-Chain": "anthropic/claude-sonnet:sel -> anthropic/claude-sonnet:200",
       "X-Selected-Provider": "anthropic/claude-sonnet",
       "X-Routing-Profile": "code",
     });
