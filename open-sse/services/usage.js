@@ -17,6 +17,7 @@ import {
   getIflowUsage,
   getOllamaUsage,
   getGlmUsage,
+  getKimiUsage,
   getVercelAiGatewayUsage,
   getQoderUsage,
 } from "./usage/misc.js";
@@ -40,6 +41,7 @@ const USAGE_HANDLERS = {
   iflow: (c) => getIflowUsage(c.accessToken),
   ollama: (c) => getOllamaUsage(c.apiKey || c.accessToken, c.proxyOptions),
   glm: (c) => getGlmUsage(c.apiKey, c.provider, c.proxyOptions),
+  kimi: (c) => getKimiUsage(c.apiKey || c.accessToken, c.proxyOptions),
   "glm-cn": (c) => getGlmUsage(c.apiKey, c.provider, c.proxyOptions),
   minimax: (c) => getMiniMaxUsage(c.apiKey, c.provider, c.proxyOptions),
   "minimax-cn": (c) => getMiniMaxUsage(c.apiKey, c.provider, c.proxyOptions),

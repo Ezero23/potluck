@@ -465,3 +465,109 @@ export async function getQoderUsage(accessToken, provider = "qoder", proxyOption
     return { message: `Qoder connected. Unable to fetch usage: ${error.message}` };
   }
 }
+
+/**
+ * Kimi Coding Plan usage.
+ *
+ * The Code usages endpoint accepts plain API keys (no JWT subject to identify
+ * the account) and carries the account's stable userId inside booster_wallet.
+ * The accountKey uses the same hash recipe as the Monitor's local kimi row
+ * (sha256 of "kimi-account"\0<userId>\0) so the gateway-fed row and the
+ * Monitor's own row merge into one confirmed account. Top-level `usage` is
+ * the weekly quota; limits[] holds the rolling 5-hour session window.
+ */
+const KIMI_CODING_USAGES_URL = "https://api.kimi.com/coding/v1/usages";
+
+// Kimi windows use protobuf-style enums ("TIME_UNIT_MINUTE"), same idea as
+// the GLM converter but keyed off the string unit names.
+function kimiWindowMinutes(window) {
+  const amount = glmNumberOrNull(window?.duration);
+  if (amount === null || amount <= 0) return null;
+  const unit = String(window?.timeUnit ?? window?.time_unit ?? "").trim().toUpperCase();
+  if (unit.includes("MIN")) return amount;
+  if (unit.includes("HOUR")) return amount * 60;
+  if (unit.includes("DAY")) return amount * 24 * 60;
+  if (unit.includes("WEEK")) return amount * 7 * 24 * 60;
+  return null;
+}
+
+export async function getKimiUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) {
+    return { message: "Kimi API key not available." };
+  }
+
+  try {
+    const response = await proxyAwareFetch(KIMI_CODING_USAGES_URL, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+      },
+    }, proxyOptions);
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return { message: "Kimi API key invalid or expired." };
+      }
+      return { message: `Kimi usage API error (${response.status}).` };
+    }
+
+    const json = await response.json();
+    const quotas = {};
+
+    const usage = json?.usage && typeof json.usage === "object" ? json.usage : null;
+    if (usage) {
+      const total = glmNumberOrNull(usage.limit);
+      const used = glmNumberOrNull(usage.used);
+      const remaining = glmNumberOrNull(usage.remaining);
+      if (total !== null && (used !== null || remaining !== null)) {
+        quotas["Weekly"] = {
+          used: used !== null ? used : Math.max(0, total - (remaining ?? total)),
+          total,
+          remaining,
+          resetAt: glmIsoDateOrNull(usage.resetTime ?? usage.reset_time),
+          unlimited: false,
+        };
+      }
+    }
+
+    const limits = Array.isArray(json?.limits) ? json.limits : [];
+    for (const entry of limits) {
+      const minutes = kimiWindowMinutes(entry?.window);
+      const detail = entry?.detail && typeof entry.detail === "object" ? entry.detail : null;
+      // The rolling session window is the first short-window entry (Kimi
+      // reports 300 × TIME_UNIT_MINUTE = the 5-hour bucket).
+      if (detail === null || minutes === null || minutes > 6 * 60) continue;
+      const total = glmNumberOrNull(detail.limit);
+      const remaining = glmNumberOrNull(detail.remaining);
+      if (total === null || remaining === null) continue;
+      quotas["Session"] = {
+        used: Math.max(0, total - remaining),
+        total,
+        remaining,
+        resetAt: glmIsoDateOrNull(detail.resetTime ?? detail.reset_time),
+        unlimited: false,
+      };
+      break;
+    }
+
+    const userId = String(
+      json?.booster_wallet?.userId
+      ?? json?.booster_wallet?.balance?.userId
+      ?? ""
+    ).trim();
+    if (!Object.keys(quotas).length && !userId) {
+      return { message: "Kimi usage response carried no quotas." };
+    }
+
+    return {
+      plan: "Kimi Coding Plan",
+      quotas,
+      ...(userId ? {
+        accountKey: glmOpaqueKey("kimi-account", userId),
+        quotaPoolKey: glmOpaqueKey("kimi-pool", userId),
+      } : {}),
+    };
+  } catch (error) {
+    return { message: `Kimi error: ${error.message}` };
+  }
+}

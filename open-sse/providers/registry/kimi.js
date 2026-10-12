@@ -53,4 +53,7 @@ export default {
     endpoint: "https://api.moonshot.cn/v1/chat/completions",
     pricingUrl: "https://platform.moonshot.ai/docs/pricing/chat",
   },
+  features: {
+    usageApikey: true,
+  },
 };
